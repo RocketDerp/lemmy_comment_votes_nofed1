@@ -1,4 +1,12 @@
-import { LemmyHttp } from "lemmy-js-client";
+import {
+  GetPosts,
+  GetPostsResponse,
+  GetReplies,
+  GetRepliesResponse,
+  GetUnreadCount,
+  GetUnreadCountResponse,
+  LemmyHttp,
+} from "lemmy-js-client";
 import { CreatePost } from "lemmy-js-client/dist/types/CreatePost";
 import { DeletePost } from "lemmy-js-client/dist/types/DeletePost";
 import { EditPost } from "lemmy-js-client/dist/types/EditPost";
@@ -64,132 +72,120 @@ import { GetPersonDetails } from "lemmy-js-client/dist/types/GetPersonDetails";
 export interface API {
   client: LemmyHttp;
   auth: string;
+  clientaddress?: string;
+  name?: string;
+  hostname?: string;
+  username?: string;
+  password?: string;
+  netport?: number;
+  privledge?: number;
+  fedallow?: string[];
+  fedblock?: string[];
+  extra?: {};
 }
 
-export let alpha: API = {
-  client: new LemmyHttp("http://127.0.0.1:8541"),
-  auth: "",
-};
+const defaultPassword = "lemmylemmy";
+export let alladmins : API[] = [];
 
-export let beta: API = {
-  client: new LemmyHttp("http://127.0.0.1:8551"),
-  auth: "",
-};
+function apicreate (name: string, port: number, privledgelevel: number, allow: string[], block: string[]) {
+  let outHostname = "lemmy" + "-" + name;
 
-export let gamma: API = {
-  client: new LemmyHttp("http://127.0.0.1:8561"),
-  auth: "",
-};
+  let outHostAddress = "http:/" + outHostname;
+  // let outHostAddress = "http://" + "127.0.0.1";
+  if (port) {
+    outHostAddress = "http://" + outHostname + ":" + port;
+    // outHostAddress = "http://" + "127.0.0.1" + ":" + port;
+  }
 
-export let delta: API = {
-  client: new LemmyHttp("http://127.0.0.1:8571"),
-  auth: "",
-};
+  // the incoming fedallow and fedblock lists:
+  //   1. could have the instance itself on the list, filter out
+  //   2. uses a shortcut name of "alpha" format, needs to be rewritten as "lemmy-alpha" format.
+  let newapi : API = {
+    client: new LemmyHttp(outHostAddress),
+    clientaddress: outHostAddress,
+    hostname: outHostname,
+    name: name,
+    netport: port,
+    username: "lemmy" + "_" + name,
+    password: defaultPassword,
+    privledge: privledgelevel,
+    auth: "nevermatch",
+    extra: {},
+    fedallow: allow.filter(a => a !== name)
+      .map(a => "lemmy-" + a),
+    fedblock: block.filter(item => item !== name)
+      .map(a => "lemmy-" + a),
+  };
+  if (privledgelevel == 1) {
+    alladmins.push(newapi);
+  }
+  return newapi;
+}
 
-export let epsilon: API = {
-  client: new LemmyHttp("http://127.0.0.1:8581"),
-  auth: "",
-};
+export let allowPack = ["alpha", "beta", "gamma", "delta", "epsilon"];
+export let alpha: API = apicreate("alpha", 8541, 1, allowPack, []);
+export let beta: API = apicreate("beta", 8551, 1, allowPack, []);
+export let gamma: API = apicreate("gamma", 8561, 1, allowPack, []);
+export let delta: API = apicreate("delta", 8571, 1, ["beta"], []);
+export let epsilon: API = apicreate("epsilon", 8581, 1, [], ["alpha"]);
 
-const password = "lemmylemmy";
+export async function doLogin(api: API) {
+  let formLogin: Login = {
+    username_or_email: api.username ?? "",
+    password: api.password ?? ""
+  };
+  let loginRes = await api.client.login(formLogin);
+  if (loginRes.jwt) {
+    if (loginRes.jwt.length > 10) {
+      api.auth = loginRes.jwt;
+      return true;
+    }
+  }
+  return false;
+}
 
 export async function setupLogins() {
-  let formAlpha: Login = {
-    username_or_email: "lemmy_alpha",
-    password,
-  };
-  let resAlpha = alpha.client.login(formAlpha);
+  for (let i = 0; i < alladmins.length; i++) {
+    let goodLogin = await doLogin(alladmins[i]);
+    if (!goodLogin) {
+      console.error("Aborting, login failed, EXIT code 5");
+      process.exit(5);
+    }
+    expect(goodLogin).toBe(true);
 
-  let formBeta: Login = {
-    username_or_email: "lemmy_beta",
-    password,
-  };
-  let resBeta = beta.client.login(formBeta);
-
-  let formGamma: Login = {
-    username_or_email: "lemmy_gamma",
-    password,
-  };
-  let resGamma = gamma.client.login(formGamma);
-
-  let formDelta: Login = {
-    username_or_email: "lemmy_delta",
-    password,
-  };
-  let resDelta = delta.client.login(formDelta);
-
-  let formEpsilon: Login = {
-    username_or_email: "lemmy_epsilon",
-    password,
-  };
-  let resEpsilon = epsilon.client.login(formEpsilon);
-
-  let res = await Promise.all([
-    resAlpha,
-    resBeta,
-    resGamma,
-    resDelta,
-    resEpsilon,
-  ]);
-
-  alpha.auth = res[0].jwt ?? "";
-  beta.auth = res[1].jwt ?? "";
-  gamma.auth = res[2].jwt ?? "";
-  delta.auth = res[3].jwt ?? "";
-  epsilon.auth = res[4].jwt ?? "";
-
-  // Registration applications are now enabled by default, need to disable them
-  let editSiteForm: EditSite = {
-    registration_mode: "Open",
-    rate_limit_message: 999,
-    rate_limit_post: 999,
-    rate_limit_register: 999,
-    rate_limit_image: 999,
-    rate_limit_comment: 999,
-    rate_limit_search: 999,
-    auth: "",
-  };
-
-  // Set the blocks and auths for each
-  editSiteForm.auth = alpha.auth;
-  editSiteForm.allowed_instances = [
-    "lemmy-beta",
-    "lemmy-gamma",
-    "lemmy-delta",
-    "lemmy-epsilon",
-  ];
-  await alpha.client.editSite(editSiteForm);
-
-  editSiteForm.auth = beta.auth;
-  editSiteForm.allowed_instances = [
-    "lemmy-alpha",
-    "lemmy-gamma",
-    "lemmy-delta",
-    "lemmy-epsilon",
-  ];
-  await beta.client.editSite(editSiteForm);
-
-  editSiteForm.auth = gamma.auth;
-  editSiteForm.allowed_instances = [
-    "lemmy-alpha",
-    "lemmy-beta",
-    "lemmy-delta",
-    "lemmy-epsilon",
-  ];
-  await gamma.client.editSite(editSiteForm);
-
-  editSiteForm.allowed_instances = ["lemmy-beta"];
-  editSiteForm.auth = delta.auth;
-  await delta.client.editSite(editSiteForm);
-
-  editSiteForm.auth = epsilon.auth;
-  editSiteForm.allowed_instances = [];
-  editSiteForm.blocked_instances = ["lemmy-alpha"];
-  await epsilon.client.editSite(editSiteForm);
+    // Registration applications are now enabled by default, need to disable them
+    let editSiteForm: EditSite = {
+      registration_mode: "Open",
+      rate_limit_message: 999,
+      rate_limit_post: 999,
+      rate_limit_register: 999,
+      rate_limit_image: 999,
+      rate_limit_comment: 999,
+      rate_limit_search: 999,
+      auth: alladmins[i].auth,
+      allowed_instances: alladmins[i].fedallow,
+      blocked_instances: alladmins[i].fedblock,
+    };
+    // console.log("%s ", alladmins[i].name, editSiteForm);
+    // alladmins[i].extra.editSiteForm = editSiteForm;
+    let editRes = await alladmins[i].client.editSite(editSiteForm);
+    expect(editRes.site_view).toBeDefined();
+    // console.log("Login was good, site edit was good %s", alladmins[i].clientaddress);
+  }
 
   // Create the main alpha/beta communities
-  await createCommunity(alpha, "main");
-  await createCommunity(beta, "main");
+  // Ignore thrown errors of duplicates
+  try {
+    let cc0 = await createCommunity(alpha, "main");
+    // console.log(cc0.community_view);
+    let cc1 = await createCommunity(beta, "main");
+  } catch (_) {}
+}
+
+/// lemmy convention is to return an inband (JSON) error field
+/// the normal objects in lemmy do not have this field, so use any object type
+export function checkInbandError(clientResponse: any) {
+  return clientResponse?.error;
 }
 
 export async function createPost(
@@ -199,6 +195,23 @@ export async function createPost(
   let name = randomString(5);
   let body = randomString(10);
   let url = "https://google.com/";
+  let form: CreatePost = {
+    name,
+    url,
+    body,
+    auth: api.auth,
+    community_id,
+  };
+  return api.client.createPost(form);
+}
+
+export async function createNoLinkPost(
+  api: API,
+  community_id: number,
+): Promise<PostResponse> {
+  let name = "Post without link " + randomString(5);
+  let body = "Body of post without link " + randomString(10);
+  let url = undefined;
   let form: CreatePost = {
     name,
     url,
@@ -307,6 +320,34 @@ export async function getPost(
   return api.client.getPost(form);
 }
 
+export async function getPosts(
+  api: API,
+  community_name: string,
+): Promise<GetPostsResponse> {
+  let form: GetPosts = {
+    community_name: community_name,
+    limit: 25,
+    sort: "New",
+    type_: "All",
+    auth: api.auth,
+  };
+  return api.client.getPosts(form);
+}
+
+export async function getPostsCID(
+  api: API,
+  community_id: number,
+): Promise<GetPostsResponse> {
+  let form: GetPosts = {
+    community_id: community_id,
+    limit: 25,
+    sort: "New",
+    type_: "All",
+    auth: api.auth,
+  };
+  return api.client.getPosts(form);
+}
+
 export async function getComments(
   api: API,
   post_id: number,
@@ -318,6 +359,37 @@ export async function getComments(
     auth: api.auth,
   };
   return api.client.getComments(form);
+}
+
+export async function findPostGetComments(
+  api: API,
+  community_name: string,
+  post_ap_id: string,
+): Promise<GetCommentsResponse> {
+  // searach new on the community
+  let postsResponse = await getPosts(api, community_name);
+  if (!checkInbandError(postsResponse))
+  {
+    if (postsResponse.posts) {
+      let posts = postsResponse.posts;
+      let targetPost;
+      for (let i = 0; i < posts.length; i++) {
+        if (posts[i].post.ap_id === post_ap_id) {
+          targetPost = posts[i];
+          break;
+        };
+      }
+      if (targetPost) {
+        return await getComments(api, targetPost.post.id);
+      }
+    } else {
+      console.warn("findPostGetComments found no post response on community_name %s searching for post %s", community_name, post_ap_id);
+    }
+  } else {
+    console.warn("findPostGetComments error response '%s' on community_name %s searching for post %s", checkInbandError(postsResponse), community_name, post_ap_id);
+  }
+  return { error: "test-found-nothing" } as any;
+  // return { } as GetCommentsResponse;
 }
 
 export async function resolveComment(
@@ -489,6 +561,24 @@ export async function getMentions(
   return api.client.getPersonMentions(form);
 }
 
+export async function getUnreadCount(
+  api: API,
+): Promise<GetUnreadCountResponse> {
+  let form: GetUnreadCount = {
+    auth: api.auth,
+  };
+  return api.client.getUnreadCount(form);
+}
+
+export async function getReplies(api: API): Promise<GetRepliesResponse> {
+  let form: GetReplies = {
+    sort: "New",
+    unread_only: false,
+    auth: api.auth,
+  };
+  return api.client.getReplies(form);
+}
+
 export async function likeComment(
   api: API,
   score: number,
@@ -592,14 +682,15 @@ export async function deletePrivateMessage(
   return api.client.deletePrivateMessage(form);
 }
 
+// ToDo: api now has a username field, could use that instead of random?
 export async function registerUser(
   api: API,
   username: string = randomString(5),
 ): Promise<LoginResponse> {
   let form: Register = {
     username,
-    password,
-    password_verify: password,
+    password: api.password ?? defaultPassword,
+    password_verify: api.password ?? defaultPassword,
     show_nsfw: true,
   };
   return api.client.register(form);
@@ -662,7 +753,7 @@ export async function getPersonDetails(
 export async function deleteUser(api: API): Promise<DeleteAccountResponse> {
   let form: DeleteAccount = {
     auth: api.auth,
-    password,
+    password: api.password ?? defaultPassword,
   };
   return api.client.deleteAccount(form);
 }

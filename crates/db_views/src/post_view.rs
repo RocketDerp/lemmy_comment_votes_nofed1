@@ -398,6 +398,10 @@ impl<'a> PostQuery<'a> {
     }
     // Only hide the read posts, if the saved_only is false. Otherwise ppl with the hide_read
     // setting wont be able to see saved posts.
+    // Same issue with user profile
+    else if is_profile_view {
+      // show read, do not add filter
+    }
     else if !self
       .local_user
       .map(|l| l.local_user.show_read_posts)

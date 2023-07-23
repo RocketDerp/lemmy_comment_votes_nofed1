@@ -555,7 +555,6 @@ test("Preference behavior, show_read_posts", async () => {
 
   // create a test user
   let alphaUserJwt = await registerUser(alpha, "alpha_read_posts");
-  console.log("after registerUser show_read_posts");
   expect(alphaUserJwt).toBeDefined();
   expect(alphaUserJwt.jwt).toBeDefined();
   expect(alphaUserJwt.jwt?.length).toBeGreaterThan(10);
@@ -576,7 +575,6 @@ test("Preference behavior, show_read_posts", async () => {
 
   // https://github.com/LemmyNet/lemmy/issues/3691
   // does user profile show read/unread
-  console.log("before getSite");
   let alpha_user_site = await getSite(alpha_user);
   console.log("after getSite");
 
@@ -584,9 +582,7 @@ test("Preference behavior, show_read_posts", async () => {
     // turn off show_read_posts
     let myLocalUser = alpha_user_site.my_user.local_user_view.local_user;
     myLocalUser.show_read_posts = false;
-    console.log("before saveUserSeetings 0");
     let save0 = await saveUserSettingsLocalUser(alpha_user, myLocalUser);
-    console.log("after saveUserSeetings 0");
     expect(save0.jwt?.length).toBeGreaterThanOrEqual(10);
 
     let communityNameFull = "main" + "@lemmy-beta";
@@ -615,7 +611,6 @@ test("Preference behavior, show_read_posts", async () => {
     // turn on show_read_posts
     myLocalUser.show_read_posts = true;
     let save1 = await saveUserSettingsLocalUser(alpha_user, myLocalUser);
-    console.log("after saveUserSeetings 1");
     expect(save1.jwt?.length).toBeGreaterThanOrEqual(10);
 
     let postsAfter1 = await getPosts(alpha_user, communityNameFull);
@@ -640,7 +635,6 @@ test("Preference behavior, show_read_posts", async () => {
     // turn off show_read_posts
     myLocalUser.show_read_posts = false;
     let save2 = await saveUserSettingsLocalUser(alpha_user, myLocalUser);
-    console.log("after saveUserSeetings 2");
     expect(save2.jwt?.length).toBeGreaterThanOrEqual(10);
 
     // look again at profile of the alpha admin user, did posts change?

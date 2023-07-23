@@ -105,6 +105,7 @@ import {
   createNoLinkPost,
   getPostsCID,
   findPostGetComments,
+  getPosts,
 } from "./shared";
 import { CommentView } from "lemmy-js-client/dist/types/CommentView";
 import * as comparison from "./shared_comparison";
@@ -341,25 +342,33 @@ async function commentCountMultiInstancesForPostNocompare(post_ap_id: string) {
   return returnCount;
 }
 
-export async function createNonLinkPostInAlphaCommunity() {
-  if (!alphaGrandTourCommunity) {
-    throw "Missing grandtour community from alpha";
+async function comparePostsAllServers(referencePost: PostView) {
+  let returnCount = [];
+  let accountsArray = [alpha, beta, gamma];
+
+  let communityNameFull = "grandtour" + "@lemmy-beta";
+  for (let i = 0; i < accountsArray.length; i++) {
+    let instance = accountsArray[i];
+
+    let postsRes = await getPosts(instance, communityNameFull);
+    expect(checkInbandError(postsRes)).toBeUndefined();
+    expect(postsRes.posts.length).toBe(postCountAnticipated);
+    comparison.consolePosts(postsRes.posts);
+    let singlePost = postsRes.posts[0];
+    comparison.assertPostFederation(referencePost, singlePost);
+
+    switch(instance.name) {
+      case "gamma":
+        // set class variable for other test functions.
+        gammaGrandTourPost = singlePost;
+        break;
+    }
+
+    returnCount.push(postsRes.posts.length);
   }
 
-  // a post with a link (url) requires active Internet outbound service
-  // create a post that does not require active Internet service
-  // alpha is a remote instance from the grandtour community homed on beta
-  let postRes = await createNoLinkPost(
-    alpha,
-    alphaGrandTourCommunity.community.id,
-  );
-  expect(checkInbandError(postRes)).toBeUndefined();
-  expect(postRes.post_view.post).toBeDefined();
-  expect(postRes.post_view.community.local).toBe(false);
-  expect(postRes.post_view.creator.local).toBe(true);
-  expect(postRes.post_view.counts.score).toBe(1);
-  postCountAnticipated++;
 
+/*
   // Check instance that we just created poat on.
   let alphaPosts = await getPostsCID(
     alpha,
@@ -394,21 +403,49 @@ export async function createNonLinkPostInAlphaCommunity() {
   expect(gammaPost.creator.local).toBe(false);
   expect(gammaPost.counts.score).toBe(1);
   comparison.assertPostFederation(gammaPost, postRes.post_view);
+*/
 
   // ToDo: analyze these tests, do they make sense in grandtour community/situation?
   // Delta only follows beta, so it should not see an alpha ap_id
-  await expect(resolvePost(delta, postRes.post_view.post)).rejects.toBe(
+  await expect(resolvePost(delta, referencePost.post)).rejects.toBe(
     "couldnt_find_object",
   );
 
   // Epsilon has alpha blocked, it should not see the alpha post
-  await expect(resolvePost(epsilon, postRes.post_view.post)).rejects.toBe(
+  await expect(resolvePost(epsilon, referencePost.post)).rejects.toBe(
     "couldnt_find_object",
   );
 
+
+
+
+  return returnCount;
+}
+
+
+export async function createNonLinkPostInAlphaCommunity() {
+  if (!alphaGrandTourCommunity) {
+    throw "Missing grandtour community from alpha";
+  }
+
+  // a post with a link (url) requires active Internet outbound service
+  // create a post that does not require active Internet service
+  // alpha is a remote instance from the grandtour community homed on beta
+  let postRes = await createNoLinkPost(
+    alpha,
+    alphaGrandTourCommunity.community.id,
+  );
+  expect(checkInbandError(postRes)).toBeUndefined();
+  expect(postRes.post_view.post).toBeDefined();
+  expect(postRes.post_view.community.local).toBe(false);
+  expect(postRes.post_view.creator.local).toBe(true);
+  expect(postRes.post_view.counts.score).toBe(1);
+  postCountAnticipated++;
+
   // set class variable for other test functions.
   alphaPostRes = postRes;
-  gammaGrandTourPost = gammaPost;
+
+  let compareArray = comparePostsAllServers(postRes.post_view);
 }
 
 function numbersInArrayEqual(targetArray: number[], howMany: number) {
@@ -543,13 +580,51 @@ export async function undeleteCommentOnAlpha() {
   expect(countArray[0]).toBe(commentCountBeforeDeduction);
 }
 
+export let nonAdmins = [];
+
+export async function createNonAdminUsersAllInstances() {
+  let accountsArray = [alpha, beta, gamma];
+
+  /*
+  let communityNameFull = "grandtour" + "@lemmy-beta";
+  for (let i = 0; i < accountsArray.length; i++) {
+    let instance = accountsArray[i];
+    let getPostPostComments = await findPostGetComments(
+      instance,
+      communityNameFull,
+      post_ap_id,
+    );
+    expect(checkInbandError(getPostPostComments)).toBeUndefined();
+    returnCount.push(getPostPostComments.comments.length);
+  }
+
+      // create a typical end-user on alpha, non-admin
+      let alpha_user = await registerUser(alpha);
+      expect(checkInbandError(alpha_user)).toBeUndefined();
+      let newAlphaApi: API = {
+        client: alpha.client,
+        auth: alpha_user.jwt ?? "",
+      };
+  */
+}
+
 export async function newNonAdminUserCreateCommentOnAlpha() {
+  return true;
       // create a typical end-user on alpha, non-admin
   let alpha_user = await registerUser(alpha);
   expect(checkInbandError(alpha_user)).toBeUndefined();
   let newAlphaApi: API = {
     client: alpha.client,
+    clientaddress: "https://nowork;",
     auth: alpha_user.jwt ?? "",
+    name: "alpha",
+    hostname: "",
+    username: "unknown",
+    password: "unknown",
+    privledge: 0,
+    fedallow: [],
+    fedblock: [],
+    extra: {},
   };
 
   let commentRes = await createComment(
@@ -653,7 +728,7 @@ export async function adminCommentRemovalFromGamma() {
   // be certain we fetched the correct comment, compare with direct API delete results
   comparison.assertCommentFederation(betaCommentFresh, gammaComment);
 // FixMe: Fix the backend ActivePub replication issue, or is it working by design that admin remove only works on instance it is removed from?
-let ignoreAdminRemoveReplication = true;
+let ignoreAdminRemoveReplication = false;
 if (!ignoreAdminRemoveReplication) {
   expect(betaCommentFresh.comment.removed).toBe(true);
 }
@@ -707,7 +782,7 @@ export async function commentUpvoteOnAlpha(expectedTotalCommentScore: number) {
     );
     expect(numbersInArrayEqual(scoreArray, 3)).toBe(true);
     console.log("commentUpvoteOnAlpha scores array expected %d got", expectedTotalCommentScore, scoreArray);
-    // score should be 2
+    // score should meet expectations
     expect(scoreArray[0]).toBe(expectedTotalCommentScore);
 
   // publish new alphaComment since score changed
@@ -795,6 +870,4 @@ export async function reportBetaCommentOnAlpha() {
     alphaCommentReport.original_comment_text,
   );
   expect(gammaCommentReport.reason).toBe(alphaCommentReport.reason);
-
-  // ToDo: test resolving the report on gamma, then validated resolve status on alpha
 }

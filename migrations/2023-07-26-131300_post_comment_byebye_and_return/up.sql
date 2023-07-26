@@ -7,7 +7,8 @@
 
 -- lemmy_server 0.18.2 context:
 --   byebye actions are causing massive performance problems on the site. Individual deletes taking PostgreSQL many seconds.
---   byebye actions upon multiple posts and comments, such as account delete, are crashing the servers.
+--   byebye actions upon multiple posts and comments, such as account delete, are crashing the servers. Although
+--   an emergency fix to site_aggregates may have improved the sitaution.
 
 
 -- ASSUMPTIONS:

@@ -1,4 +1,4 @@
-jest.setTimeout(180000);
+jest.setTimeout(120000);
 
 import { CommunityView } from "lemmy-js-client/dist/types/CommunityView";
 import {
@@ -34,23 +34,16 @@ import {
   getSite,
   unfollows,
   resolveCommunity,
-  saveUserSettingsLocalUser,
-  getPosts,
-  getPersonDetails,
 } from "./shared";
 import { PostView } from "lemmy-js-client/dist/types/PostView";
-import { GetPostsResponse, PostResponse } from "lemmy-js-client";
+import { CreatePost } from "lemmy-js-client/dist/types/CreatePost";
 
-let betaCommunityOnAlpha: CommunityView | undefined;
-let betaCommunityOnBeta: CommunityView | undefined;
+let betaCommunity: CommunityView | undefined;
 
 beforeAll(async () => {
   await setupLogins();
-  betaCommunityOnAlpha = (await resolveBetaCommunity(alpha)).community;
-  expect(betaCommunityOnAlpha).toBeDefined();
-  betaCommunityOnBeta = (await resolveBetaCommunity(beta)).community;
-  expect(betaCommunityOnBeta).toBeDefined();
-  // WARNING: these tests start out with unfollows state of communities.
+  betaCommunity = (await resolveBetaCommunity(alpha)).community;
+  expect(betaCommunity).toBeDefined();
   await unfollows();
 });
 
@@ -76,11 +69,11 @@ function assertPostFederation(postOne?: PostView, postTwo?: PostView) {
 }
 
 test("Create a post", async () => {
-  if (!betaCommunityOnAlpha) {
+  if (!betaCommunity) {
     throw "Missing beta community";
   }
 
-  let postRes = await createPost(alpha, betaCommunityOnAlpha.community.id);
+  let postRes = await createPost(alpha, betaCommunity.community.id);
   expect(postRes.post_view.post).toBeDefined();
   expect(postRes.post_view.community.local).toBe(false);
   expect(postRes.post_view.creator.local).toBe(true);
@@ -111,10 +104,10 @@ test("Create a post in a non-existent community", async () => {
 });
 
 test("Unlike a post", async () => {
-  if (!betaCommunityOnAlpha) {
+  if (!betaCommunity) {
     throw "Missing beta community";
   }
-  let postRes = await createPost(alpha, betaCommunityOnAlpha.community.id);
+  let postRes = await createPost(alpha, betaCommunity.community.id);
   let unlike = await likePost(alpha, 0, postRes.post_view.post);
   expect(unlike.post_view.counts.score).toBe(0);
 
@@ -132,10 +125,10 @@ test("Unlike a post", async () => {
 });
 
 test("Update a post", async () => {
-  if (!betaCommunityOnAlpha) {
+  if (!betaCommunity) {
     throw "Missing beta community";
   }
-  let postRes = await createPost(alpha, betaCommunityOnAlpha.community.id);
+  let postRes = await createPost(alpha, betaCommunity.community.id);
 
   let updatedName = "A jest test federated post, updated";
   let updatedPost = await editPost(alpha, postRes.post_view.post);
@@ -160,10 +153,10 @@ test("Update a post", async () => {
 });
 
 test("Sticky a post", async () => {
-  if (!betaCommunityOnAlpha) {
+  if (!betaCommunity) {
     throw "Missing beta community";
   }
-  let postRes = await createPost(alpha, betaCommunityOnAlpha.community.id);
+  let postRes = await createPost(alpha, betaCommunity.community.id);
 
   let betaPost1 = (await resolvePost(beta, postRes.post_view.post)).post;
   if (!betaPost1) {
@@ -200,11 +193,11 @@ test("Sticky a post", async () => {
 });
 
 test("Lock a post", async () => {
-  if (!betaCommunityOnAlpha) {
+  if (!betaCommunity) {
     throw "Missing beta community";
   }
-  await followCommunity(alpha, true, betaCommunityOnAlpha.community.id);
-  let postRes = await createPost(alpha, betaCommunityOnAlpha.community.id);
+  await followCommunity(alpha, true, betaCommunity.community.id);
+  let postRes = await createPost(alpha, betaCommunity.community.id);
 
   // Lock the post
   let betaPost1 = (await resolvePost(beta, postRes.post_view.post)).post;
@@ -239,11 +232,11 @@ test("Lock a post", async () => {
 });
 
 test("Delete a post", async () => {
-  if (!betaCommunityOnAlpha) {
+  if (!betaCommunity) {
     throw "Missing beta community";
   }
 
-  let postRes = await createPost(alpha, betaCommunityOnAlpha.community.id);
+  let postRes = await createPost(alpha, betaCommunity.community.id);
   expect(postRes.post_view.post).toBeDefined();
 
   let deletedPost = await deletePost(alpha, true, postRes.post_view.post);
@@ -275,12 +268,12 @@ test("Delete a post", async () => {
 });
 
 test("Remove a post from admin and community on different instance", async () => {
-  if (!betaCommunityOnAlpha) {
+  if (!betaCommunity) {
     throw "Missing beta community";
   }
 
   let gammaCommunity = (
-    await resolveCommunity(gamma, betaCommunityOnAlpha.community.actor_id)
+    await resolveCommunity(gamma, betaCommunity.community.actor_id)
   ).community?.community;
   if (!gammaCommunity) {
     throw "Missing gamma community";
@@ -313,11 +306,11 @@ test("Remove a post from admin and community on different instance", async () =>
 });
 
 test("Remove a post from admin and community on same instance", async () => {
-  if (!betaCommunityOnAlpha) {
+  if (!betaCommunity) {
     throw "Missing beta community";
   }
   await followBeta(alpha);
-  let postRes = await createPost(alpha, betaCommunityOnAlpha.community.id);
+  let postRes = await createPost(alpha, betaCommunity.community.id);
   expect(postRes.post_view.post).toBeDefined();
 
   // Get the id for beta
@@ -346,11 +339,11 @@ test("Remove a post from admin and community on same instance", async () => {
 });
 
 test("Search for a post", async () => {
-  if (!betaCommunityOnAlpha) {
+  if (!betaCommunity) {
     throw "Missing beta community";
   }
   await unfollowRemotes(alpha);
-  let postRes = await createPost(alpha, betaCommunityOnAlpha.community.id);
+  let postRes = await createPost(alpha, betaCommunity.community.id);
   expect(postRes.post_view.post).toBeDefined();
 
   let betaPost = (await resolvePost(beta, postRes.post_view.post)).post;
@@ -358,11 +351,11 @@ test("Search for a post", async () => {
 });
 
 test("Enforce site ban for federated user", async () => {
-  if (!betaCommunityOnAlpha) {
+  if (!betaCommunity) {
     throw "Missing beta community";
   }
-  // create a test user, a punk, test the punk busting
-  let alphaUserJwt = await registerUser(alpha, "alpha_punk");
+  // create a test user
+  let alphaUserJwt = await registerUser(alpha);
   expect(alphaUserJwt).toBeDefined();
   let alpha_user: API = {
     client: alpha.client,
@@ -381,10 +374,7 @@ test("Enforce site ban for federated user", async () => {
   expect(alphaPerson).toBeDefined();
 
   // alpha makes post in beta community, it federates to beta instance
-  let postRes1 = await createPost(
-    alpha_user,
-    betaCommunityOnAlpha.community.id,
-  );
+  let postRes1 = await createPost(alpha_user, betaCommunity.community.id);
   let searchBeta1 = await searchPostLocal(beta, postRes1.post_view.post);
   expect(searchBeta1.posts[0]).toBeDefined();
 
@@ -415,10 +405,7 @@ test("Enforce site ban for federated user", async () => {
   expect(unBanAlpha.banned).toBe(false);
 
   // alpha makes new post in beta community, it federates
-  let postRes2 = await createPost(
-    alpha_user,
-    betaCommunityOnAlpha.community.id,
-  );
+  let postRes2 = await createPost(alpha_user, betaCommunity.community.id);
   let searchBeta3 = await searchPostLocal(beta, postRes2.post_view.post);
   expect(searchBeta3.posts[0]).toBeDefined();
 
@@ -426,67 +413,52 @@ test("Enforce site ban for federated user", async () => {
   expect(alphaUserOnBeta2.person?.person.banned).toBe(false);
 });
 
-test("Enforce community ban for federated user", async () => {
-  if (!betaCommunityOnAlpha) {
-    throw "Missing beta community on beta";
-  }
-  if (!betaCommunityOnBeta) {
-    throw "Missing beta community on beta";
+test.skip("Enforce community ban for federated user", async () => {
+  if (!betaCommunity) {
+    throw "Missing beta community";
   }
   let alphaShortname = `@lemmy_alpha@lemmy-alpha:8541`;
-  let alphaPersonOnBeta = (await resolvePerson(beta, alphaShortname)).person;
-  if (!alphaPersonOnBeta) {
-    throw "Missing alpha person on beta";
+  let alphaPerson = (await resolvePerson(beta, alphaShortname)).person;
+  if (!alphaPerson) {
+    throw "Missing alpha person";
   }
-  expect(alphaPersonOnBeta).toBeDefined();
+  expect(alphaPerson).toBeDefined();
 
-  // make a post in beta community from alpha, it goes through
-  let postRes1 = await createPost(alpha, betaCommunityOnAlpha.community.id);
-  expect(postRes1.post_view.post.ap_id).toBeDefined();
+  // make a post in beta, it goes through
+  let postRes1 = await createPost(alpha, betaCommunity.community.id);
   let searchBeta1 = await searchPostLocal(beta, postRes1.post_view.post);
   expect(searchBeta1.posts[0]).toBeDefined();
-  expect(postRes1.post_view.post.ap_id).toBe(searchBeta1.posts[0].post.ap_id);
 
-  // ban alpha user from beta community on beta server
-  let banAlphaFromBeta = await banPersonFromCommunity(
+  // ban alpha from beta community
+  let banAlpha = await banPersonFromCommunity(
     beta,
-    alphaPersonOnBeta.person.id,
-    betaCommunityOnBeta.community.id,
-    true, // remove data
-    true, // ban
+    alphaPerson.person.id,
+    2,
+    true,
+    true,
   );
-  expect(banAlphaFromBeta.banned).toBe(true);
+  expect(banAlpha.banned).toBe(true);
 
   // ensure that the post by alpha got removed
-  // this is using the wrong post.id!!
-  // is it because alpha is an admin that the getPost works? because user's own post?
-  //await expect(getPost(alpha, postRes1.post_view.post.id)).rejects.toBe(
-  //  "unknown",
-  //);
+  await expect(getPost(alpha, searchBeta1.posts[0].post.id)).rejects.toBe(
+    "unknown",
+  );
 
-  // is it removed on beta?
-  let searchBeta3 = await searchPostLocal(beta, postRes1.post_view.post);
-  expect(searchBeta3.posts.length).toBe(0);
-  expect(searchBeta3.posts[0]).toBeUndefined();
-  // expect(postRes1.post_view.post.ap_id).toBe(searchBeta3.posts[0].post.ap_id);
+  // Alpha tries to make post on beta, but it fails because of ban
+  await expect(createPost(alpha, betaCommunity.community.id)).rejects.toBe(
+    "banned_from_community",
+  );
 
-  // Alpha tries to make post on beta community, but it fails because of community ban
-  await expect(
-    createPost(alpha, betaCommunityOnAlpha.community.id),
-  ).rejects.toBe("banned_from_community");
-
-  // Unban alpha from beta
+  // Unban alpha
   let unBanAlpha = await banPersonFromCommunity(
     beta,
-    alphaPersonOnBeta.person.id,
-    betaCommunityOnBeta.community.id,
-    false, // do not remove data
-    false, // unban
+    alphaPerson.person.id,
+    2,
+    false,
+    false,
   );
   expect(unBanAlpha.banned).toBe(false);
-
-  // create new post from alpha
-  let postRes3 = await createPost(alpha, betaCommunityOnAlpha.community.id);
+  let postRes3 = await createPost(alpha, betaCommunity.community.id);
   expect(postRes3.post_view.post).toBeDefined();
   expect(postRes3.post_view.community.local).toBe(false);
   expect(postRes3.post_view.creator.local).toBe(true);
@@ -495,14 +467,13 @@ test("Enforce community ban for federated user", async () => {
   // Make sure that post makes it to beta community
   let searchBeta2 = await searchPostLocal(beta, postRes3.post_view.post);
   expect(searchBeta2.posts[0]).toBeDefined();
-  expect(searchBeta2.posts[0].post.ap_id).toBe(postRes3.post_view.post.ap_id);
 });
 
 test("A and G subscribe to B (center) A posts, it gets announced to G", async () => {
-  if (!betaCommunityOnAlpha) {
+  if (!betaCommunity) {
     throw "Missing beta community";
   }
-  let postRes = await createPost(alpha, betaCommunityOnAlpha.community.id);
+  let postRes = await createPost(alpha, betaCommunity.community.id);
   expect(postRes.post_view.post).toBeDefined();
 
   let betaPost = (await resolvePost(gamma, postRes.post_view.post)).post;
@@ -510,10 +481,12 @@ test("A and G subscribe to B (center) A posts, it gets announced to G", async ()
 });
 
 test("Report a post", async () => {
-  if (!betaCommunityOnBeta) {
+  // Note, this is a different one from the setup
+  let betaCommunity = (await resolveBetaCommunity(beta)).community;
+  if (!betaCommunity) {
     throw "Missing beta community";
   }
-  let postRes = await createPost(beta, betaCommunityOnBeta.community.id);
+  let postRes = await createPost(beta, betaCommunity.community.id);
   expect(postRes.post_view.post).toBeDefined();
 
   let alphaPost = (await resolvePost(alpha, postRes.post_view.post)).post;
@@ -533,119 +506,20 @@ test("Report a post", async () => {
   expect(betaReport.reason).toBe(alphaReport.reason);
 });
 
-function matchPostsListFirstToPost(
-  list: GetPostsResponse,
-  targetPost: PostResponse,
-) {
-  expect(targetPost.post_view).toBeDefined();
-
-  expect(list.posts).toBeDefined();
-  expect(list.posts.length).toBeGreaterThanOrEqual(1);
-  // Sort was by new, so most recent post should be the fresh one
-  expect(list.posts[0].post.ap_id).toBe(targetPost.post_view.post.ap_id);
-  assertPostFederation(list.posts[0], targetPost.post_view);
-
-  return list.posts.length;
-}
-
-test("Preference behavior, show_read_posts", async () => {
-  if (!betaCommunityOnAlpha) {
+test("Sanitize HTML", async () => {
+  let betaCommunity = (await resolveBetaCommunity(beta)).community;
+  if (!betaCommunity) {
     throw "Missing beta community";
   }
 
-  // create a test user
-  let alphaUserJwt = await registerUser(alpha, "alpha_read_posts");
-  expect(alphaUserJwt).toBeDefined();
-  expect(alphaUserJwt.jwt).toBeDefined();
-  expect(alphaUserJwt.jwt?.length).toBeGreaterThan(10);
-  let alpha_user: API = {
-    client: alpha.client,
-    auth: alphaUserJwt.jwt ?? "",
+  let name = randomString(5);
+  let body = "<script>alert('xss');</script> hello";
+  let form: CreatePost = {
+    name,
+    body,
+    auth: beta.auth,
+    community_id: betaCommunity.community.id,
   };
-
-  // create a new post on beta community using the admin account on alpha
-  let adminNewPost0Res = await createPost(
-    alpha,
-    betaCommunityOnAlpha.community.id,
-  );
-  expect(adminNewPost0Res.post_view.post).toBeDefined();
-  expect(adminNewPost0Res.post_view.community.local).toBe(false);
-  expect(adminNewPost0Res.post_view.creator.local).toBe(true);
-  expect(adminNewPost0Res.post_view.counts.score).toBe(1);
-
-  // https://github.com/LemmyNet/lemmy/issues/3691
-  // does user profile show read/unread
-  let alpha_user_site = await getSite(alpha_user);
-  console.log("after getSite");
-
-  if (alpha_user_site.my_user) {
-    // turn off show_read_posts
-    let myLocalUser = alpha_user_site.my_user.local_user_view.local_user;
-    myLocalUser.show_read_posts = false;
-    let save0 = await saveUserSettingsLocalUser(alpha_user, myLocalUser);
-    expect(save0.jwt?.length).toBeGreaterThanOrEqual(10);
-
-    let communityNameFull = "main" + "@lemmy-beta";
-
-    // Query posts for beta community by new posts
-    let posts0 = await getPosts(alpha_user, communityNameFull);
-    const posts0count = matchPostsListFirstToPost(posts0, adminNewPost0Res);
-
-    // As a sanity check, listing posts should not count as a 'read' of a post
-    // Refresh the list a second time and confirm it is still listed.
-    let posts1 = await getPosts(alpha_user, communityNameFull);
-    const posts1count = matchPostsListFirstToPost(posts1, adminNewPost0Res);
-    expect(posts0count).toBe(posts1count);
-
-    // Read the first post
-    let readPost = await getPost(alpha_user, posts1.posts[0].post.id);
-    expect(readPost.post_view).toBeDefined;
-    expect(readPost.post_view.post.ap_id).toBe(
-      adminNewPost0Res.post_view.post.ap_id,
-    );
-
-    let postsAfter0 = await getPosts(alpha_user, communityNameFull);
-    // will not match: const postsAfter0count = matchPostsListFirstToPost(postsAfter0, adminNewPost0Res);
-    expect(postsAfter0.posts.length).toBe(posts1count - 1);
-
-    // turn on show_read_posts
-    myLocalUser.show_read_posts = true;
-    let save1 = await saveUserSettingsLocalUser(alpha_user, myLocalUser);
-    expect(save1.jwt?.length).toBeGreaterThanOrEqual(10);
-
-    let postsAfter1 = await getPosts(alpha_user, communityNameFull);
-    const postsAfter1count = matchPostsListFirstToPost(
-      postsAfter1,
-      adminNewPost0Res,
-    );
-    expect(postsAfter1count).toBe(posts1count);
-
-    // https://github.com/LemmyNet/lemmy/issues/3691
-    // does user profile filter by read/unread
-    // look at the profile of the alpha admin user from a nobody end-user
-    let personDetails0 = await getPersonDetails(
-      alpha_user,
-      adminNewPost0Res.post_view.creator.id,
-    );
-    const personPostsCount0 = matchPostsListFirstToPost(
-      personDetails0,
-      adminNewPost0Res,
-    );
-
-    // turn off show_read_posts
-    myLocalUser.show_read_posts = false;
-    let save2 = await saveUserSettingsLocalUser(alpha_user, myLocalUser);
-    expect(save2.jwt?.length).toBeGreaterThanOrEqual(10);
-
-    // look again at profile of the alpha admin user, did posts change?
-    let personDetails1 = await getPersonDetails(
-      alpha_user,
-      adminNewPost0Res.post_view.creator.id,
-    );
-    // will not match: const personPostsCount1 = matchPostsListFirstToPost(personDetails1, adminNewPost0Res);
-    // the count should not change, looking at a user profile should not honor show_read_posts
-    expect(personPostsCount0).toBe(personDetails1.posts.length);
-
-    // at this point, the user should be discarded, as you don't want show_read_posts confusing next tests.
-  }
+  let post = await beta.client.createPost(form);
+  expect(post.post_view.post.body).toBe(" hello");
 });

@@ -34,9 +34,12 @@ import {
   getSite,
   unfollows,
   resolveCommunity,
+  getPersonDetails,
+  saveUserSettings,
 } from "./shared";
 import { PostView } from "lemmy-js-client/dist/types/PostView";
 import { CreatePost } from "lemmy-js-client/dist/types/CreatePost";
+import { GetPosts, GetPostsResponse, LocalUser, LoginResponse, PostResponse, SaveUserSettings } from "lemmy-js-client";
 
 let betaCommunity: CommunityView | undefined;
 
@@ -522,4 +525,151 @@ test("Sanitize HTML", async () => {
   };
   let post = await beta.client.createPost(form);
   expect(post.post_view.post.body).toBe(" hello");
+});
+
+
+
+
+export async function getPosts(
+  api: API,
+  community_name: string,
+): Promise<GetPostsResponse> {
+  let form: GetPosts = {
+    community_name: community_name,
+    limit: 25,
+    sort: "New",
+    type_: "All",
+    auth: api.auth,
+  };
+  return api.client.getPosts(form);
+}
+
+function matchPostsListFirstToPost(
+  list: GetPostsResponse,
+  targetPost: PostResponse,
+) {
+  expect(targetPost.post_view).toBeDefined();
+
+  expect(list.posts).toBeDefined();
+  expect(list.posts.length).toBeGreaterThanOrEqual(1);
+  // Sort was by new, so most recent post should be the fresh one
+  expect(list.posts[0].post.ap_id).toBe(targetPost.post_view.post.ap_id);
+  assertPostFederation(list.posts[0], targetPost.post_view);
+
+  return list.posts.length;
+}
+
+test("Preference behavior, show_read_posts", async () => {
+	let betaCommunityOnAlpha = betaCommunity;
+  if (!betaCommunityOnAlpha) {
+    throw "Missing beta community";
+  }
+
+  // create a test user
+  let alphaUserJwt = await registerUser(alpha, "alpha_read_posts");
+  expect(alphaUserJwt).toBeDefined();
+  expect(alphaUserJwt.jwt).toBeDefined();
+  expect(alphaUserJwt.jwt?.length).toBeGreaterThan(10);
+  let alpha_user: API = {
+    client: alpha.client,
+    auth: alphaUserJwt.jwt ?? "",
+  };
+
+  // create a new post on beta community using the admin account on alpha
+  let adminNewPost0Res = await createPost(
+    alpha,
+    betaCommunityOnAlpha.community.id,
+  );
+  expect(adminNewPost0Res.post_view.post).toBeDefined();
+  expect(adminNewPost0Res.post_view.community.local).toBe(false);
+  expect(adminNewPost0Res.post_view.creator.local).toBe(true);
+  expect(adminNewPost0Res.post_view.counts.score).toBe(1);
+
+  // https://github.com/LemmyNet/lemmy/issues/3691
+  // does user profile show read/unread
+  let alpha_user_site = await getSite(alpha_user);
+
+  if (!alpha_user_site.my_user) {
+    throw("newly created user not found with GetSite call")
+  }
+
+// bug in Lemmy? Testing reveals that the show_read_posts setting will not save
+//    if you do not edit the bio.
+  let alphaUserSettings : SaveUserSettings = {
+    show_read_posts: false,
+    auth: alpha_user.auth,
+    bio: "turn off show_read_posts for testing"
+  };
+
+  // turn off show_read_posts
+  console.log(alpha_user_site.my_user.local_user_view.local_user);
+  if (alpha_user_site.my_user.local_user_view.local_user.show_read_posts) {
+    let save0 = await saveUserSettings(alpha_user, alphaUserSettings);
+    expect(save0.jwt?.length).toBeGreaterThanOrEqual(10);
+  }
+
+  let communityNameFull = "main" + "@lemmy-beta";
+
+  // Query posts for beta community by new posts
+  let posts0 = await getPosts(alpha_user, communityNameFull);
+  const posts0count = matchPostsListFirstToPost(posts0, adminNewPost0Res);
+
+  // As a sanity check, listing posts should not count as a 'read' of a post
+  // Refresh the list a second time and confirm it is still listed.
+  let posts1 = await getPosts(alpha_user, communityNameFull);
+  const posts1count = matchPostsListFirstToPost(posts1, adminNewPost0Res);
+  expect(posts0count).toBe(posts1count);
+
+  // Read the first post
+  let readPost = await getPost(alpha_user, posts1.posts[0].post.id);
+  expect(readPost.post_view).toBeDefined;
+  expect(readPost.post_view.post.ap_id).toBe(
+    adminNewPost0Res.post_view.post.ap_id,
+  );
+
+  let postsAfter0 = await getPosts(alpha_user, communityNameFull);
+  // will not match: const postsAfter0count = matchPostsListFirstToPost(postsAfter0, adminNewPost0Res);
+  expect(postsAfter0.posts.length).toBe(posts1count - 1);
+
+  // turn on show_read_posts
+  alphaUserSettings.show_read_posts = true;
+  alphaUserSettings.bio = "modify this field to prevent user_already_exists error";
+  let save1 = await saveUserSettings(alpha_user, alphaUserSettings);
+  expect(save1.jwt?.length).toBeGreaterThanOrEqual(10);
+
+  let postsAfter1 = await getPosts(alpha_user, communityNameFull);
+  const postsAfter1count = matchPostsListFirstToPost(
+    postsAfter1,
+    adminNewPost0Res,
+  );
+  expect(postsAfter1count).toBe(posts1count);
+
+  // https://github.com/LemmyNet/lemmy/issues/3691
+  // does user profile filter by read/unread
+  // look at the profile of the alpha admin user from a nobody end-user
+  let personDetails0 = await getPersonDetails(
+    alpha_user,
+    adminNewPost0Res.post_view.creator.id,
+  );
+  const personPostsCount0 = matchPostsListFirstToPost(
+    personDetails0,
+    adminNewPost0Res,
+  );
+
+  // turn off show_read_posts
+  alphaUserSettings.show_read_posts = false;
+  alphaUserSettings.bio = "modify this field 2nd to prevent user_already_exists error";
+  let save2 = await saveUserSettings(alpha_user, alphaUserSettings);
+  expect(save2.jwt?.length).toBeGreaterThanOrEqual(10);
+
+  // look again at profile of the alpha admin user, did posts change?
+  let personDetails1 = await getPersonDetails(
+    alpha_user,
+    adminNewPost0Res.post_view.creator.id,
+  );
+  // will not match: const personPostsCount1 = matchPostsListFirstToPost(personDetails1, adminNewPost0Res);
+  // the count should not change, looking at a user profile should not honor show_read_posts
+  expect(personPostsCount0).toBe(personDetails1.posts.length);
+
+  // at this point, the user should be abandoned, as you don't want show_read_posts confusing following tests.
 });

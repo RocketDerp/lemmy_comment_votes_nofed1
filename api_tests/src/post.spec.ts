@@ -532,6 +532,51 @@ test("Sanitize HTML", async () => {
   };
   let post = await beta.client.createPost(form);
   expect(post.post_view.post.body).toBe(" hello");
+
+  let DISABLE_LEMMY_BUG_v_0_18_3_ERROR = true;
+  // recycling variables
+  // certain content should not be munged
+  name = "This is about Me & You & a Dog Named Boo";
+  body = "If you don't know the song.... https://en.wikipedia.org/wiki/Me_and_You_and_a_Dog_Named_Boo";
+  form = {
+    name,
+    body,
+    auth: beta.auth,
+    community_id: betaCommunity.community.id,
+  };
+  let post1 = await beta.client.createPost(form);
+  if (DISABLE_LEMMY_BUG_v_0_18_3_ERROR) {
+  expect(post1.post_view.post.name).toBe(name);
+  }
+
+  // recycling variables
+  // certain content should not be munged
+  name = randomString(5);
+  body = "We are going to try a code block..."
+       + "\n\n"
+       + "    4 spaces code block: < less than & > greater than & <b>bold is HTML lesson</b>"
+       + "\n\n"
+       + "How about a big code block?"
+       + "\n\n"
+       + "```"
+       + "\n"
+       + "function test() { console.log('lemmy parsing < & > is here?');"
+       + "\n"
+       + "}"
+       + "```"
+       + "\n\n"
+       + "have a good day!"
+       ;
+  form = {
+    name,
+    body,
+    auth: beta.auth,
+    community_id: betaCommunity.community.id,
+  };
+  let post2 = await beta.client.createPost(form);
+  if (DISABLE_LEMMY_BUG_v_0_18_3_ERROR) {
+  expect(post2.post_view.post.body).toBe(body);
+  }
 });
 
 export async function getPosts(

@@ -537,7 +537,8 @@ test("Sanitize HTML", async () => {
   // recycling variables
   // certain content should not be munged
   name = "This is about Me & You & a Dog Named Boo";
-  body = "If you don't know the song.... https://en.wikipedia.org/wiki/Me_and_You_and_a_Dog_Named_Boo";
+  body =
+    "If you don't know the song.... https://en.wikipedia.org/wiki/Me_and_You_and_a_Dog_Named_Boo";
   form = {
     name,
     body,
@@ -546,27 +547,27 @@ test("Sanitize HTML", async () => {
   };
   let post1 = await beta.client.createPost(form);
   if (DISABLE_LEMMY_BUG_v_0_18_3_ERROR) {
-  expect(post1.post_view.post.name).toBe(name);
+    expect(post1.post_view.post.name).toBe(name);
   }
 
   // recycling variables
   // certain content should not be munged
   name = randomString(5);
-  body = "We are going to try a code block..."
-       + "\n\n"
-       + "    4 spaces code block: < less than & > greater than & <b>bold is HTML lesson</b>"
-       + "\n\n"
-       + "How about a big code block?"
-       + "\n\n"
-       + "```"
-       + "\n"
-       + "function test() { console.log('lemmy parsing < & > is here?');"
-       + "\n"
-       + "}"
-       + "```"
-       + "\n\n"
-       + "have a good day!"
-       ;
+  body =
+    "We are going to try a code block..." +
+    "\n\n" +
+    "    4 spaces code block: < less than & > greater than & <b>bold is HTML lesson</b>" +
+    "\n\n" +
+    "How about a big code block?" +
+    "\n\n" +
+    "```" +
+    "\n" +
+    "function test() { console.log('lemmy parsing < & > is here?');" +
+    "\n" +
+    "}" +
+    "```" +
+    "\n\n" +
+    "have a good day!";
   form = {
     name,
     body,
@@ -575,7 +576,7 @@ test("Sanitize HTML", async () => {
   };
   let post2 = await beta.client.createPost(form);
   if (DISABLE_LEMMY_BUG_v_0_18_3_ERROR) {
-  expect(post2.post_view.post.body).toBe(body);
+    expect(post2.post_view.post.body).toBe(body);
   }
 });
 

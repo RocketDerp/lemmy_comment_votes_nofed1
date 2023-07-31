@@ -39,7 +39,14 @@ import {
 } from "./shared";
 import { PostView } from "lemmy-js-client/dist/types/PostView";
 import { CreatePost } from "lemmy-js-client/dist/types/CreatePost";
-import { GetPosts, GetPostsResponse, LocalUser, LoginResponse, PostResponse, SaveUserSettings } from "lemmy-js-client";
+import {
+  GetPosts,
+  GetPostsResponse,
+  LocalUser,
+  LoginResponse,
+  PostResponse,
+  SaveUserSettings,
+} from "lemmy-js-client";
 
 let betaCommunity: CommunityView | undefined;
 
@@ -527,9 +534,6 @@ test("Sanitize HTML", async () => {
   expect(post.post_view.post.body).toBe(" hello");
 });
 
-
-
-
 export async function getPosts(
   api: API,
   community_name: string,
@@ -560,7 +564,7 @@ function matchPostsListFirstToPost(
 }
 
 test("Preference behavior, show_read_posts", async () => {
-	let betaCommunityOnAlpha = betaCommunity;
+  let betaCommunityOnAlpha = betaCommunity;
   if (!betaCommunityOnAlpha) {
     throw "Missing beta community";
   }
@@ -590,15 +594,15 @@ test("Preference behavior, show_read_posts", async () => {
   let alpha_user_site = await getSite(alpha_user);
 
   if (!alpha_user_site.my_user) {
-    throw("newly created user not found with GetSite call")
+    throw "newly created user not found with GetSite call";
   }
 
-// bug in Lemmy? Testing reveals that the show_read_posts setting will not save
-//    if you do not edit the bio.
-  let alphaUserSettings : SaveUserSettings = {
+  // bug in Lemmy? Testing reveals that the show_read_posts setting will not save
+  //    if you do not edit the bio.
+  let alphaUserSettings: SaveUserSettings = {
     show_read_posts: false,
     auth: alpha_user.auth,
-    bio: "turn off show_read_posts for testing"
+    bio: "turn off show_read_posts for testing",
   };
 
   // turn off show_read_posts
@@ -633,7 +637,8 @@ test("Preference behavior, show_read_posts", async () => {
 
   // turn on show_read_posts
   alphaUserSettings.show_read_posts = true;
-  alphaUserSettings.bio = "modify this field to prevent user_already_exists error";
+  alphaUserSettings.bio =
+    "modify this field to prevent user_already_exists error";
   let save1 = await saveUserSettings(alpha_user, alphaUserSettings);
   expect(save1.jwt?.length).toBeGreaterThanOrEqual(10);
 
@@ -658,7 +663,8 @@ test("Preference behavior, show_read_posts", async () => {
 
   // turn off show_read_posts
   alphaUserSettings.show_read_posts = false;
-  alphaUserSettings.bio = "modify this field 2nd to prevent user_already_exists error";
+  alphaUserSettings.bio =
+    "modify this field 2nd to prevent user_already_exists error";
   let save2 = await saveUserSettings(alpha_user, alphaUserSettings);
   expect(save2.jwt?.length).toBeGreaterThanOrEqual(10);
 

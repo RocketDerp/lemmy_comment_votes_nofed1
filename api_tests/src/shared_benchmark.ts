@@ -155,6 +155,20 @@ export function getPostsNewMax(
   return api.client.getPosts(form);
 }
 
+export function getPostsNewMax2(
+  api: API,
+  moderator_view = false,
+): Promise<GetPostsResponse> {
+  let form: GetPosts = {
+    moderator_view,
+    auth: api.auth,
+    limit: 500,
+    sort: "New",
+    type_: "All",
+  };
+  return api.client.getPosts(form);
+}
+
 export async function setupBenchmarkLogins(tag: string) {
   alpha_user_casual0 = await registerUserClient(alpha, "alpha_casual" + tag);
 }
@@ -224,7 +238,17 @@ export async function nestedCommentsOnMostRecentPosts2() {
           parent_id = prevComment.comment_view.comment.id;
         }
       }
-      let body = "reply to post " + i + " comment " + j + " same " + sameCount + " branchLevel " + branchLevel + " total " + totalCount;
+      let body =
+        "reply to post " +
+        i +
+        " comment " +
+        j +
+        " same " +
+        sameCount +
+        " branchLevel " +
+        branchLevel +
+        " total " +
+        totalCount;
       console.log("sameCount %d %s", sameCount, body);
       if (commentRes) {
         if (post) {
@@ -240,7 +264,6 @@ export async function nestedCommentsOnMostRecentPosts2() {
   }
 }
 
-
 export async function nestedCommentsOnMostRecentPosts3() {
   let posts = await getPostsNewMax(alpha);
   expect(posts.posts.length).toBeGreaterThanOrEqual(10);
@@ -254,7 +277,17 @@ export async function nestedCommentsOnMostRecentPosts3() {
     // create 50 trunk comments, users who comment but don't read and reply
     for (let j = 0; j < 50; j++) {
       totalCount++;
-      let body = "trunk reply to post " + i + " comment " + j + " same " + sameCount + " branchLevel " + "TRUNK" + " total " + totalCount;
+      let body =
+        "trunk reply to post " +
+        i +
+        " comment " +
+        j +
+        " same " +
+        sameCount +
+        " branchLevel " +
+        "TRUNK" +
+        " total " +
+        totalCount;
       await createComment(alpha, post.post.id, undefined, body);
     }
 
@@ -280,7 +313,17 @@ export async function nestedCommentsOnMostRecentPosts3() {
           parent_id = prevComment.comment_view.comment.id;
         }
       }
-      let body = "reply to post " + i + " comment " + j + " same " + sameCount + " branchLevel " + branchLevel + " total " + totalCount;
+      let body =
+        "reply to post " +
+        i +
+        " comment " +
+        j +
+        " same " +
+        sameCount +
+        " branchLevel " +
+        branchLevel +
+        " total " +
+        totalCount;
       console.log("sameCount %d %s", sameCount, body);
       if (commentRes) {
         if (post) {
@@ -295,4 +338,3 @@ export async function nestedCommentsOnMostRecentPosts3() {
     }
   }
 }
-

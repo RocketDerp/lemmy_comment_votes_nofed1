@@ -17,6 +17,7 @@ import {
 import { alpha, setupLogins, createComment } from "./shared";
 import {
   getPostsNewMax,
+  getPostsNewMax2,
   loopActionSetA,
   nestedCommentsOnMostRecentPosts,
   nestedCommentsOnMostRecentPosts2,
@@ -79,7 +80,20 @@ test("benchmark baseline, reading: list posts", async () => {
 
   for (let i = 0; i < 50; i++) {
     let posts = await getPostsNewMax(alpha);
-    expect(posts.posts.length).toBeGreaterThanOrEqual(10);
+    expect(posts.posts.length).toBeGreaterThanOrEqual(12);
+  }
+
+  const end = performance.now();
+  expect(end - start).toBeLessThan(4 * 1000);
+});
+
+test("benchmark baseline, reading: list posts 3 times", async () => {
+  const start = performance.now();
+
+  for (let i = 0; i < 3; i++) {
+    let posts = await getPostsNewMax2(alpha);
+    console.log("posts %d", posts.posts.length);
+    expect(posts.posts.length).toBeGreaterThanOrEqual(12);
   }
 
   const end = performance.now();

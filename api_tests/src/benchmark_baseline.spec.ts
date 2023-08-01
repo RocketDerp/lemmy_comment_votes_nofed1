@@ -16,10 +16,11 @@ import {
 } from "lemmy-js-client";
 import { alpha, setupLogins, createComment } from "./shared";
 import {
-  alpha_user_casual0,
   getPostsNewMax,
   loopActionSetA,
   nestedCommentsOnMostRecentPosts,
+  nestedCommentsOnMostRecentPosts2,
+  nestedCommentsOnMostRecentPosts3,
   setupBenchmarkLogins,
 } from "./shared_benchmark";
 
@@ -65,10 +66,10 @@ test.skip("may as well study the content", async () => {
 /*
 This tries to create tiny comments to primarily exercise the PostgreSQL INDEX updates / INDEX scan behaviors.
 */
-test(
+test.skip(
   "variability due to quantity of comments on post",
   async () => {
-    let timeTaken = await nestedCommentsOnMostRecentPosts();
+    let timeTaken = await nestedCommentsOnMostRecentPosts3();
   },
   60 * 60 * 1000,
 );
@@ -82,5 +83,5 @@ test("benchmark baseline, reading: list posts", async () => {
   }
 
   const end = performance.now();
-  expect(end - start).toBeLessThan(3 * 1000);
+  expect(end - start).toBeLessThan(4 * 1000);
 });

@@ -190,3 +190,109 @@ export async function nestedCommentsOnMostRecentPosts() {
     }
   }
 }
+
+export async function nestedCommentsOnMostRecentPosts2() {
+  let posts = await getPostsNewMax(alpha);
+  expect(posts.posts.length).toBeGreaterThanOrEqual(10);
+
+  let sameCount = 0;
+  let totalCount = 0;
+  let parent_id = undefined;
+  for (let i = 0; i < 4; i++) {
+    let post = posts.posts[i];
+    let commentRes = await createComment(alpha, post.post.id);
+    let replyTo = commentRes;
+    parent_id = undefined;
+    let prevComment = commentRes;
+    let branchLevel = 0;
+    for (let j = 0; j < i * 1000; j++) {
+      totalCount++;
+      sameCount++;
+      if (j % 30 == 0) {
+        sameCount = 0;
+        // replyTo = prevComment;
+        branchLevel++;
+        if (branchLevel > 12) {
+          branchLevel = 0;
+          parent_id = undefined;
+        } else {
+          parent_id = prevComment.comment_view.comment.id;
+        }
+      } else {
+        // after one cycle of undefined, start a chain
+        if (!parent_id) {
+          parent_id = prevComment.comment_view.comment.id;
+        }
+      }
+      let body = "reply to post " + i + " comment " + j + " same " + sameCount + " branchLevel " + branchLevel + " total " + totalCount;
+      console.log("sameCount %d %s", sameCount, body);
+      if (commentRes) {
+        if (post) {
+          prevComment = await createComment(
+            alpha,
+            post.post.id,
+            parent_id,
+            body,
+          );
+        }
+      }
+    }
+  }
+}
+
+
+export async function nestedCommentsOnMostRecentPosts3() {
+  let posts = await getPostsNewMax(alpha);
+  expect(posts.posts.length).toBeGreaterThanOrEqual(10);
+
+  let sameCount = 0;
+  let totalCount = 0;
+  let parent_id = undefined;
+  for (let i = 0; i < 4; i++) {
+    let post = posts.posts[i];
+
+    // create 50 trunk comments, users who comment but don't read and reply
+    for (let j = 0; j < 50; j++) {
+      totalCount++;
+      let body = "trunk reply to post " + i + " comment " + j + " same " + sameCount + " branchLevel " + "TRUNK" + " total " + totalCount;
+      await createComment(alpha, post.post.id, undefined, body);
+    }
+
+    let commentRes = await createComment(alpha, post.post.id);
+    parent_id = undefined;
+    let prevComment = commentRes;
+    let branchLevel = 0;
+    for (let j = 0; j < i * 1000; j++) {
+      totalCount++;
+      sameCount++;
+      if (j % 30 == 0) {
+        sameCount = 0;
+        branchLevel++;
+        if (branchLevel > 12) {
+          branchLevel = 0;
+          parent_id = undefined;
+        } else {
+          parent_id = prevComment.comment_view.comment.id;
+        }
+      } else {
+        // after one cycle of undefined, start a chain
+        if (!parent_id) {
+          parent_id = prevComment.comment_view.comment.id;
+        }
+      }
+      let body = "reply to post " + i + " comment " + j + " same " + sameCount + " branchLevel " + branchLevel + " total " + totalCount;
+      console.log("sameCount %d %s", sameCount, body);
+      if (commentRes) {
+        if (post) {
+          prevComment = await createComment(
+            alpha,
+            post.post.id,
+            parent_id,
+            body,
+          );
+        }
+      }
+    }
+  }
+}
+

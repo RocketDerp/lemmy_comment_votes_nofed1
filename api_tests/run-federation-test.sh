@@ -65,7 +65,7 @@ fi
 
 
 
-if [ "$bypass_pg_purge" = false ] then
+if [ "$bypass_pg_purge" = false ]; then
 
 killall -s1 lemmy_server
 

@@ -23,6 +23,17 @@ bypass_yarn=true
 
 yarn
 
+for INSTANCE in lemmy_alpha lemmy_beta lemmy_gamma lemmy_delta lemmy_epsilon; do
+  # reminder: PostgreSQL can convert to JSON
+  # in postgress config file, set:
+  #   shared_preload_libraries = 'pg_stat_statements'	# (change requires restart)
+  #   pg_stat_statements.track = all
+  psql "$LEMMY_DATABASE_URL" -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
+  psql "$LEMMY_DATABASE_URL" -c "SELECT pg_stat_statements_reset();"
+done
+
+
+
 if [ "$bypass_yarn" = false ]
 then
   echo ":::: running yarn api-test"
@@ -62,7 +73,10 @@ else
 
 fi
 
-
+for INSTANCE in lemmy_alpha lemmy_beta lemmy_gamma lemmy_delta lemmy_epsilon; do
+  # reminder: PostgreSQL can convert to JSON
+  psql "$LEMMY_DATABASE_URL" -c "SELECT queryid, calls, rows, mean_exec_time, query FROM pg_stat_statements ORDER BY calls DESC;" > /tmp/${INSTANCE}_stat_statements.txt
+done
 
 
 if [ "$bypass_pg_purge" = false ]; then

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # IMPORTANT NOTE: this script does not use the normal LEMMY_DATABASE_URL format
 #   it is expected that this script is called by run-federation-test.sh script.
+
+# set -e will cause bash to exit on any non-zero command result.
 set -e
 
 bypass_pg_purge=true;

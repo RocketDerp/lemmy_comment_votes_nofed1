@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-bypass_pg_purge=false;
+bypass_pg_purge=true;
 bypass_drone_prep=false;
 
 export LEMMY_DATABASE_URL=postgres://lemmy:password@localhost:5432

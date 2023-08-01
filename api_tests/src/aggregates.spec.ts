@@ -5,7 +5,13 @@ This testing module forgoes many checks expectation checks on newly created item
    validating the final counts. Keeps the code simpler and easier to follow.
 */
 
-import { CommentResponse, CommunityResponse, CommunityView, GetSiteResponse, PostResponse } from "lemmy-js-client";
+import {
+  CommentResponse,
+  CommunityResponse,
+  CommunityView,
+  GetSiteResponse,
+  PostResponse,
+} from "lemmy-js-client";
 import {
   alpha,
   beta,
@@ -80,9 +86,7 @@ function consoleSomeA(
   let followPiles0 = [];
   for (let i = 0; i < uf.length; i++) {
     let a = uf[i];
-    followPiles0.push(
-        a.community.name + " local " + a.community.local
-    );
+    followPiles0.push(a.community.name + " local " + a.community.local);
   }
   console.log(followPiles0);
 }
@@ -120,10 +124,12 @@ let userPile: API[] = [];
 let postPile: PostResponse[] = [];
 let commentPile: CommentResponse[] = [];
 
-
 async function checkTheNumbers(outNote0: string) {
   // Check the numbers.
-  let joyceFinnCommunityRes = await resolveCommunity(alpha, "!finnegans_wake@lemmy-alpha:8541");
+  let joyceFinnCommunityRes = await resolveCommunity(
+    alpha,
+    "!finnegans_wake@lemmy-alpha:8541",
+  );
   if (joyceFinnCommunityRes.community) {
     joyceFinnCommunity = joyceFinnCommunityRes.community;
   }
@@ -145,10 +151,17 @@ test("establish fresh user alpha_joyce and community finnegans_wake", async () =
   };
 
   // Joyce creates community and posts in it
-  joyceFinnCommunity = (await createCommunity(alpha_joyce, "finnegans_wake")).community_view;
+  joyceFinnCommunity = (await createCommunity(alpha_joyce, "finnegans_wake"))
+    .community_view;
   await createPost(alpha_joyce, joyceFinnCommunity.community.id);
-  let alphaJoyceComment0Res = await createPost(alpha_joyce, joyceFinnCommunity.community.id);
-  commentAlphaResB0 = await createComment(alpha, alphaJoyceComment0Res.post_view.post.id);
+  let alphaJoyceComment0Res = await createPost(
+    alpha_joyce,
+    joyceFinnCommunity.community.id,
+  );
+  commentAlphaResB0 = await createComment(
+    alpha,
+    alphaJoyceComment0Res.post_view.post.id,
+  );
   await checkTheNumbers("++joyceFinnCommunity");
 });
 
@@ -162,11 +175,18 @@ async function createTestUseActionSeries0(name: string) {
     auth: alphaDudeLoginRes.jwt ?? "",
   };
 
-  let postAlphaDude0Res = await createPost(alpha_dude, joyceFinnCommunity.community.id);
-  commentPile.push(await createComment(alpha_dude, postAlphaDude0Res.post_view.post.id));
+  let postAlphaDude0Res = await createPost(
+    alpha_dude,
+    joyceFinnCommunity.community.id,
+  );
+  commentPile.push(
+    await createComment(alpha_dude, postAlphaDude0Res.post_view.post.id),
+  );
   await likePost(alpha_dude, 1, postAlphaResA1.post_view.post);
   await likeComment(alpha_dude, 1, commentAlphaResB0.comment_view.comment);
-  commentPile.push(await createComment(alpha_dude, postAlphaResA1.post_view.post.id));
+  commentPile.push(
+    await createComment(alpha_dude, postAlphaResA1.post_view.post.id),
+  );
   for (let i = 0; i < postPile.length; i++) {
     await likePost(alpha_dude, 1, postPile[i].post_view.post);
     await createComment(alpha_dude, postPile[i].post_view.post.id);
@@ -214,9 +234,13 @@ test("establish fresh user alpha_mann and community enter_shikari", async () => 
   };
 
   // Mann creates community and posts in it
-  enterShikariCommunity = (await createCommunity(alpha_mann, "enter_shikari")).community_view;
+  enterShikariCommunity = (await createCommunity(alpha_mann, "enter_shikari"))
+    .community_view;
   await createPost(alpha_mann, enterShikariCommunity.community.id);
-  let alphaMannPost0 = await createPost(alpha_mann, enterShikariCommunity.community.id);
+  let alphaMannPost0 = await createPost(
+    alpha_mann,
+    enterShikariCommunity.community.id,
+  );
   await createComment(alpha_mann, alphaMannPost0.post_view.post.id);
   await checkTheNumbers("++enterShikariCommunity");
 
@@ -224,7 +248,6 @@ test("establish fresh user alpha_mann and community enter_shikari", async () => 
   await likePost(alpha_mann, 1, postAlphaResA1.post_view.post);
   await checkTheNumbers("newPost");
 });
-
 
 test("establish fresh user alpha_james and community only_others, let others use community, pull the rug out", async () => {
   // create a non-admin user, James
@@ -237,15 +260,22 @@ test("establish fresh user alpha_james and community only_others, let others use
   };
 
   // James creates community and DOES NOT post or comment in it.
-  let onlyOthersCommunity = (await createCommunity(alpha_james, "only_others")).community_view;
+  let onlyOthersCommunity = (await createCommunity(alpha_james, "only_others"))
+    .community_view;
   await checkTheNumbers("++onlyOthersCommunity");
 
   // Now Mann posts in it
   await createPost(alpha_mann, onlyOthersCommunity.community.id);
-  let alphaMannPost0 = await createPost(alpha_mann, onlyOthersCommunity.community.id);
+  let alphaMannPost0 = await createPost(
+    alpha_mann,
+    onlyOthersCommunity.community.id,
+  );
   await createComment(alpha_mann, alphaMannPost0.post_view.post.id);
   await checkTheNumbers("++anotherActive");
-  let communityRes0 = await getCommunity(alpha_mann, onlyOthersCommunity.community.id);
+  let communityRes0 = await getCommunity(
+    alpha_mann,
+    onlyOthersCommunity.community.id,
+  );
   expect(communityRes0.community_view.community.deleted).toBe(false);
   expect(communityRes0.moderators.length).toBe(1);
 
@@ -254,14 +284,21 @@ test("establish fresh user alpha_james and community only_others, let others use
   await checkTheNumbers("deleteaccount");
 
   // can Mann follow the community after delete of account by James?
-  let followRes = await followCommunity(alpha, true, onlyOthersCommunity.community.id);
+  let followRes = await followCommunity(
+    alpha,
+    true,
+    onlyOthersCommunity.community.id,
+  );
   expect(followRes.community_view.community.deleted).toBe(false);
   await createPost(alpha_mann, onlyOthersCommunity.community.id);
   // commenting on a post in a community created by deleted user
   await createComment(alpha_mann, alphaMannPost0.post_view.post.id);
   // who is the moderator of a community where moderator deleted their account?
   // expect(followRes.community_view.community.)
-  let communityRes1 = await getCommunity(alpha_mann, onlyOthersCommunity.community.id);
+  let communityRes1 = await getCommunity(
+    alpha_mann,
+    onlyOthersCommunity.community.id,
+  );
   expect(communityRes1.moderators.length).toBe(0);
   await checkTheNumbers("followPostDelete");
 });
@@ -278,14 +315,30 @@ test("site_aggregates community_aggregates person_aggregates for post & comment"
   // create 2 posts, 5 comments
   postAlphaRes0 = await createPost(alpha, joyceFinnCommunity.community.id);
   await createComment(alpha, postAlphaRes0.post_view.post.id);
-  commentAlphaRes1 = await createComment(alpha, postAlphaRes0.post_view.post.id);
+  commentAlphaRes1 = await createComment(
+    alpha,
+    postAlphaRes0.post_view.post.id,
+  );
   postAlphaRes1 = await createPost(alpha, joyceFinnCommunity.community.id);
-  commentAlphaRes2 = await createComment(alpha, postAlphaRes1.post_view.post.id);
-  commentAlphaRes3 = await createComment(alpha, postAlphaRes1.post_view.post.id);
-  commentAlphaRes4 = await createComment(alpha, postAlphaRes1.post_view.post.id);
+  commentAlphaRes2 = await createComment(
+    alpha,
+    postAlphaRes1.post_view.post.id,
+  );
+  commentAlphaRes3 = await createComment(
+    alpha,
+    postAlphaRes1.post_view.post.id,
+  );
+  commentAlphaRes4 = await createComment(
+    alpha,
+    postAlphaRes1.post_view.post.id,
+  );
 
   // Test an unfollow
-  let unfollow = await followCommunity(alpha, false, joyceFinnCommunity.community.id);
+  let unfollow = await followCommunity(
+    alpha,
+    false,
+    joyceFinnCommunity.community.id,
+  );
   expect(unfollow.community_view.subscribed).toBe("NotSubscribed");
 
   // Check the numbers.
@@ -350,7 +403,10 @@ test("user Joe is created", async () => {
   await checkTheNumbers("RRR-undeletepost");
 
   // Joe creates community and posts in it
-  let joeShackCommunityRes = await createCommunity(alpha_joe, "joe_radio_shack");
+  let joeShackCommunityRes = await createCommunity(
+    alpha_joe,
+    "joe_radio_shack",
+  );
   joeShackCommunity = joeShackCommunityRes.community_view;
   joeShackPost0 = await createPost(alpha_joe, joeShackCommunity.community.id);
   await checkTheNumbers("++community");
@@ -358,7 +414,11 @@ test("user Joe is created", async () => {
 
 test("Joe replies to peanut gang comments", async () => {
   for (let i = 0; i < commentPile.length; i++) {
-    await createComment(alpha_joe, commentPile[i].comment_view.post.id, commentPile[i].comment_view.comment.id);
+    await createComment(
+      alpha_joe,
+      commentPile[i].comment_view.post.id,
+      commentPile[i].comment_view.comment.id,
+    );
   }
   await checkTheNumbers("Joe-Peanuts");
 });
@@ -429,13 +489,9 @@ test("user Sam", async () => {
   await checkTheNumbers("samactive");
 });
 
-test("site_aggregates community_aggregates for post", async () => {
+test("site_aggregates community_aggregates for post", async () => {});
 
-});
-
-test("site_aggregates community_aggregates for users", async () => {
-
-});
+test("site_aggregates community_aggregates for users", async () => {});
 
 test.skip("post removal and restore behavior study", async () => {
   // Intention with some of these tests is to document the Lemmy behavior

@@ -213,9 +213,8 @@ test.skip("behaviors spanning instances, recycle of names", async () => {
 });
 
 test.skip("hiding a community", async () => {
-// https://join-lemmy.org/api/interfaces/HideCommunity.html
-await multi.createCommunityOnBeta("myfirst");
-
+  // https://join-lemmy.org/api/interfaces/HideCommunity.html
+  await multi.createCommunityOnBeta("myfirst");
 });
 
 /*
@@ -292,10 +291,9 @@ test.skip("behavior checks on replies to comments", async () => {
   // 7. does alpha any replies to their comment?
 });
 
-
 test.skip("total loss of an established Lemmy instance, behavior with new install on same domain identity", async () => {
   // Nuke a server and start it over on empty database with same domain name
-/*
+  /*
 I'm a bit confused in conceiving what you are describing. The users and communities are in your database, but only the comments and posts are gone?
 
 I do wonder how Lemmy behaves when a server on the same domain is fresh-installed more than once... do other instances recognize it. There are encryption signing keys used in the process, but I've seen no discussion of someone having lost a server and what happened with using the same domain name and trying to re-integrate. ap_id for post/comment would start to be the same given how Lemmy uses integer keys that start from zero. Person records could get pretty confusing.
@@ -303,17 +301,15 @@ I do wonder how Lemmy behaves when a server on the same domain is fresh-installe
 });
 
 test.skip("behavior study of a new user account on one instance being shared to peer instances", async () => {
-// https://lemmy.ml/post/2494393?scrollToComments=true
-
-// does fetching profile of an instance trigger loading from remote instance?
-//  the test may automatically pas because it does?
+  // https://lemmy.ml/post/2494393?scrollToComments=true
+  // does fetching profile of an instance trigger loading from remote instance?
+  //  the test may automatically pas because it does?
 });
 
-https://github.com/LemmyNet/lemmy/issues/3781
+//github.com/LemmyNet/lemmy/issues/3781
 test.skip("moderator reports to all instances", async () => {
-// assumption that a communuty must be subscrived for moderator reports to replicate
-  });
+  // assumption that a communuty must be subscrived for moderator reports to replicate
+});
 
-  // https://lemmy.ml/post/2649346
-  // bot accounts and notification problems
-  
+// https://lemmy.ml/post/2649346
+// bot accounts and notification problems

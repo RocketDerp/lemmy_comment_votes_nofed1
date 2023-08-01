@@ -3,7 +3,7 @@
 #   it is expected that this script is called by run-federation-test.sh script.
 set -e
 
-bypass_pg_purge=false;
+bypass_pg_purge=true;
 
 export RUST_BACKTRACE=1
 export RUST_LOG="warn,lemmy_server=debug,lemmy_api=debug,lemmy_api_common=debug,lemmy_api_crud=debug,lemmy_apub=debug,lemmy_db_schema=debug,lemmy_db_views=debug,lemmy_db_views_actor=debug,lemmy_db_views_moderator=debug,lemmy_routes=debug,lemmy_utils=debug,lemmy_websocket=debug"

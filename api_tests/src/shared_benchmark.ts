@@ -1,7 +1,10 @@
 import { PostResponse, CreatePost, GetPostsResponse, GetPosts, Login } from "lemmy-js-client";
-import { defaultPassword, API, createCommunity, resolveCommunity, beta, followCommunity, randomString, alpha, createComment, likePost, likeComment, registerUser, doLogin } from "./shared";
+import { API, createCommunity, resolveCommunity, beta, followCommunity, randomString, alpha, createComment, likePost, likeComment, registerUser } from "./shared";
 
 export let alpha_user_casual0: API;
+
+export let defaultPassword = "lemmylemmy";
+
 
 /*
 Will try to login to existing account as this may be a second run of these tests

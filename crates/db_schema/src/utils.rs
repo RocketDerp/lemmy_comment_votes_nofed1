@@ -49,7 +49,7 @@ use tracing::{error, info};
 use url::Url;
 
 const FETCH_LIMIT_DEFAULT: i64 = 10;
-pub const FETCH_LIMIT_MAX: i64 = 1500;
+pub const FETCH_LIMIT_MAX: i64 = 50;
 const POOL_TIMEOUT: Option<Duration> = Some(Duration::from_secs(5));
 
 pub type ActualDbPool = Pool<AsyncPgConnection>;

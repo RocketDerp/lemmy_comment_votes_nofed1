@@ -14,7 +14,7 @@ cp target/debug/lemmy_server target/lemmy_server
 if [ "$bypass_drone_prep" = false ]
 then
 echo "prepare drone federation instances"
-./api_tests/prepare-drone-federation-test.sh
+./api_tests/rerun-prepare-drone-federation-test.sh
 fi
 popd
 

@@ -1150,3 +1150,7 @@ export async function serverFetchJSON0(params0: any) {
 
 // notification from blocked uuser
 // https://lemmy.ml/post/2678586
+
+
+// removed communities removed
+// https://github.com/LemmyNet/lemmy/issues/3801

@@ -1147,3 +1147,6 @@ export async function serverFetchJSON0(params0: any) {
 
   return result0;
 }
+
+// notification from blocked uuser
+// https://lemmy.ml/post/2678586

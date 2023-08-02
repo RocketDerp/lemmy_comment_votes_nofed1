@@ -4,6 +4,9 @@ import {
   GetPostsResponse,
   GetPosts,
   Login,
+  GetCommentsResponse,
+  GetComments,
+  SortType,
 } from "lemmy-js-client";
 import {
   API,
@@ -17,6 +20,7 @@ import {
   likePost,
   likeComment,
   registerUser,
+  getComments,
 } from "./shared";
 
 export let alpha_user_casual0: API;
@@ -141,15 +145,16 @@ export async function loopActionSetA(
   return end - start;
 }
 
-export function getPostsNewMax(
+export function getPostsMax(
   api: API,
   moderator_view = false,
+  sort_by: SortType,
 ): Promise<GetPostsResponse> {
   let form: GetPosts = {
     moderator_view,
     auth: api.auth,
     limit: 50,
-    sort: "New",
+    sort: sort_by,
     type_: "All",
   };
   return api.client.getPosts(form);
@@ -174,7 +179,7 @@ export async function setupBenchmarkLogins(tag: string) {
 }
 
 export async function nestedCommentsOnMostRecentPosts() {
-  let posts = await getPostsNewMax(alpha);
+  let posts = await getPostsMax(alpha, undefined, "New");
   expect(posts.posts.length).toBeGreaterThanOrEqual(10);
 
   let sameCount = 0;
@@ -206,7 +211,7 @@ export async function nestedCommentsOnMostRecentPosts() {
 }
 
 export async function nestedCommentsOnMostRecentPosts2() {
-  let posts = await getPostsNewMax(alpha);
+  let posts = await getPostsMax(alpha, undefined, "New");
   expect(posts.posts.length).toBeGreaterThanOrEqual(10);
 
   let sameCount = 0;
@@ -265,7 +270,7 @@ export async function nestedCommentsOnMostRecentPosts2() {
 }
 
 export async function nestedCommentsOnMostRecentPosts3() {
-  let posts = await getPostsNewMax(alpha);
+  let posts = await getPostsMax(alpha, undefined, "New");
   expect(posts.posts.length).toBeGreaterThanOrEqual(10);
 
   let sameCount = 0;
@@ -336,5 +341,34 @@ export async function nestedCommentsOnMostRecentPosts3() {
         }
       }
     }
+  }
+}
+
+
+
+export async function getCommentsMax(
+  api: API,
+  post_id: number,
+): Promise<GetCommentsResponse> {
+  let form: GetComments = {
+    post_id: post_id,
+    type_: "All",
+    sort: "New",
+    limit: 800,
+    auth: api.auth,
+  };
+  return api.client.getComments(form);
+}
+
+export async function getCommentsOnMostRecentPosts() {
+  // sort by most comments, stress server
+  let posts = await getPostsMax(alpha, undefined, "MostComments");
+  expect(posts.posts.length).toBeGreaterThanOrEqual(12);
+
+  for (let i = 0; i < 12; i++) {
+    let post = posts.posts[i];
+
+    let comments = await getCommentsMax(alpha, post.post.id);
+    // console.log("comments %d coount %d onpost %d", i, comments.comments.length, post.counts.comments);
   }
 }

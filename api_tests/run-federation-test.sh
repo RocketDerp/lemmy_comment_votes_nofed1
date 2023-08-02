@@ -45,7 +45,7 @@ else
 
   runjest() {
       echo ":::: run jest script $1"
-      ./node_modules/.bin/jest $1
+      ./node_modules/.bin/jest --maxConcurrency=25 $1
       echo ":::: jest exited with code $?"
       if [ $? -eq 0 ]
       then
@@ -67,9 +67,11 @@ else
   #runjest remote_to_remote.spec.ts
   #runjest aggregates.spec.ts
   # runjest remote_home_remote.spec.ts
-  runjest benchmark_baseline.spec.ts
+  # runjest benchmark_baseline.spec.ts
   # runjest benchmark_concurrent.spec.ts
   # runjest live_servers.spec.ts
+  runjest benchmark_stresstest_concurrent.spec.ts
+  runjest benchmark_jest_study_concurrent.spec.ts
 
 fi
 
@@ -88,3 +90,24 @@ for INSTANCE in lemmy_alpha lemmy_beta lemmy_gamma lemmy_delta lemmy_epsilon; do
 done
 
 fi
+
+
+# do it 4 times, but at 2 a time
+# seq 4 | parallel -n0 -j2 "curl -H 'Content-Type: application/json' http://httpbin.org/post -X POST -d '{\"url\":\"http://google.com/\"}'"
+# seq 10 | parallel -n0 -j5 "curl -H 'Content-Type: application/json' 'http://127.0.0.1:8561/api/v3/community/list?sort=New&limit=50'
+
+# seq 10 | parallel -n0 -j5 "curl 'http://127.0.0.1:8541/api/v3/community/list?sort=New&limit=50'"
+
+# hyperfine --warmup 1 --runs 25 "curl 'http://127.0.0.1:8541/api/v3/community/list?sort=New&limit=50'"
+
+# curl 'http://127.0.0.1:8541/api/v3/community/list?sort=New&limit=50' | jq '.communities | length' | awk '$1>2'
+
+hyperfine --warmup 1 --runs 25 "curl 'http://127.0.0.1:8541/api/v3/community/list?sort=New&limit=50' | jq '.communities | length' | awk '\$1==50' | grep ."
+
+# hyperfine in paralle
+#   https://github.com/sharkdp/hyperfine/issues/58
+
+echo "curl 'http://127.0.0.1:8541/api/v3/community/list?sort=New&limit=50' | jq '.communities | length' | awk '\$1==50' | grep ." > runme0.sh
+chmod +x runme0.sh
+
+hyperfine 'yes "" | head -n25 | parallel -j 25 ./runme0.sh'

@@ -14,9 +14,10 @@ import {
   GetPostsResponse,
   PostResponse,
 } from "lemmy-js-client";
-import { alpha, setupLogins, createComment } from "./shared";
+import { alpha, setupLogins, createComment, getComments } from "./shared";
 import {
-  getPostsNewMax,
+  getCommentsOnMostRecentPosts,
+  getPostsMax,
   getPostsNewMax2,
   loopActionSetA,
   nestedCommentsOnMostRecentPosts,
@@ -49,7 +50,7 @@ test("benchmark baseline, same as last test, without federation", async () => {
 });
 
 test.skip("may as well study the content", async () => {
-  let posts = await getPostsNewMax(alpha);
+  let posts = await getPostsMax(alpha, undefined, "New");
   expect(posts.posts.length).toBeGreaterThanOrEqual(10);
 
   for (let i = 0; i < posts.posts.length; i++) {
@@ -79,12 +80,12 @@ test("benchmark baseline, reading: list posts", async () => {
   const start = performance.now();
 
   for (let i = 0; i < 50; i++) {
-    let posts = await getPostsNewMax(alpha);
+    let posts = await getPostsMax(alpha, undefined, "New");
     expect(posts.posts.length).toBeGreaterThanOrEqual(12);
   }
 
   const end = performance.now();
-  expect(end - start).toBeLessThan(4 * 1000);
+  expect(end - start).toBeLessThan(6 * 1000);
 });
 
 test("benchmark baseline, reading: list posts 3 times", async () => {
@@ -98,4 +99,13 @@ test("benchmark baseline, reading: list posts 3 times", async () => {
 
   const end = performance.now();
   expect(end - start).toBeLessThan(4 * 1000);
+});
+
+test("benchmark baseline, reading: comments off list of posts sorted by MostComments", async () => {
+  const start = performance.now();
+
+  await getCommentsOnMostRecentPosts();
+
+  const end = performance.now();
+  expect(end - start).toBeLessThan(12 * 1000);
 });

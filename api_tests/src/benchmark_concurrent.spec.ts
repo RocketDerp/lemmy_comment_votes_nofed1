@@ -17,7 +17,7 @@ import {
 import { alpha, setupLogins, createComment } from "./shared";
 import {
   alpha_user_casual0,
-  getPostsNewMax,
+  getPostsMax,
   loopActionSetA,
   setupBenchmarkLogins,
 } from "./shared_benchmark";

@@ -190,6 +190,9 @@ fn queries<'a>() -> Queries<
         }
       }
     }
+    /*
+    what if there is no listing_type? does that mean it should always have a post_id?
+     */
 
     if options.saved_only.unwrap_or(false) {
       query = query.filter(comment_saved::comment_id.is_not_null());

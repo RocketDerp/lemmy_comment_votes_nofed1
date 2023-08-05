@@ -242,7 +242,8 @@ fn queries<'a>() -> Queries<
       // if options.post_id.is_some() || options.parent_path.is_some() {
 
       // only order if filtering by a post id. DOS potential otherwise and max_depth + !post_id isn't used anyways (afaik)
-      if options.post_id.is_some() {
+      // if options.post_id.is_some() {
+      if options.post_id.is_some() || options.parent_path.is_some() {
         // Always order by the parent path first
         query = query.order_by(subpath(comment::path, 0, -1));
       } else {

@@ -1,0 +1,4 @@
+WARN SQLwatch: NO post_id max-depth 8 depth_limit 13
+WARN SQLwatch: NO post_id max-depth 8 depth_limit 10
+
+first was hitting: https://bulletintree.com/comment/1470326

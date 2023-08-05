@@ -66,12 +66,13 @@ else
   #runjest community.spec.ts
   #runjest remote_to_remote.spec.ts
   #runjest aggregates.spec.ts
-  # runjest remote_home_remote.spec.ts
+  runjest remote_home_remote.spec.ts
   # runjest benchmark_baseline.spec.ts
   # runjest benchmark_concurrent.spec.ts
   # runjest live_servers.spec.ts
-  runjest benchmark_stresstest_concurrent.spec.ts
-  runjest benchmark_jest_study_concurrent.spec.ts
+  # runjest live_servers_stress.spec.ts
+  # runjest benchmark_stresstest_concurrent.spec.ts
+  # runjest benchmark_jest_study_concurrent.spec.ts
 
 fi
 

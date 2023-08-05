@@ -751,6 +751,119 @@ test("alpha moderator creates comment 'speaking as moderator', gamma validates",
   expect(gammaPostComments.comments[0].comment.distinguished).toBe(true);
 });
 
+
+async function blockUserAllowedaToCreateOnPosts(unusedvar: boolean) {
+  let gamma_user_to_block0 = await registerUserClient(alpha, "gamma_user_block0");
+  let alpha_user_carl = await registerUserClient(alpha, "alpha_user_carl");
+  let newPost0 = await createPost(alpha_user_carl, alphaCommunityRemote.id);
+  let newComment0 = await createComment(alpha_user_carl, newPost0.post_view.post.id);
+
+  // the user on gamma has to find the newest post to locate localized id numbers
+  // gamma reads it
+  let communityNameFull = betaCommunityHome.name + "@lemmy-beta";
+  // ap_id of a post is stable across all instances
+  let gammaPostComments = await findPostFromListNewGetComments(
+    gamma_user_to_block0,
+    communityNameFull,
+    newPost0.post_view.post.ap_id,
+  );
+  // grab the newest comment
+  expect(gammaPostComments.comments.length).toBe(1);
+  let gammaNewestComment = gammaPostComments.comments[0];
+
+  // create a comment by the person to be blocked just to get their person ID
+  // make it a reply to carl that inspires the blocking of the user
+  let commentBody0 = "go ahead, make my day";
+  let blockPersonComment0 = await createComment(gamma_user_to_block0, gammaNewestComment.post.id, gammaNewestComment.comment.id, commentBody0);
+
+  // We could load notifications for Carl to get a reference, but instead
+  //   just go ahead and refresh the posts and find newest comment
+  // ap_id of a post is stable across all instances
+  let alphaPostComments = await findPostFromListNewGetComments(
+    alpha_user_carl,
+    communityNameFull,
+    newPost0.post_view.post.ap_id,
+  );
+  // grab the newest comment
+  expect(alphaPostComments.comments.length).toBe(2);
+  // out of band check here, carry the comment with sneakernet ;)
+  expect(alphaPostComments.comments[0].comment.content).toBe(commentBody0);
+
+  // Carl blocks other user
+  let blockAction0 = alpha_user_carl.client.blockPerson({
+    auth: alpha_user_carl.auth,
+    person_id: alphaPostComments.comments[0].comment.creator_id,
+    block: true
+  });
+
+  // can the blocked person comment on Carl's post?
+  let blockPersonComment1 = await createComment(gamma_user_to_block0, gammaNewestComment.post.id, gammaNewestComment.comment.id, "I'm a San Francisco cop named Harry!");
+
+  // Carl unblocks other user
+  let blockAction1 = alpha_user_carl.client.blockPerson({
+    auth: alpha_user_carl.auth,
+    person_id: alphaPostComments.comments[0].comment.creator_id,
+    block: false
+  });
+
+  // Carl refreshes his page on alpha
+  let alphaPostCommentsAfter = await findPostFromListNewGetComments(
+    alpha_user_carl,
+    communityNameFull,
+    newPost0.post_view.post.ap_id,
+  );
+  // Lemmy does not block creation of new comments in 0.18.3, so the count will be 3
+  expect(alphaPostCommentsAfter.comments.length).toBe(3);
+
+  // Validating notification behavior from blocked users was another question.
+}
+
+
+async function moderatorBlockUserPostsMultiCommunity(unusedvar: boolean) {
+// the moderator is concdrned if blocking a user ends up
+// interfering with their moderation duties on a community
+// So the target user creates posts in two communities
+// One of which the moderator does moderate, the other which they do not
+// in the community they moderate, the block should be bypassed
+
+  // let alpha admin create a new community of which no others will moderate
+  let gpCommunityResult = await createCommunity(alpha, "general_purpose0");
+  let alpha_user_to_block0 = await registerUserClient(alpha, "alpha_user_block0");
+  let newPost0 = await createPost(alpha_user_to_block0, gpCommunityResult.community_view.community.id);
+  let newPost1 = await createPost(alpha_user_to_block0, alphaCommunityRemote.id);
+
+  let communityNameFull = betaCommunityHome.name + "@lemmy-beta";
+
+  // The bock target user in previous test had several posts and comments in the community of focus
+  // grab a list before block
+  let beforeBlockPosts = await getCommunityPostsFromListNew(
+    alpha_user_mod,
+    communityNameFull,
+  );
+  // 9 posts total so far, reminder that a non-subscriber may have posted before replication
+  expect(beforeBlockPosts.posts.length).toBe(4);
+
+  // moderator blocks user
+  let modAction0 = alpha_user_mod.client.blockPerson({
+    auth: alpha_user_mod.auth,
+    person_id: newPost0.post_view.post.creator_id,
+    block: true
+  });
+
+  let afterBlockPosts = await getCommunityPostsFromListNew(
+    alpha_user_mod,
+    communityNameFull,
+  );
+  
+  // it is debatable if this should be the expected behavior
+  //  WHen a moderator is looking at posts and comments in communities they moderate
+  //  should person to person blocking be honored. And can this be implemented
+  //  wihtout adding SQL overhead. A user with a big block list, big community mod list
+  //  could impact perfomrance in untested ways.
+  expect(beforeBlockPosts.posts.length).toBe(afterBlockPosts.posts.length + 1);
+}
+
+
 async function doBanUnbanUser(with_remove_data: boolean) {
   let communityNameFull = betaCommunityHome.name + "@lemmy-beta";
 
@@ -837,7 +950,7 @@ async function doBanUnbanUser(with_remove_data: boolean) {
 // open issue on GitHub: https://github.com/LemmyNet/lemmy/issues/3535
 test("non-admin remote moderator on gamma bans remote non-mod user from alpha, unbans", async () => {
   // create an alpha observer account that
-  // doe snot need to follow community
+  // does not need to follow community
   alpha_user_observer = await registerUserClient(alpha, "alpha_observer0");
   await doBanUnbanUser(false);
 });
@@ -848,6 +961,20 @@ test("rerun previous ban test with remove_data", async () => {
   // confirm the user who was banned/unbanned is again able to post in community
   await createPost(alpha_user_non_mod, alphaCommunityRemote.id);
 });
+
+// if moderator, can you see post of blocked user?
+// https://lemmy.ml/post/2831165
+test("non-admin moderator blocks ordinary user, does it impact their view in moderated community?", async () => {
+  // create an alpha observer account that
+  // doe snot need to follow community
+  await moderatorBlockUserPostsMultiCommunity(false);
+});
+
+// https://lemmy.world/post/2671501?scrollToComments=true
+test("two non-admin mon-moderator ordinary users, can blocked user comment on post or comments?", async () => {
+  await blockUserAllowedaToCreateOnPosts(false);
+});
+
 
 test.skip("once the replication bugs previously identified are fixed, compare post & comment lists between alpha and gamma instances", async () => {
   // ToDo; include comparing from anonymous vs. logged-in accounts
@@ -1087,7 +1214,7 @@ test("hiding a community", async () => {
       "&hidden=true" +
       "&reason=" +
       "testing";
-    let modActionResult = await lemmyCallEndpoint(connectParam);
+    let modActionResult = await serverFetchJSON0(connectParam);
     console.log(modActionResult);
   }
 });
@@ -1154,3 +1281,4 @@ export async function serverFetchJSON0(params0: any) {
 
 // removed communities removed
 // https://github.com/LemmyNet/lemmy/issues/3801
+

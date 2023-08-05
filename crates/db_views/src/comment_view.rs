@@ -246,7 +246,7 @@ fn queries<'a>() -> Queries<
         // Always order by the parent path first
         query = query.order_by(subpath(comment::path, 0, -1));
       } else {
-        tracing::warn!(target: "SQLwatch", "NO post_id max-depth {}", max_depth);
+        tracing::warn!(target: "SQLwatch", "NO post_id max-depth {} depth_limit {}", max_depth, depth_limit);
       }
 
       // TODO limit question. Limiting does not work for comment threads ATM, only max_depth
@@ -259,7 +259,7 @@ fn queries<'a>() -> Queries<
       // If a max depth is given, then you know its a tree fetch, and limits should be ignored
       // TODO a kludge to prevent attacks. Limit comments to 300 for now.
       // (i64::MAX, 0)
-      (300, 0)
+      (500, 0)
     } else {
       // limit_and_offset_unlimited(options.page, options.limit)
       limit_and_offset(options.page, options.limit)?

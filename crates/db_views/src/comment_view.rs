@@ -246,7 +246,7 @@ fn queries<'a>() -> Queries<
         // Always order by the parent path first
         query = query.order_by(subpath(comment::path, 0, -1));
       } else {
-        tracing::warn!(tag: "SQLWATCH", "NO post_id");
+        tracing::warn!(target: "SQLwatch", "NO post_id");
       }
 
       // TODO limit question. Limiting does not work for comment threads ATM, only max_depth

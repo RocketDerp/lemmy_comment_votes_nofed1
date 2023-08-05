@@ -44,6 +44,7 @@ import {
   banPersonFromCommunity,
   likeComment,
   likePost,
+  getUnreadCount,
 } from "./shared";
 
 beforeAll(async () => {
@@ -773,10 +774,13 @@ async function blockUserAllowedaToCreateOnPosts(unusedvar: boolean) {
 
   // create a comment by the person to be blocked just to get their person ID
   // make it a reply to carl that inspires the blocking of the user
-  let commentBody0 = "go ahead, make my day";
+  const commentBody0 = "go ahead, make my day";
   let blockPersonComment0 = await createComment(gamma_user_to_block0, gammaNewestComment.post.id, gammaNewestComment.comment.id, commentBody0);
 
-  // We could load notifications for Carl to get a reference, but instead
+  // We could load notifications for Carl to get a reference...
+  let carlUnread0 = await getUnreadCount(alpha_user_carl);
+  expect(carlUnread0.replies).toBe(1);
+
   //   just go ahead and refresh the posts and find newest comment
   // ap_id of a post is stable across all instances
   let alphaPostComments = await findPostFromListNewGetComments(
@@ -789,18 +793,52 @@ async function blockUserAllowedaToCreateOnPosts(unusedvar: boolean) {
   // out of band check here, carry the comment with sneakernet ;)
   expect(alphaPostComments.comments[0].comment.content).toBe(commentBody0);
 
+  let exhaustiveTest = true;
+  if (exhaustiveTest) {
+    let carlReplies0 = await alpha_user_carl.client.getReplies({
+      auth: alpha_user_carl.auth
+    });
+    expect(carlReplies0.replies.length).toBe(1);
+    expect(carlReplies0.replies[0].comment.id).toBe(alphaPostComments.comments[0].comment.id);
+    expect(carlReplies0.replies[0].comment.content).toBe(commentBody0);
+
+    // at this poiint the commenbt will NOT be marked as read
+    // Do an explicit load of that comment
+    /*
+    // FixMe: why is this call throwing "unknown"?
+    await alpha_user_carl.client.markCommentReplyAsRead({
+      auth: alpha_user_carl.auth,
+      // comment_reply_id: alphaPostComments.comments[0].comment.id,
+      comment_reply_id: carlReplies0.replies[0].comment_reply.comment_id,
+      read: true
+    });
+    */
+
+    await alpha_user_carl.client.markAllAsRead({
+      auth: alpha_user_carl.auth
+    });
+  };
+
+  // did that count as reading the comment?
+  let carlUnread1 = await getUnreadCount(alpha_user_carl);
+  expect(carlUnread1.replies).toBe(0);
+
   // Carl blocks other user
-  let blockAction0 = alpha_user_carl.client.blockPerson({
+  let blockAction0 = await alpha_user_carl.client.blockPerson({
     auth: alpha_user_carl.auth,
     person_id: alphaPostComments.comments[0].comment.creator_id,
     block: true
   });
 
   // can the blocked person comment on Carl's post?
-  let blockPersonComment1 = await createComment(gamma_user_to_block0, gammaNewestComment.post.id, gammaNewestComment.comment.id, "I'm a San Francisco cop named Harry!");
+  const commentBody1 = "I'm a San Francisco cop named Harry!";
+  let blockPersonComment1 = await createComment(gamma_user_to_block0, gammaNewestComment.post.id, gammaNewestComment.comment.id, commentBody1);
+
+  let carlUnread2 = await getUnreadCount(alpha_user_carl);
+  expect(carlUnread2.replies).toBe(0);
 
   // Carl unblocks other user
-  let blockAction1 = alpha_user_carl.client.blockPerson({
+  let blockAction1 = await alpha_user_carl.client.blockPerson({
     auth: alpha_user_carl.auth,
     person_id: alphaPostComments.comments[0].comment.creator_id,
     block: false
@@ -814,8 +852,8 @@ async function blockUserAllowedaToCreateOnPosts(unusedvar: boolean) {
   );
   // Lemmy does not block creation of new comments in 0.18.3, so the count will be 3
   expect(alphaPostCommentsAfter.comments.length).toBe(3);
-
-  // Validating notification behavior from blocked users was another question.
+  expect(alphaPostCommentsAfter.comments[0].comment.content).toBe(commentBody1);
+  expect(alphaPostCommentsAfter.comments[1].comment.content).toBe(commentBody0);
 }
 
 
@@ -844,7 +882,7 @@ async function moderatorBlockUserPostsMultiCommunity(unusedvar: boolean) {
   expect(beforeBlockPosts.posts.length).toBe(4);
 
   // moderator blocks user
-  let modAction0 = alpha_user_mod.client.blockPerson({
+  let modAction0 = await alpha_user_mod.client.blockPerson({
     auth: alpha_user_mod.auth,
     person_id: newPost0.post_view.post.creator_id,
     block: true
@@ -970,8 +1008,10 @@ test("non-admin moderator blocks ordinary user, does it impact their view in mod
   await moderatorBlockUserPostsMultiCommunity(false);
 });
 
-// https://lemmy.world/post/2671501?scrollToComments=true
-test("two non-admin mon-moderator ordinary users, can blocked user comment on post or comments?", async () => {
+// https://lemmy.world/post/2671501
+// notification from blocked user
+// https://lemmy.ml/post/2678586
+test("2 non-admin mon-moderator ordinary users, can blocked user comment on post or comments?", async () => {
   await blockUserAllowedaToCreateOnPosts(false);
 });
 
@@ -1275,8 +1315,7 @@ export async function serverFetchJSON0(params0: any) {
   return result0;
 }
 
-// notification from blocked uuser
-// https://lemmy.ml/post/2678586
+
 
 
 // removed communities removed

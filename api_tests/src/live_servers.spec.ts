@@ -6,6 +6,8 @@ jest.setTimeout(1 * 60 * 1000);
 import {
   CommentView,
   CreatePost,
+  GetComments,
+  GetPost,
   GetPosts,
   GetPostsResponse,
   LemmyHttp,
@@ -31,7 +33,7 @@ beforeAll(async () => {});
 
 afterAll(async () => {});
 
-test("lemmy.ml comment", async () => {
+test.skip("lemmy.ml comment", async () => {
   // let targetComment = 2071725;  // seems fixed now with added comments?
   // let targetPost = 2540874;
 
@@ -54,11 +56,56 @@ test("lemmy.ml comment", async () => {
   expect(comment.comment_view.comment.id).toBe(comments.comments[0].comment.id);
 });
 
+test("bulletintree.com comment", async () => {
+
+  let targetComment = 1470326;
+  targetComment = 1493691;
+  let client = new LemmyHttp("https://bulletintree.com/");
+  let auth;
+  let isPostLink = false;
+
+  let id = targetComment;
+
+  const postForm: GetPost = {
+    auth,
+  };
+
+  const commentsForm: GetComments = {
+    max_depth: 8,
+    sort: "Hot",
+    type_: "All",
+    saved_only: false,
+    limit: 3,
+    auth,
+  };
+
+  // Set the correct id based on the path type
+  if (isPostLink) {
+    postForm.id = id;
+    commentsForm.post_id = id;
+  } else {
+    postForm.comment_id = id;
+    commentsForm.parent_id = id;
+  }
+
+  let bothFetch = {
+    postRes: await client.getPost(postForm),
+    commentsRes: await client.getComments(commentsForm),
+  };
+
+  console.log("post %s", bothFetch.postRes.post_view.post.name);
+  showComments(bothFetch.commentsRes.comments);
+
+  console.log(postForm);
+  console.log(commentsForm);
+});
+
 function showComments(comments: CommentView[]) {
   for (let i = 0; i < comments.length; i++) {
     let c = comments[i];
     console.log(
-      "%d %s %s '%s'",
+      "%d: %d %s %s '%s'",
+      i,
       c.comment.id,
       c.creator.actor_id,
       c.comment.path,

@@ -477,10 +477,11 @@ export async function nestedCommentsOnMostRecentPostsSpecificCommunity(account: 
     // create 50 trunk comments, users who comment but don't read and reply
     for (let j = 0; j < 50; j++) {
       totalCount++;
+      let now = new Date();
       let body =
         "BulletinTree.com testing of live servers.\n" +
         "It is suggested you do not subscribe to community.\n\n" +
-        + new Date().toISOString() + "  "
+        now.toISOString() + "  " +
         "trunk reply to post " +
         i +
         " comment " +
@@ -538,10 +539,11 @@ export async function nestedCommentsOnMostRecentPostsSpecificCommunity(account: 
           parent_id = prevComment.comment_view.comment.id;
         }
       }
+      let now = new Date();
       let body =
         "BulletinTree.com testing of live servers.\n" +
         "It is suggested you do not subscribe to community.\n\n" +
-        + new Date().toISOString() + "  "
+        now.toISOString() + "  " +
         "reply to post " +
         i +
         " comment " +
@@ -587,10 +589,11 @@ export async function createTrunkCommentsOnPost(i : number, account: API, post: 
       // create 50 trunk comments, users who comment but don't read and reply
       for (let j = 0; j < 50; j++) {
         totalCount++;
+        let now = new Date();
         let body =
           "BulletinTree.com testing of live servers.\n" +
           "It is suggested you do not subscribe to community.\n\n" +
-          + new Date().toISOString() + "  "
+          now.toISOString() + "  " +
           "trunk reply to post " +
           i +
           " comment " +
@@ -684,10 +687,11 @@ export async function nestedCommentsOnMostRecentPostsSpecificCommunityA(account:
           parent_id = prevComment.comment_view.comment.id;
         }
       }
+      let now = new Date();
       let body =
         "BulletinTree.com testing of live servers.\n" +
         "It is suggested you do not subscribe to community.\n\n" +
-        + new Date().toISOString() + "  "
+        now.toISOString() + "  " +
         "reply to post " +
         i +
         " comment " +

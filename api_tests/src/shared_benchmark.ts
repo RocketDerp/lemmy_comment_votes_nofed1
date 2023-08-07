@@ -7,6 +7,8 @@ import {
   GetCommentsResponse,
   GetComments,
   SortType,
+  PostView,
+  CommentResponse,
 } from "lemmy-js-client";
 import {
   API,
@@ -25,6 +27,7 @@ import {
   getSite,
   resolvePerson,
   saveUserSettings,
+  getCommunity,
 } from "./shared";
 
 export let alpha_user_casual0: API;
@@ -150,7 +153,7 @@ export async function loopActionSetA(
 }
 
 
-export let targetCommunityName = "BT_test_quantity0";
+export let targetCommunityName = "BT_test_quantity1";
 
 
 // SetA uses leaked usernames, SetB does all with one user
@@ -167,6 +170,7 @@ export async function loopActionSetB(
   const start = performance.now();
 
   const name = targetCommunityName;
+  // await resolveCommunity(account, name);
   let communityRes = await createCommunity(account, name);
   expect(communityRes.community_view.community.name).toBe(name);
 
@@ -206,6 +210,38 @@ export async function loopActionSetB(
   // 20 seconds is NOT good performance for 13 loops. I suggest 6 or even 1.3 seconds as a goal on empty database.
   console.log("loopActionSetB end local %s tag: %s", localOnly, tag);
   return end - start;
+}
+
+//  uses a fixed single community for live server
+export async function postActionSetA(
+  account: API,
+  tag: string,
+) {
+  let prevPost: PostResponse | undefined;
+
+  const name = targetCommunityName;
+  // await resolveCommunity(account, name);
+  let communityRes = await account.client.getCommunity({ name: name });
+  expect(communityRes.community_view.community.name).toBe(name);
+
+  // For the sake of woodpecker builds, only run 13 loops because these tests are slow
+  // If performance improves,
+  for (let i = 0; i < 25; i++) {
+    const now = new Date();
+    // NOTE: the default createPost is a URL post which does network connects outbound
+    //   it is much slower to do url posts
+    let form: CreatePost = {
+      name: "TESTING POST, benchmark post " + i + " " + tag + " " + now.toISOString(),
+      body: now.toISOString() + "\n\n" +
+       "BulletinTree.com performance testing on live database. Please ignore.\n\n" +
+       "Body of post without link " + randomString(10) + " " + tag,
+      auth: account.auth,
+      community_id: communityRes.community_view.community.id,
+    };
+    let postRes = await account.client.createPost(form);
+
+    prevPost = postRes;
+  }
 }
 
 
@@ -421,7 +457,7 @@ export async function nestedCommentsOnMostRecentPostsSpecificCommunity(account: 
     moderator_view: false,
     auth: account.auth,
     limit: 50,
-    sort: "MostComments",
+    sort: "New",
     community_name: targetCommunityName,
     type_: "Local",
   };
@@ -444,6 +480,7 @@ export async function nestedCommentsOnMostRecentPostsSpecificCommunity(account: 
       let body =
         "BulletinTree.com testing of live servers.\n" +
         "It is suggested you do not subscribe to community.\n\n" +
+        + new Date().toISOString() + "  "
         "trunk reply to post " +
         i +
         " comment " +
@@ -504,6 +541,7 @@ export async function nestedCommentsOnMostRecentPostsSpecificCommunity(account: 
       let body =
         "BulletinTree.com testing of live servers.\n" +
         "It is suggested you do not subscribe to community.\n\n" +
+        + new Date().toISOString() + "  "
         "reply to post " +
         i +
         " comment " +
@@ -541,6 +579,151 @@ export async function nestedCommentsOnMostRecentPostsSpecificCommunity(account: 
   }
 }
 
+
+
+export async function createTrunkCommentsOnPost(i : number, account: API, post: PostView) {
+  let prevComment;
+
+      // create 50 trunk comments, users who comment but don't read and reply
+      for (let j = 0; j < 50; j++) {
+        totalCount++;
+        let body =
+          "BulletinTree.com testing of live servers.\n" +
+          "It is suggested you do not subscribe to community.\n\n" +
+          + new Date().toISOString() + "  "
+          "trunk reply to post " +
+          i +
+          " comment " +
+          j +
+          " same " +
+          sameCount +
+          " branchLevel " +
+          "TRUNK" +
+          " total " +
+          totalCount;
+        if (totalCount % 5 == 0) {
+          await delay(1000);
+        }
+        try {
+          let newComment = await createComment(account, post.post.id, undefined, body);
+          // next statement will only set if no excepton.
+          prevComment = newComment;
+        } catch (e0) {
+          if (e0=="Service Temporarily Unavailable") {
+            serviceUnavailableCount++;
+            console.log("'Service Temporarily Unavailable' %d, sleeping, i %d j %d tc %d", serviceUnavailableCount, i, j, totalCount);
+            await delay(5000);
+            j--;  // NOTE: this is modifyng the for loop to do a retry.
+            totalCount--;
+          } else {
+            console.error("Unrecognized exception");
+            console.log(e0);
+            process.exit(30);
+          }
+        }
+      }
+
+      return prevComment;
+}
+
+let sameCount = 0;
+let totalCount = 0;
+let serviceUnavailableCount = 0;
+
+export async function nestedCommentsOnMostRecentPostsSpecificCommunityA(account: API) {
+
+  // IMPORTANT: live server, live-wire testing.
+  //    only Local
+  //    only recognized test community
+  expect(targetCommunityName).toBeDefined();
+  let form: GetPosts = {
+    moderator_view: false,
+    auth: account.auth,
+    limit: 50,
+    sort: "New",
+    community_name: targetCommunityName,
+    type_: "Local",
+  };
+  let posts = await account.client.getPosts(form);
+  // let posts = await getPostsMax(alpha, undefined, "New");
+
+  let postLoop = 4;
+  expect(posts.posts.length).toBeGreaterThanOrEqual(postLoop);
+
+  sameCount = 0;
+  totalCount = 0;
+  let parent_id = undefined;
+  serviceUnavailableCount = 0;
+  let prevComment : CommentResponse | undefined;
+  for (let i = 0; i < postLoop; i++) {
+    let post = posts.posts[i];
+
+    prevComment = await createTrunkCommentsOnPost(i, account, post);
+
+    if (!prevComment) {
+      throw ("At least one comment had to be created prior to here");
+    }
+
+    parent_id = undefined;
+    let branchLevel = 0;
+    for (let j = 0; j < i * 1000; j++) {
+      totalCount++;
+      sameCount++;
+      if (j % 30 == 0) {
+        sameCount = 0;
+        branchLevel++;
+        if (branchLevel > 12) {
+          branchLevel = 0;
+          parent_id = undefined;
+        } else {
+          parent_id = prevComment.comment_view.comment.id;
+        }
+      } else {
+        // after one cycle of undefined, start a chain
+        if (!parent_id) {
+          parent_id = prevComment.comment_view.comment.id;
+        }
+      }
+      let body =
+        "BulletinTree.com testing of live servers.\n" +
+        "It is suggested you do not subscribe to community.\n\n" +
+        + new Date().toISOString() + "  "
+        "reply to post " +
+        i +
+        " comment " +
+        j +
+        " same " +
+        sameCount +
+        " branchLevel " +
+        branchLevel +
+        " total " +
+        totalCount;
+
+
+      if (totalCount % 5 == 0) {
+        await delay(1250);
+      }
+
+      try {
+        let newComment = await createComment(account, post.post.id, parent_id, body);
+        // next statement will only set if no excepton.
+        prevComment = newComment;
+      } catch (e0) {
+        if (e0=="Service Temporarily Unavailable") {
+          serviceUnavailableCount++;
+          console.log("'Service Temporarily Unavailable' %d, sleeping, i %d j %d tc %d branchLevel %d", serviceUnavailableCount, i, j, totalCount, branchLevel);
+          await delay(5000);
+          j--;  // NOTE: this is modifyng the for loop to do a retry.
+          totalCount--;
+        } else {
+          console.error("Unrecognized exception");
+          console.log(e0);
+          process.exit(31);
+        }
+      }
+    } // loop of comments with levels
+  }
+}
 
 
 

@@ -33,17 +33,37 @@ beforeAll(async () => {});
 
 afterAll(async () => {});
 
-test.skip("lemmy.ml comment", async () => {
+test("lemmy.ml comment", async () => {
   // let targetComment = 2071725;  // seems fixed now with added comments?
   // let targetPost = 2540874;
 
   let targetComment = 2130121;
   targetComment = 2119998;
+  // https://github.com/LemmyNet/lemmy/issues/3741
+  /*
+  output:
+      {
+      id: 2042764,
+      creator_id: 918230,
+      post_id: 2507287,
+      content: 'Good!',
+      removed: false,
+      published: '2023-07-27T18:59:42.669568',
+      deleted: false,
+      ap_id: 'https://lemmy.world/comment/1792290',
+      local: false,
+      path: '0',
+      distinguished: false,
+      language_id: 0
+    }
+  */
+  targetComment = 2042764;
   let client = new LemmyHttp("https://lemmy.ml/");
   let comment = await client.getComment({
     id: targetComment,
   });
   console.log(comment.comment_view.comment);
+  console.log(comment.comment_view.counts);
 
   let comments = await client.getComments({
     post_id: comment.comment_view.post.id,
@@ -56,7 +76,31 @@ test.skip("lemmy.ml comment", async () => {
   expect(comment.comment_view.comment.id).toBe(comments.comments[0].comment.id);
 });
 
-test("bulletintree.com comment", async () => {
+
+
+test.skip("lemm.ee comment, child_count", async () => {
+  let targetComment = 1799656;
+  targetComment = 1153351;
+  let client = new LemmyHttp("https://lemm.ee/");
+  let comment = await client.getComment({
+    id: targetComment,
+  });
+  console.log(comment.comment_view.comment);
+  console.log(comment.comment_view.counts);
+
+  let comments = await client.getComments({
+    post_id: comment.comment_view.post.id,
+    parent_id: targetComment,
+  });
+  showComments(comments.comments);
+
+  // this seems like a valid asumption since you asked for that comment by id
+  // expect(comment.comment_view.comment.id).toBe(comments.comments[0].comment.id);
+});
+
+
+
+test.skip("bulletintree.com comment", async () => {
 
   let targetComment = 1470326;
   targetComment = 1493691;
@@ -100,14 +144,16 @@ test("bulletintree.com comment", async () => {
   console.log(commentsForm);
 });
 
+
 function showComments(comments: CommentView[]) {
   for (let i = 0; i < comments.length; i++) {
     let c = comments[i];
     console.log(
-      "%d: %d %s %s '%s'",
+      "%d: %d %s cc:%d %s '%s'",
       i,
       c.comment.id,
       c.creator.actor_id,
+      c.counts.child_count,
       c.comment.path,
       c.comment.content,
     );

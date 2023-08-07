@@ -59,7 +59,8 @@ impl Comment {
   ) -> Result<Comment, Error> {
     let conn = &mut get_conn(pool).await?;
 
-    // Insert, to get the id
+    // INSERT, to get the id
+    // This can also be the code path for federated UPDATE, edit of a comment
     let inserted_comment = insert_into(comment)
       .values(comment_form)
       .on_conflict(ap_id)

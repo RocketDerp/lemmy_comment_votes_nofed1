@@ -238,8 +238,6 @@ fn queries<'a>() -> Queries<
       query = query.filter(nlevel(comment::path).le(depth_limit));
 
       // only order if filtering by a post id, or parent_path. DOS potential otherwise and max_depth + !post_id isn't used anyways (afaik)
-      // "If post_id filter is missing, getting comments ordered by path causes a sequence scan on the whole comments table."
-      // when would you not have post_id, on a community comments or all-site comments?
       if options.post_id.is_some() || options.parent_path.is_some() {
         // Always order by the parent path first
         query = query.order_by(subpath(comment::path, 0, -1));

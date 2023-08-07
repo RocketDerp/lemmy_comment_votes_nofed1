@@ -239,8 +239,26 @@ fn queries<'a>() -> Queries<
 
       // only order if filtering by a post id, or parent_path. DOS potential otherwise and max_depth + !post_id isn't used anyways (afaik)
       if options.post_id.is_some() || options.parent_path.is_some() {
+        /*
+        I need to do some thinking/thinking here about how sorting works
+        can sort of naked path be done instead of subpath?
+
+          0.1.3.5.17.21
+          0.1.3.5.17.41
+          0.1.3.24
+          0.1.3.5.27
+          0.1.3.5.16
+          0.1.3.5.16.31
+          0.1.3.5.16.37
+          0.1.45
+          0.1.45.46
+
+        https://github.com/LemmyNet/lemmy/commit/e384b1dd7eabbe4dcf171044f75e7a64e897e0d1#commitcomment-123844179
+        */
         // Always order by the parent path first
         query = query.order_by(subpath(comment::path, 0, -1));
+      } else {
+        tracing::warn!(target: "SQLwatch", "NO post_id max-depth {} depth_limit {}", max_depth, depth_limit);
       }
 
       // TODO limit question. Limiting does not work for comment threads ATM, only max_depth
@@ -253,7 +271,7 @@ fn queries<'a>() -> Queries<
       // If a max depth is given, then you know its a tree fetch, and limits should be ignored
       // TODO a kludge to prevent attacks. Limit comments to 300 for now.
       // (i64::MAX, 0)
-      (300, 0)
+      (800, 0)
     } else {
       // limit_and_offset_unlimited(options.page, options.limit)
       limit_and_offset(options.page, options.limit)?

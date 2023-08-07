@@ -115,6 +115,7 @@ from (
 where ca.comment_id = c.id"
           );
 
+          tracing::warn!(target: "SQLwatch", "comment_aggregates set child_count parent_id {} parent_path {}", parent_id, parent_path);
           sql_query(update_child_count_stmt).execute(conn).await?;
         }
       }

@@ -190,9 +190,6 @@ fn queries<'a>() -> Queries<
         }
       }
     }
-    /*
-    what if there is no listing_type? does that mean it should always have a post_id?
-     */
 
     if options.saved_only.unwrap_or(false) {
       query = query.filter(comment_saved::comment_id.is_not_null());
@@ -240,17 +237,10 @@ fn queries<'a>() -> Queries<
 
       query = query.filter(nlevel(comment::path).le(depth_limit));
 
-
       // only order if filtering by a post id, or parent_path. DOS potential otherwise and max_depth + !post_id isn't used anyways (afaik)
-      // if options.post_id.is_some() || options.parent_path.is_some() {
-
-      // only order if filtering by a post id. DOS potential otherwise and max_depth + !post_id isn't used anyways (afaik)
-      // if options.post_id.is_some() {
       if options.post_id.is_some() || options.parent_path.is_some() {
         // Always order by the parent path first
         query = query.order_by(subpath(comment::path, 0, -1));
-      } else {
-        tracing::warn!(target: "SQLwatch", "NO post_id max-depth {} depth_limit {}", max_depth, depth_limit);
       }
 
       // TODO limit question. Limiting does not work for comment threads ATM, only max_depth
@@ -263,7 +253,7 @@ fn queries<'a>() -> Queries<
       // If a max depth is given, then you know its a tree fetch, and limits should be ignored
       // TODO a kludge to prevent attacks. Limit comments to 300 for now.
       // (i64::MAX, 0)
-      (500, 0)
+      (300, 0)
     } else {
       // limit_and_offset_unlimited(options.page, options.limit)
       limit_and_offset(options.page, options.limit)?

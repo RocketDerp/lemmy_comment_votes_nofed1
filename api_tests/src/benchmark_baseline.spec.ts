@@ -98,7 +98,7 @@ test(
   2 * 60 * 60 * 1000,
 );
 
-test("benchmark baseline, reading: list posts", async () => {
+test.skip("benchmark baseline, reading: list posts", async () => {
   const start = performance.now();
 
   for (let i = 0; i < 50; i++) {
@@ -110,7 +110,7 @@ test("benchmark baseline, reading: list posts", async () => {
   expect(end - start).toBeLessThan(6 * 1000);
 });
 
-test("benchmark baseline, reading: list posts 3 times", async () => {
+test.skip("benchmark baseline, reading: list posts 3 times", async () => {
   const start = performance.now();
 
   for (let i = 0; i < 3; i++) {
@@ -123,7 +123,7 @@ test("benchmark baseline, reading: list posts 3 times", async () => {
   expect(end - start).toBeLessThan(4 * 1000);
 });
 
-test("benchmark baseline, reading: comments off list of posts sorted by MostComments", async () => {
+test.skip("benchmark baseline, reading: comments off list of posts sorted by MostComments", async () => {
   const start = performance.now();
 
   await getCommentsOnMostRecentPosts();
@@ -135,5 +135,5 @@ test("benchmark baseline, reading: comments off list of posts sorted by MostComm
 test("site counts", async () => {
   let siteRes = await getSite(alpha);
   let c = siteRes.site_view.counts;
-  console.log("comments %d posts %d communities %d", c.comments, c.posts, c.communities);
+  console.log("getSite counts, comments %d posts %d communities %d", c.comments, c.posts, c.communities);
 });

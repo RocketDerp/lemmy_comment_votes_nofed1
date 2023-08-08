@@ -275,6 +275,7 @@ export async function loopActionSetB(
 export async function postActionSetA(
   account: API,
   tag: string,
+  quantity: number = 25
 ) {
   let prevPost: PostResponse | undefined;
 
@@ -285,7 +286,7 @@ export async function postActionSetA(
 
   // For the sake of woodpecker builds, only run 13 loops because these tests are slow
   // If performance improves,
-  for (let i = 0; i < 25; i++) {
+  for (let i = 0; i < quantity; i++) {
     const now = new Date();
     // NOTE: the default createPost is a URL post which does network connects outbound
     //   it is much slower to do url posts
@@ -307,6 +308,7 @@ export async function postActionSetA(
       process.exit(80);
     }
   }
+  console.log("postActionSetA finish: errors %d, total communities %d posts %d comments %d", serviceUnavailableCount, totalCommunityCount, totalPostCount, totalCommentCount);
 }
 
 
@@ -400,6 +402,14 @@ export async function manyCommunitiesManyPosts(account: API) {
 }
 
 
+export async function manyPostsWithAFewCommentsSameCommunity(account: API) {
+  const postLoop = 25;
+  for (let b = 0; b < postLoop; b++) {
+    await postActionSetA(account, "MP_", 100);
+  }
+  console.log("manyPosts finish: errors %d, total communities %d posts %d comments %d", serviceUnavailableCount, totalCommunityCount, totalPostCount, totalCommentCount);
+}
+
 
 export async function nestedCommentsOnMostRecentPostsSpecificCommunityA(account: API) {
   // IMPORTANT: live server, live-wire testing.
@@ -441,12 +451,14 @@ export async function nestedCommentsOnMostRecentPostsSpecificCommunityA(account:
 export async function nestedCommentsOnPost(i: number, account: API, post: PostView, prevComment: CommentResponse) {
   let parent_id = undefined;
   let branchLevel = 0;
+  const maxBranchLevel = 14;
+
   for (let j = 0; j < i * 1000; j++) {
     sameCount++;
     if (j % 30 == 0) {
       sameCount = 0;
       branchLevel++;
-      if (branchLevel > 12) {
+      if (branchLevel > maxBranchLevel) {
         branchLevel = 0;
         parent_id = undefined;
       } else {

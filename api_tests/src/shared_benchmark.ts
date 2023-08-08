@@ -120,7 +120,9 @@ export async function setupBenchmarkLogins(tag: string) {
 }
 
 
-export let targetCommunityName = "BT_test_quantity1";
+// 2023-08-08 testing, looks like my production server has 9 subscribers on community
+//    in response, start with a new community
+export let targetCommunityName = "BT_test_quantity2";
 let sameCount = 0;
 // ToDo: one totalCount object
 let totalCommentCount = 0;
@@ -200,6 +202,15 @@ export async function loopActionSetA(
 }
 
 
+// intended for production servers to be self-aware when creating
+export async function createTargetCommunity(account: API) {
+  const name = targetCommunityName;
+  // await resolveCommunity(account, name);
+  let communityRes = await createCommunity(account, name);
+  totalCommunityCount++;
+  expect(communityRes.community_view.community.name).toBe(name);
+}
+
 // SetA uses leaked usernames, SetB does all with one user
 //   SetB uses a fixed single community for live server
 export async function loopActionSetB(
@@ -210,14 +221,13 @@ export async function loopActionSetB(
   let prevPost: PostResponse | undefined;
   let prevComment;
 
-  console.log("loopActionSetB start local %s tag: %s", localOnly, tag);
-  const start = performance.now();
-
   const name = targetCommunityName;
   // await resolveCommunity(account, name);
-  let communityRes = await createCommunity(account, name);
-  totalCommunityCount++;
+  let communityRes = await account.client.getCommunity({ name: name });
   expect(communityRes.community_view.community.name).toBe(name);
+
+  console.log("loopActionSetB start local %s tag: %s", localOnly, tag);
+  const start = performance.now();
 
   // For the sake of woodpecker builds, only run 13 loops because these tests are slow
   // If performance improves,
@@ -357,15 +367,26 @@ export function resetTotal() {
 //   as it will create many cmmmunities
 export async function manyCommunitiesManyPosts(account: API) {
   // lemmy.world has over 9000 in production
-  let communityLoop = 1500;
+  const communityLoop = 1500;
+  // to allow multiple passes against the same server, timestamp as part of name
+  const startNow = new Date();
+  // Lemmy has rather short name description limits in 0.18.3... so
+  //   this has to fit.
+  // 1970-01-01T00:00:00.000Z
+  const splitNowT = startNow.toISOString().split("T");
+  // 00:00:00.000Z
+  const splitNowP = splitNowT[1].split(".");
+  const nameBase = "zzST_" + splitNowP[0] + "_";
+  console.log("manyCommunitiesManyPosts nameBase '%s'", nameBase);
   for (let a = 0; a < communityLoop; a++) {
-    let name = "zzzStressTest_c" + a;
+    let name = nameBase + a;
     let communityRes;
     try {
+      // ToDo: add to community description with full startNow string
       communityRes = await createCommunity(account, name);
       totalCommunityCount++;
     } catch(e0) {
-      console.error("Exception creating community, are you running in live server?");
+      console.error("Exception creating community, are you running against live server?");
       console.log(e0);
       process.exit(70);
     }
@@ -412,7 +433,7 @@ export async function nestedCommentsOnMostRecentPostsSpecificCommunityA(account:
 
     await nestedCommentsOnPost(i, account, post, prevComment);
 
-    console.log("finished post, progress: errors %d, i %d tc %d", serviceUnavailableCount, i, totalCommentCount);
+    console.log("finished post, progress: errors %d, i %d total communities %d posts %d comments %d", serviceUnavailableCount, i, totalCommunityCount, totalPostCount, totalCommentCount);
   }
 }
 
@@ -454,7 +475,7 @@ export async function nestedCommentsOnPost(i: number, account: API, post: PostVi
       totalCommentCount;
 
     if (totalCommentCount % 50 == 0) {
-      console.log("progress: errors %d, i %d j %d tc %d branchLevel %d", serviceUnavailableCount, i, j, totalCommentCount, branchLevel);
+      console.log("progress: errors %d, i %d j %d total communuities %d posts %d comments %d branchLevel %d", serviceUnavailableCount, i, j, totalCommunityCount, totalPostCount, totalCommentCount, branchLevel);
     }
 
     try {
@@ -466,7 +487,7 @@ export async function nestedCommentsOnPost(i: number, account: API, post: PostVi
     } catch (e0) {
       if (e0=="Service Temporarily Unavailable") {
         serviceUnavailableCount++;
-        console.log("'Service Temporarily Unavailable' %d, sleeping, i %d j %d tc %d branchLevel %d", serviceUnavailableCount, i, j, totalCommentCount, branchLevel);
+        console.log("'Service Temporarily Unavailable' %d, sleeping, i %d j %d total comments %d branchLevel %d", serviceUnavailableCount, i, j, totalCommentCount, branchLevel);
         await delay(5000);
         j--;  // NOTE: this is modifyng the for loop to do a retry.
       } else {

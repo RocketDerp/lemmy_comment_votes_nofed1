@@ -122,7 +122,10 @@ export async function setupBenchmarkLogins(tag: string) {
 
 export let targetCommunityName = "BT_test_quantity1";
 let sameCount = 0;
+// ToDo: one totalCount object
 let totalCommentCount = 0;
+let totalPostCount = 0;
+let totalCommunityCount = 0;
 let serviceUnavailableCount = 0;
 
 
@@ -143,6 +146,7 @@ export async function loopActionSetA(
     const name = "series_" + i + "_" + tag + "_" + randomString(4);
     targetCommunityName = name;
     let communityRes = await createCommunity(account, name);
+    totalCommunityCount++;
     expect(communityRes.community_view.community.name).toBe(name);
 
     if (!localOnly) {
@@ -212,6 +216,7 @@ export async function loopActionSetB(
   const name = targetCommunityName;
   // await resolveCommunity(account, name);
   let communityRes = await createCommunity(account, name);
+  totalCommunityCount++;
   expect(communityRes.community_view.community.name).toBe(name);
 
   // For the sake of woodpecker builds, only run 13 loops because these tests are slow
@@ -282,9 +287,15 @@ export async function postActionSetA(
       auth: account.auth,
       community_id: communityRes.community_view.community.id,
     };
-    let postRes = await account.client.createPost(form);
-
-    prevPost = postRes;
+    try {
+      let postRes = await account.client.createPost(form);
+      totalPostCount++;
+      prevPost = postRes;
+    } catch (e0) {
+      console.error("Exception creating post on communuity %s", targetCommunityName);
+      console.log(e0);
+      process.exit(80);
+    }
   }
 }
 
@@ -337,7 +348,36 @@ export async function createTrunkCommentsOnPost(i : number, account: API, post: 
 
 export function resetTotal() {
   totalCommentCount = 0;
+  totalPostCount = 0;
+  totalCommunityCount = 0;
 }
+
+
+// not recommended to call this in live server
+//   as it will create many cmmmunities
+export async function manyCommunitiesManyPosts(account: API) {
+  // lemmy.world has over 9000 in production
+  let communityLoop = 1500;
+  for (let a = 0; a < communityLoop; a++) {
+    let name = "zzzStressTest_c" + a;
+    let communityRes;
+    try {
+      communityRes = await createCommunity(account, name);
+      totalCommunityCount++;
+    } catch(e0) {
+      console.error("Exception creating community, are you running in live server?");
+      console.log(e0);
+      process.exit(70);
+    }
+    targetCommunityName = name;
+    await postActionSetA(account, name);
+    if (a % 50) {
+      console.log("community + post progress: errors %d, a %d total communities %d posts %d comments %d", serviceUnavailableCount, a, totalCommunityCount, totalPostCount, totalCommentCount);
+    }
+  }
+  console.log("community + post finish: errors %d, total communities %d posts %d comments %d", serviceUnavailableCount, totalCommunityCount, totalPostCount, totalCommentCount);
+}
+
 
 
 export async function nestedCommentsOnMostRecentPostsSpecificCommunityA(account: API) {
@@ -376,7 +416,7 @@ export async function nestedCommentsOnMostRecentPostsSpecificCommunityA(account:
   }
 }
 
-
+// does work against live servers with rate-limiting nginx known excception
 export async function nestedCommentsOnPost(i: number, account: API, post: PostView, prevComment: CommentResponse) {
   let parent_id = undefined;
   let branchLevel = 0;

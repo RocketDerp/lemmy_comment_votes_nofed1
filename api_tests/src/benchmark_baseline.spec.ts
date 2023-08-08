@@ -20,6 +20,7 @@ import {
   getPostsMax,
   getPostsNewMax2,
   loopActionSetA,
+  manyCommunitiesManyPosts,
   nestedCommentsOnMostRecentPostsSpecificCommunityA,
   postActionSetA,
   resetTotal,
@@ -82,6 +83,17 @@ test(
   "variability due to quantity of comments on post",
   async () => {
     let timeTaken = await nestedCommentsOnMostRecentPostsSpecificCommunityA(alpha);
+  },
+  2 * 60 * 60 * 1000,
+);
+
+/*
+creates non-url posts, as they do not require outbound Internet and are faster.
+*/
+test(
+  "variability due to quantity of posts and communities",
+  async () => {
+    let timeTaken = await manyCommunitiesManyPosts(alpha);
   },
   2 * 60 * 60 * 1000,
 );

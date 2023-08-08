@@ -101,6 +101,7 @@ export async function loopActionSetA(
   // If performance improves,
   for (let i = 0; i < 13; i++) {
     const name = "series_" + i + "_" + tag + "_" + randomString(4);
+    targetCommunityName = name;
     let communityRes = await createCommunity(account, name);
     expect(communityRes.community_view.community.name).toBe(name);
 
@@ -127,6 +128,7 @@ export async function loopActionSetA(
 
     //let postRes = await createNoLinkPost(alpha, communityRes.community_view.community.id);
     let commentRes = await createComment(alpha, postRes.post_view.post.id);
+    totalCommentCount++;
 
     if (prevComment) {
       if (prevPost) {
@@ -136,6 +138,7 @@ export async function loopActionSetA(
           prevComment.comment_view.comment.id,
           "reply to previous " + i + " " + tag,
         );
+        totalCommentCount++;
       }
     }
 
@@ -151,9 +154,6 @@ export async function loopActionSetA(
   console.log("loopActionSetA end local %s tag: %s", localOnly, tag);
   return end - start;
 }
-
-
-export let targetCommunityName = "BT_test_quantity1";
 
 
 // SetA uses leaked usernames, SetB does all with one user
@@ -190,6 +190,7 @@ export async function loopActionSetB(
 
     //let postRes = await createNoLinkPost(alpha, communityRes.community_view.community.id);
     let commentRes = await createComment(alpha, postRes.post_view.post.id);
+    totalCommentCount++;
 
     if (prevComment) {
       if (prevPost) {
@@ -199,6 +200,7 @@ export async function loopActionSetB(
           prevComment.comment_view.comment.id,
           "reply to previous " + i + " " + tag,
         );
+        totalCommentCount++;
       }
     }
 
@@ -285,7 +287,6 @@ export async function createTrunkCommentsOnPost(i : number, account: API, post: 
 
   // create 50 trunk comments, users who comment but don't read and reply
   for (let j = 0; j < 50; j++) {
-    totalCount++;
     let now = new Date();
     let body =
       "BulletinTree.com testing of live servers.\n" +
@@ -300,21 +301,22 @@ export async function createTrunkCommentsOnPost(i : number, account: API, post: 
       " branchLevel " +
       "TRUNK" +
       " total " +
-      totalCount;
-    if (totalCount % 5 == 0) {
+      totalCommentCount;
+    if (totalCommentCount % 5 == 0) {
       await delay(1000);
     }
     try {
       let newComment = await createComment(account, post.post.id, undefined, body);
       // next statement will only set if no excepton.
       prevComment = newComment;
+      // if exception was hit, this won't increment
+      totalCommentCount++;
     } catch (e0) {
       if (e0=="Service Temporarily Unavailable") {
         serviceUnavailableCount++;
-        console.log("'Service Temporarily Unavailable' %d, sleeping, i %d j %d tc %d", serviceUnavailableCount, i, j, totalCount);
+        console.log("'Service Temporarily Unavailable' %d, sleeping, i %d j %d tc %d", serviceUnavailableCount, i, j, totalCommentCount);
         await delay(5000);
         j--;  // NOTE: this is modifyng the for loop to do a retry.
-        totalCount--;
       } else {
         console.error("Unrecognized exception");
         console.log(e0);
@@ -326,9 +328,13 @@ export async function createTrunkCommentsOnPost(i : number, account: API, post: 
   return prevComment;
 }
 
+export function resetTotal() {
+  totalCommentCount = 0;
+}
 
+export let targetCommunityName = "BT_test_quantity1";
 let sameCount = 0;
-let totalCount = 0;
+let totalCommentCount = 0;
 let serviceUnavailableCount = 0;
 
 export async function nestedCommentsOnMostRecentPostsSpecificCommunityA(account: API) {
@@ -352,7 +358,6 @@ export async function nestedCommentsOnMostRecentPostsSpecificCommunityA(account:
   expect(posts.posts.length).toBeGreaterThanOrEqual(postLoop);
 
   sameCount = 0;
-  totalCount = 0;
   let parent_id = undefined;
   serviceUnavailableCount = 0;
   let prevComment : CommentResponse | undefined;
@@ -368,7 +373,6 @@ export async function nestedCommentsOnMostRecentPostsSpecificCommunityA(account:
     parent_id = undefined;
     let branchLevel = 0;
     for (let j = 0; j < i * 1000; j++) {
-      totalCount++;
       sameCount++;
       if (j % 30 == 0) {
         sameCount = 0;
@@ -399,23 +403,24 @@ export async function nestedCommentsOnMostRecentPostsSpecificCommunityA(account:
         " branchLevel " +
         branchLevel +
         " total " +
-        totalCount;
+        totalCommentCount;
 
-      if (totalCount % 13 == 0) {
-        console.log("progress: errors %d, i %d j %d tc %d branchLevel %d", serviceUnavailableCount, i, j, totalCount, branchLevel);
+      if (totalCommentCount % 50 == 0) {
+        console.log("progress: errors %d, i %d j %d tc %d branchLevel %d", serviceUnavailableCount, i, j, totalCommentCount, branchLevel);
       }
 
       try {
         let newComment = await createComment(account, post.post.id, parent_id, body);
         // next statement will only set if no excepton.
         prevComment = newComment;
+        // total only incremented if exception not hit
+        totalCommentCount++;
       } catch (e0) {
         if (e0=="Service Temporarily Unavailable") {
           serviceUnavailableCount++;
-          console.log("'Service Temporarily Unavailable' %d, sleeping, i %d j %d tc %d branchLevel %d", serviceUnavailableCount, i, j, totalCount, branchLevel);
+          console.log("'Service Temporarily Unavailable' %d, sleeping, i %d j %d tc %d branchLevel %d", serviceUnavailableCount, i, j, totalCommentCount, branchLevel);
           await delay(5000);
           j--;  // NOTE: this is modifyng the for loop to do a retry.
-          totalCount--;
         } else {
           console.error("Unrecognized exception");
           console.log(e0);
@@ -423,6 +428,7 @@ export async function nestedCommentsOnMostRecentPostsSpecificCommunityA(account:
         }
       }
     } // loop of comments with levels
+    console.log("finished post, progress: errors %d, i %d tc %d", serviceUnavailableCount, i, totalCommentCount);
   }
 }
 

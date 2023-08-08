@@ -6,7 +6,7 @@ testing with threaded conversations reveals just how variable performance can be
 particular patterns in the data are likely triggering comment rewrites
 to update counts. So that's a lurking issue, a comment on a specific thread.
 */
-jest.setTimeout(60 * 60 * 1000);
+jest.setTimeout(3 * 60 * 60 * 1000);
 
 import {
   CreatePost,
@@ -14,15 +14,15 @@ import {
   GetPostsResponse,
   PostResponse,
 } from "lemmy-js-client";
-import { alpha, setupLogins, createComment, getComments } from "./shared";
+import { alpha, setupLogins, createComment, getComments, getSite } from "./shared";
 import {
   getCommentsOnMostRecentPosts,
   getPostsMax,
   getPostsNewMax2,
   loopActionSetA,
-  nestedCommentsOnMostRecentPosts,
-  nestedCommentsOnMostRecentPosts2,
-  nestedCommentsOnMostRecentPosts3,
+  nestedCommentsOnMostRecentPostsSpecificCommunityA,
+  postActionSetA,
+  resetTotal,
   setupBenchmarkLogins,
 } from "./shared_benchmark";
 
@@ -35,6 +35,7 @@ afterAll(async () => {});
 
 test("benchmark creating an account", async () => {
   // alpha_user_casual0 = await registerUserClient(alpha, "alpha_casual0");
+  await resetTotal();
 });
 
 // reference: https://stackoverflow.com/questions/58461792/timing-function-calls-in-jest
@@ -65,15 +66,24 @@ test.skip("may as well study the content", async () => {
   }
 });
 
+test(
+  "ceaate post on last created community",
+  async () => {
+    // community name is taken from last loopActionSetA create of community
+    await postActionSetA(alpha, "alpharun0");
+  },
+  3 * 60 * 1000,
+);
+
 /*
 This tries to create tiny comments to primarily exercise the PostgreSQL INDEX updates / INDEX scan behaviors.
 */
-test.skip(
+test(
   "variability due to quantity of comments on post",
   async () => {
-    let timeTaken = await nestedCommentsOnMostRecentPosts3();
+    let timeTaken = await nestedCommentsOnMostRecentPostsSpecificCommunityA(alpha);
   },
-  60 * 60 * 1000,
+  2 * 60 * 60 * 1000,
 );
 
 test("benchmark baseline, reading: list posts", async () => {
@@ -108,4 +118,10 @@ test("benchmark baseline, reading: comments off list of posts sorted by MostComm
 
   const end = performance.now();
   expect(end - start).toBeLessThan(12 * 1000);
+});
+
+test("site counts", async () => {
+  let siteRes = await getSite(alpha);
+  let c = siteRes.site_view.counts;
+  console.log("comments %d posts %d communities %d", c.comments, c.posts, c.communities);
 });

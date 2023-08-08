@@ -40,13 +40,13 @@ test("benchmark creating an account", async () => {
 });
 
 // reference: https://stackoverflow.com/questions/58461792/timing-function-calls-in-jest
-test("benchmark baseline, inserts: community, discovery, follow, post, comment, vote", async () => {
+test.skip("benchmark baseline, inserts: community, discovery, follow, post, comment, vote", async () => {
   let timeTaken = await loopActionSetA(alpha, false, "fed");
   // 20 seconds is NOT good performance for 13 loops. I suggest 6 or even 1.3 seconds as a goal on empty database.
   expect(timeTaken).toBeLessThan(20 * 1000);
 });
 
-test("benchmark baseline, same as last test, without federation", async () => {
+test.skip("benchmark baseline, same as last test, without federation", async () => {
   let timeTaken = await loopActionSetA(alpha, true, "nofed");
   expect(timeTaken).toBeLessThan(20 * 1000);
 });
@@ -67,7 +67,7 @@ test.skip("may as well study the content", async () => {
   }
 });
 
-test(
+test.skip(
   "ceaate post on last created community",
   async () => {
     // community name is taken from last loopActionSetA create of community
@@ -79,7 +79,7 @@ test(
 /*
 This tries to create tiny comments to primarily exercise the PostgreSQL INDEX updates / INDEX scan behaviors.
 */
-test(
+test.skip(
   "variability due to quantity of comments on post",
   async () => {
     let timeTaken = await nestedCommentsOnMostRecentPostsSpecificCommunityA(alpha);

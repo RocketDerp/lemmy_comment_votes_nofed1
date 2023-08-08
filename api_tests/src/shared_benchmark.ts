@@ -376,7 +376,7 @@ export async function manyCommunitiesManyPosts(account: API) {
   const splitNowT = startNow.toISOString().split("T");
   // 00:00:00.000Z
   const splitNowP = splitNowT[1].split(".");
-  const nameBase = "zzST_" + splitNowP[0] + "_";
+  const nameBase = "zzST_" + splitNowP[0].replaceAll(":", "") + "_";
   console.log("manyCommunitiesManyPosts nameBase '%s'", nameBase);
   for (let a = 0; a < communityLoop; a++) {
     let name = nameBase + a;

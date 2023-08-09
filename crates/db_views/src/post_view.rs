@@ -317,11 +317,9 @@ fn queries<'a>() -> Queries<
       query = query.filter(post_like::score.eq(-1));
     }
 
-    // Filter out the rows with missing languages
-    query = query.filter(local_user_language::language_id.is_not_null());
-
     if options.local_user.is_some() {
-
+      // Filter out the rows with missing languages
+      // query = query.filter(local_user_language::language_id.is_not_null());
 
       // Don't show blocked communities or persons
       query = query.filter(community_block::person_id.is_null());

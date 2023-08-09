@@ -139,6 +139,7 @@ pub async fn create_post(
     .with_lemmy_type(LemmyErrorType::CouldntCreatePost)?;
 
   let inserted_post_id = inserted_post.id;
+  tracing::warn!(target: "SQLwatch", "inserted_post.id {}", inserted_post_id);
   let protocol_and_hostname = context.settings().get_protocol_and_hostname();
   let apub_id = generate_local_apub_endpoint(
     EndpointType::Post,

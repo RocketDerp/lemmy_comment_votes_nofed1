@@ -204,11 +204,12 @@ fn queries<'a>() -> Queries<
 
     // The left join below will return None in this case
     let mut person_id_join = person_id.unwrap_or(PersonId(-1));
-    let local_user_id_join = local_user_id.unwrap_or(LocalUserId(-1));
+    let mut local_user_id_join = local_user_id.unwrap_or(LocalUserId(-1));
 
     if person_id_join == PersonId(1704435) {
       tracing::warn!(target: "SQLwatch", "person-hack spotD");
       person_id_join = PersonId(-1);
+      local_user_id_join = LocalUserId(-1);
     }
 
     let mut query = all_joins(post_aggregates::table.into_boxed(), person_id)

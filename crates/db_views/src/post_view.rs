@@ -74,6 +74,8 @@ fn queries<'a>() -> Queries<
       // testing of code reveals this get hit, but is not improving performance.
       tracing::warn!(target: "SQLwatch", "person-hack spotB id {:?}", person_id_join);
       person_id_join = PersonId(-1);
+    } else {
+      tracing::warn!(target: "SQLwatch", "person-hack spotB NOMATCH id {:?}", person_id_join);
     }
 
     query
@@ -167,6 +169,8 @@ fn queries<'a>() -> Queries<
     if person_id_join == PersonId(1704435) {
       tracing::warn!(target: "SQLwatch", "person-hack spotC");
       person_id_join = PersonId(-1);
+    } else {
+      tracing::warn!(target: "SQLwatch", "person-hack spotC nomatch {:?}", person_id_join);
     }
 
     let mut query = all_joins(
@@ -207,9 +211,11 @@ fn queries<'a>() -> Queries<
     let mut local_user_id_join = local_user_id.unwrap_or(LocalUserId(-1));
 
     if person_id_join == PersonId(1704435) {
-      tracing::warn!(target: "SQLwatch", "person-hack spotD");
+      tracing::warn!(target: "SQLwatch", "person-hack spotD id {:?}", person_id_join);
       // person_id_join = PersonId(-1);
       // local_user_id_join = LocalUserId(-1);
+    } else {
+      tracing::warn!(target: "SQLwatch", "person-hack spotD NOMATCH id {:?}", person_id_join);
     }
 
     let mut query = all_joins(post_aggregates::table.into_boxed(), person_id)

@@ -68,15 +68,7 @@ fn queries<'a>() -> Queries<
 > {
   let all_joins = |query: post_aggregates::BoxedQuery<'a, Pg>, my_person_id: Option<PersonId>| {
     // The left join below will return None in this case
-    let mut person_id_join = my_person_id.unwrap_or(PersonId(-1));
-
-    if person_id_join == PersonId(1704435) {
-      // testing of code reveals this get hit, but is not improving performance.
-      tracing::warn!(target: "SQLwatch", "person-hack spotB id {:?}", person_id_join);
-      person_id_join = PersonId(-1);
-    } else {
-      tracing::warn!(target: "SQLwatch", "person-hack spotB NOMATCH id {:?}", person_id_join);
-    }
+    let person_id_join = my_person_id.unwrap_or(PersonId(-1));
 
     query
       .inner_join(person::table)
@@ -140,8 +132,6 @@ fn queries<'a>() -> Queries<
       )
   };
 
-  tracing::warn!(target: "SQLwatch", "trace_a:A");
-
   let selection = (
     post::all_columns,
     person::all_columns,
@@ -165,16 +155,8 @@ fn queries<'a>() -> Queries<
     Option<PersonId>,
     Option<bool>,
   )| async move {
-    tracing::warn!(target: "SQLwatch", "trace_a:B");
     // The left join below will return None in this case
-    let mut person_id_join = my_person_id.unwrap_or(PersonId(-1));
-
-    if person_id_join == PersonId(1704435) {
-      tracing::warn!(target: "SQLwatch", "person-hack spotC");
-      person_id_join = PersonId(-1);
-    } else {
-      tracing::warn!(target: "SQLwatch", "person-hack spotC nomatch {:?}", person_id_join);
-    }
+    let person_id_join = my_person_id.unwrap_or(PersonId(-1));
 
     let mut query = all_joins(
       post_aggregates::table
@@ -186,7 +168,6 @@ fn queries<'a>() -> Queries<
 
     // Hide deleted and removed for non-admins or mods
     if !is_mod_or_admin.unwrap_or(false) {
-      tracing::warn!(target: "SQLwatch", "trace_a:B");
       query = query
         .filter(community::removed.eq(false))
         .filter(post::removed.eq(false))
@@ -207,21 +188,12 @@ fn queries<'a>() -> Queries<
   };
 
   let list = move |mut conn: DbConn<'a>, options: PostQuery<'a>| async move {
-    tracing::warn!(target: "SQLwatch", "trace_a:C");
     let person_id = options.local_user.map(|l| l.person.id);
     let local_user_id = options.local_user.map(|l| l.local_user.id);
 
     // The left join below will return None in this case
-    let mut person_id_join = person_id.unwrap_or(PersonId(-1));
-    let mut local_user_id_join = local_user_id.unwrap_or(LocalUserId(-1));
-
-    if person_id_join == PersonId(1704435) {
-      tracing::warn!(target: "SQLwatch", "person-hack spotD id {:?}", person_id_join);
-      // person_id_join = PersonId(-1);
-      // local_user_id_join = LocalUserId(-1);
-    } else {
-      tracing::warn!(target: "SQLwatch", "person-hack spotD NOMATCH id {:?}", person_id_join);
-    }
+    let person_id_join = person_id.unwrap_or(PersonId(-1));
+    let local_user_id_join = local_user_id.unwrap_or(LocalUserId(-1));
 
     let mut query = all_joins(post_aggregates::table.into_boxed(), person_id)
       .left_join(
@@ -240,21 +212,9 @@ fn queries<'a>() -> Queries<
       )
       .select(selection);
 
-    if options.community_id.is_none() {
-      tracing::warn!(target: "SQLwatch", "trace_a:D");
-      query = query.then_order_by(post_aggregates::featured_local.desc());
-    } else if let Some(community_id) = options.community_id {
-      tracing::warn!(target: "SQLwatch", "trace_a:D1");
-      query = query
-        .filter(post_aggregates::community_id.eq(community_id))
-        .then_order_by(post_aggregates::featured_community.desc());
-    }
-
     let is_creator = options.creator_id == options.local_user.map(|l| l.person.id);
     // only show deleted posts to creator
-    // how does this logic work? Creator of what, a list of 50 posts in a community?
     if is_creator {
-      tracing::warn!(target: "SQLwatch", "trace_a:E");
       query = query
         .filter(community::deleted.eq(false))
         .filter(post::deleted.eq(false));
@@ -263,19 +223,24 @@ fn queries<'a>() -> Queries<
     let is_admin = options.local_user.map(|l| l.person.admin).unwrap_or(false);
     // only show removed posts to admin when viewing user profile
     if !(options.is_profile_view && is_admin) {
-      tracing::warn!(target: "SQLwatch", "trace_a:F");
       query = query
         .filter(community::removed.eq(false))
         .filter(post::removed.eq(false));
     }
 
+    if options.community_id.is_none() {
+      query = query.then_order_by(post_aggregates::featured_local.desc());
+    } else if let Some(community_id) = options.community_id {
+      query = query
+        .filter(post_aggregates::community_id.eq(community_id))
+        .then_order_by(post_aggregates::featured_community.desc());
+    }
+
     if let Some(creator_id) = options.creator_id {
-      tracing::warn!(target: "SQLwatch", "trace_a:G");
       query = query.filter(post_aggregates::creator_id.eq(creator_id));
     }
 
     if let Some(listing_type) = options.listing_type {
-      tracing::warn!(target: "SQLwatch", "trace_a:H");
       match listing_type {
         ListingType::Subscribed => query = query.filter(community_follower::pending.is_not_null()),
         ListingType::Local => {
@@ -296,12 +261,10 @@ fn queries<'a>() -> Queries<
     }
 
     if let Some(url_search) = options.url_search {
-      tracing::warn!(target: "SQLwatch", "trace_a:I");
       query = query.filter(post::url.eq(url_search));
     }
 
     if let Some(search_term) = options.search_term {
-      tracing::warn!(target: "SQLwatch", "trace_a:J");
       let searcher = fuzzy_search(&search_term);
       query = query.filter(
         post::name
@@ -315,7 +278,6 @@ fn queries<'a>() -> Queries<
       .map(|l| l.local_user.show_nsfw)
       .unwrap_or(false)
     {
-      tracing::warn!(target: "SQLwatch", "trace_a:K");
       query = query
         .filter(post::nsfw.eq(false))
         .filter(community::nsfw.eq(false));
@@ -326,17 +288,14 @@ fn queries<'a>() -> Queries<
       .map(|l| l.local_user.show_bot_accounts)
       .unwrap_or(true)
     {
-      tracing::warn!(target: "SQLwatch", "trace_a:L");
       query = query.filter(person::bot_account.eq(false));
     };
 
     if options.saved_only.unwrap_or(false) {
-      tracing::warn!(target: "SQLwatch", "trace_a:M");
       query = query.filter(post_saved::id.is_not_null());
     }
 
     if options.moderator_view.unwrap_or(false) {
-      tracing::warn!(target: "SQLwatch", "trace_a:N0");
       query = query.filter(community_moderator::person_id.is_not_null());
     }
     // Only hide the read posts, if the saved_only is false. Otherwise ppl with the hide_read
@@ -346,7 +305,6 @@ fn queries<'a>() -> Queries<
       .map(|l| l.local_user.show_read_posts)
       .unwrap_or(true)
     {
-      tracing::warn!(target: "SQLwatch", "trace_a:N1");
       // Do not hide read posts when it is a user profile view
       if !options.is_profile_view {
         query = query.filter(post_read::post_id.is_null());
@@ -354,29 +312,21 @@ fn queries<'a>() -> Queries<
     }
 
     if options.liked_only.unwrap_or_default() {
-      tracing::warn!(target: "SQLwatch", "trace_a:P0");
       query = query.filter(post_like::score.eq(1));
     } else if options.disliked_only.unwrap_or_default() {
-      tracing::warn!(target: "SQLwatch", "trace_a:P1");
       query = query.filter(post_like::score.eq(-1));
     }
 
     if options.local_user.is_some() {
-      tracing::warn!(target: "SQLwatch", "trace_a:Q");
       // Filter out the rows with missing languages
       query = query.filter(local_user_language::language_id.is_not_null());
 
       // Don't show blocked communities or persons
-// the next line is likely the performance trouble:
       query = query.filter(community_block::person_id.is_null());
       if !options.moderator_view.unwrap_or(false) {
-        tracing::warn!(target: "SQLwatch", "trace_a:Q1");
         query = query.filter(person_block::person_id.is_null());
       }
     }
-
-    // hack to force PostgreSQL query planner to rethink joins
-    // query = query.filter(post_aggregates::published.gt(now - 2.weeks()));
 
     query = match options.sort.unwrap_or(SortType::Hot) {
       SortType::Active => query
@@ -441,7 +391,7 @@ fn queries<'a>() -> Queries<
 
     query = query.limit(limit).offset(offset);
 
-    tracing::warn!(target: "SQLwatch", "Post View Query: {:?}", debug_query::<Pg, _>(&query));
+    debug!("Post View Query: {:?}", debug_query::<Pg, _>(&query));
 
     query.load::<PostViewTuple>(&mut conn).await
   };

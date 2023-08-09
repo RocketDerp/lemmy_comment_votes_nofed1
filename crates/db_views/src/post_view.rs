@@ -72,7 +72,7 @@ fn queries<'a>() -> Queries<
 
     if person_id_join == PersonId(1704435) {
       // testing of code reveals this get hit, but is not improving performance.
-      tracing::warn!(target: "SQLwatch", "person-hack spotB");
+      tracing::warn!(target: "SQLwatch", "person-hack spotB id {:?}", person_id_join);
       person_id_join = PersonId(-1);
     }
 
@@ -208,7 +208,7 @@ fn queries<'a>() -> Queries<
 
     if person_id_join == PersonId(1704435) {
       tracing::warn!(target: "SQLwatch", "person-hack spotD");
-      person_id_join = PersonId(-1);
+      // person_id_join = PersonId(-1);
       // local_user_id_join = LocalUserId(-1);
     }
 

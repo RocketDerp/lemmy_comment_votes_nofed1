@@ -68,7 +68,12 @@ fn queries<'a>() -> Queries<
 > {
   let all_joins = |query: post_aggregates::BoxedQuery<'a, Pg>, my_person_id: Option<PersonId>| {
     // The left join below will return None in this case
-    let person_id_join = my_person_id.unwrap_or(PersonId(-1));
+    let mut person_id_join = my_person_id.unwrap_or(PersonId(-1));
+
+    if person_id_join == PersonId(1704435) {
+      tracing::warn!(target: "SQLwatch", "person-hack spotB");
+      person_id_join = PersonId(-1);
+    }
 
     query
       .inner_join(person::table)
@@ -156,14 +161,7 @@ fn queries<'a>() -> Queries<
     Option<bool>,
   )| async move {
     // The left join below will return None in this case
-    //let person_id_join = my_person_id.unwrap_or(PersonId(-1));
-
-    let mut person_id_join = my_person_id.unwrap_or(PersonId(-1));
-    if person_id_join == PersonId(1704435) {
-      tracing::warn!(target: "SQLwatch", "person-hack spotA");
-      person_id_join = PersonId(-1);
-    }
-
+    let person_id_join = my_person_id.unwrap_or(PersonId(-1));
 
     let mut query = all_joins(
       post_aggregates::table

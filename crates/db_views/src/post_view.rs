@@ -335,7 +335,7 @@ fn queries<'a>() -> Queries<
     }
 
     // hack to force PostgreSQL query planner to rethink joins
-    query = query.filter(post_aggregates::published.gt(now - 10.years()));
+    query = query.filter(post_aggregates::published.gt(now - 2.weeks()));
 
     query = match options.sort.unwrap_or(SortType::Hot) {
       SortType::Active => query

@@ -158,6 +158,12 @@ fn queries<'a>() -> Queries<
     // The left join below will return None in this case
     let person_id_join = my_person_id.unwrap_or(PersonId(-1));
 
+    //let mut person_id_join = my_person_id.unwrap_or(PersonId(-1));
+    //if person_id_join == PersonId(1704435) {
+    //  person_id_join = PersonId(-1);
+    //}
+
+
     let mut query = all_joins(
       post_aggregates::table
         .filter(post_aggregates::post_id.eq(post_id))
@@ -192,8 +198,6 @@ fn queries<'a>() -> Queries<
     let local_user_id = options.local_user.map(|l| l.local_user.id);
 
     // The left join below will return None in this case
-    //let person_id_join = person_id.unwrap_or(PersonId(-1));
-    //let local_user_id_join = local_user_id.unwrap_or(LocalUserId(-1));
     let person_id_join = person_id.unwrap_or(PersonId(-1));
     let local_user_id_join = local_user_id.unwrap_or(LocalUserId(-1));
 
@@ -330,15 +334,16 @@ fn queries<'a>() -> Queries<
       }
     }
 
+    // hack to force PostgreSQL query planner to rethink joins
+    query = query.filter(post_aggregates::published.gt(now - 10.years()));
+
     query = match options.sort.unwrap_or(SortType::Hot) {
       SortType::Active => query
         .then_order_by(post_aggregates::hot_rank_active.desc())
-        .then_order_by(post_aggregates::published.desc())
-        .filter(post_aggregates::published.gt(now - 1.weeks())),
+        .then_order_by(post_aggregates::published.desc()),
       SortType::Hot => query
         .then_order_by(post_aggregates::hot_rank.desc())
-        .then_order_by(post_aggregates::published.desc())
-        .filter(post_aggregates::published.gt(now - 1.weeks())),
+        .then_order_by(post_aggregates::published.desc()),
       SortType::Controversial => query.then_order_by(post_aggregates::controversy_rank.desc()),
       SortType::New => query.then_order_by(post_aggregates::published.desc()),
       SortType::Old => query.then_order_by(post_aggregates::published.asc()),

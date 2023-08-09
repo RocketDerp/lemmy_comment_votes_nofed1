@@ -276,7 +276,7 @@ impl Object for ApubPost {
     };
 
     let post = Post::create(&mut context.pool(), &form).await?;
-    tracing::warn!(target: "SQLwatch", "apb post::create id {}", post.id);
+    tracing::warn!(target: "SQLwatch", "apub/objects/post.rs post::create id {} ap_id {:?}", post.id, page.id.clone());
 
     // write mod log entry for lock
     if Page::is_locked_changed(&old_post, &page.comments_enabled) {

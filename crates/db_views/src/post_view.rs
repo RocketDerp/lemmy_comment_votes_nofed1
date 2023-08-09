@@ -102,7 +102,6 @@ fn queries<'a>() -> Queries<
             .and(post_saved::person_id.eq(person_id_join)),
         ),
       )
-      /*
       .left_join(
         post_read::table.on(
           post_aggregates::post_id
@@ -110,7 +109,6 @@ fn queries<'a>() -> Queries<
             .and(post_read::person_id.eq(person_id_join)),
         ),
       )
-      */
       .left_join(
         person_block::table.on(
           post_aggregates::creator_id

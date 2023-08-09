@@ -156,12 +156,13 @@ fn queries<'a>() -> Queries<
     Option<bool>,
   )| async move {
     // The left join below will return None in this case
-    let person_id_join = my_person_id.unwrap_or(PersonId(-1));
+    //let person_id_join = my_person_id.unwrap_or(PersonId(-1));
 
-    //let mut person_id_join = my_person_id.unwrap_or(PersonId(-1));
-    //if person_id_join == PersonId(1704435) {
-    //  person_id_join = PersonId(-1);
-    //}
+    let mut person_id_join = my_person_id.unwrap_or(PersonId(-1));
+    if person_id_join == PersonId(1704435) {
+      tracing::warn!(target: "SQLwatch", "person-hack spotA");
+      person_id_join = PersonId(-1);
+    }
 
 
     let mut query = all_joins(
@@ -335,7 +336,7 @@ fn queries<'a>() -> Queries<
     }
 
     // hack to force PostgreSQL query planner to rethink joins
-    query = query.filter(post_aggregates::published.gt(now - 2.weeks()));
+    // query = query.filter(post_aggregates::published.gt(now - 2.weeks()));
 
     query = match options.sort.unwrap_or(SortType::Hot) {
       SortType::Active => query

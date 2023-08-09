@@ -361,7 +361,6 @@ fn queries<'a>() -> Queries<
       query = query.filter(post_like::score.eq(-1));
     }
 
-/*
     if options.local_user.is_some() {
       tracing::warn!(target: "SQLwatch", "trace_a:Q");
       // Filter out the rows with missing languages
@@ -371,10 +370,9 @@ fn queries<'a>() -> Queries<
       query = query.filter(community_block::person_id.is_null());
       if !options.moderator_view.unwrap_or(false) {
         tracing::warn!(target: "SQLwatch", "trace_a:Q1");
-        query = query.filter(person_block::person_id.is_null());
+        //query = query.filter(person_block::person_id.is_null());
       }
     }
-*/
 
     // hack to force PostgreSQL query planner to rethink joins
     // query = query.filter(post_aggregates::published.gt(now - 2.weeks()));

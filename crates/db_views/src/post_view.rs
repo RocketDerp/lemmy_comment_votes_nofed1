@@ -167,8 +167,7 @@ fn queries<'a>() -> Queries<
     .select(selection);
 
     // Hide deleted and removed for non-admins or mods
-    // mod of what? do you just have to be mod of a single community when browing posts for all communities?
-    //if !is_mod_or_admin.unwrap_or(false) {
+    if !is_mod_or_admin.unwrap_or(false) {
       query = query
         .filter(community::removed.eq(false))
         .filter(post::removed.eq(false))
@@ -183,7 +182,7 @@ fn queries<'a>() -> Queries<
             .eq(false)
             .or(post::creator_id.eq(person_id_join)),
         );
-    //}
+    }
 
     query.first::<PostViewTuple>(&mut conn).await
   };
@@ -318,9 +317,11 @@ fn queries<'a>() -> Queries<
       query = query.filter(post_like::score.eq(-1));
     }
 
+    // Filter out the rows with missing languages
+    query = query.filter(local_user_language::language_id.is_not_null());
+
     if options.local_user.is_some() {
-      // Filter out the rows with missing languages
-      query = query.filter(local_user_language::language_id.is_not_null());
+
 
       // Don't show blocked communities or persons
       query = query.filter(community_block::person_id.is_null());

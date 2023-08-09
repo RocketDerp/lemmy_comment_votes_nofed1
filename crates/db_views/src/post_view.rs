@@ -106,7 +106,8 @@ fn queries<'a>() -> Queries<
         post_read::table.on(
           post_aggregates::post_id
             .eq(post_read::post_id)
-            .and(post_read::person_id.eq(person_id_join)),
+            // hack .and(post_read::person_id.eq(person_id_join)),
+            .and(post_read::person_id.eq(-1)),
         ),
       )
       .left_join(

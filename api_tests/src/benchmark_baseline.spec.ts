@@ -6,15 +6,9 @@ testing with threaded conversations reveals just how variable performance can be
 particular patterns in the data are likely triggering comment rewrites
 to update counts. So that's a lurking issue, a comment on a specific thread.
 */
-jest.setTimeout(3 * 60 * 60 * 1000);
+jest.setTimeout(4 * 60 * 60 * 1000);
 
-import {
-  CreatePost,
-  GetPosts,
-  GetPostsResponse,
-  PostResponse,
-} from "lemmy-js-client";
-import { alpha, setupLogins, createComment, getComments, getSite } from "./shared";
+import { alpha, setupLogins, getSite } from "./shared";
 import {
   getCommentsOnMostRecentPosts,
   getPostsMax,
@@ -27,12 +21,14 @@ import {
   setupBenchmarkLogins,
 } from "./shared_benchmark";
 
+
 beforeAll(async () => {
   await setupLogins();
   await setupBenchmarkLogins("0");
 });
 
 afterAll(async () => {});
+
 
 test("benchmark creating an account", async () => {
   // alpha_user_casual0 = await registerUserClient(alpha, "alpha_casual0");
@@ -95,7 +91,7 @@ test(
   async () => {
     let timeTaken = await manyCommunitiesManyPosts(alpha);
   },
-  2 * 60 * 60 * 1000,
+  3 * 60 * 60 * 1000,
 );
 
 test.skip("benchmark baseline, reading: list posts", async () => {

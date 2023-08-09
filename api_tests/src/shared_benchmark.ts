@@ -22,12 +22,10 @@ import {
   likePost,
   likeComment,
   registerUser,
-  getComments,
   delay,
   getSite,
   resolvePerson,
   saveUserSettings,
-  getCommunity,
 } from "./shared";
 
 export let alpha_user_casual0: API;
@@ -123,12 +121,27 @@ export async function setupBenchmarkLogins(tag: string) {
 // 2023-08-08 testing, looks like my production server has 9 subscribers on community
 //    in response, start with a new community
 export let targetCommunityName = "BT_test_quantity2";
-let sameCount = 0;
+let sameCommentCount = 0;
 // ToDo: one totalCount object
 let totalCommentCount = 0;
 let totalPostCount = 0;
 let totalCommunityCount = 0;
 let serviceUnavailableCount = 0;
+
+
+export function setTargetCommunityName(name: string) {
+  targetCommunityName = name;
+  console.log("targetCommunityName set to '%s'", targetCommunityName);
+}
+
+// intended for production servers to be self-aware when creating
+export async function createTargetCommunity(account: API) {
+  const name = targetCommunityName;
+  // await resolveCommunity(account, name);
+  let communityRes = await createCommunity(account, name);
+  totalCommunityCount++;
+  expect(communityRes.community_view.community.name).toBe(name);
+}
 
 
 export async function loopActionSetA(
@@ -202,15 +215,6 @@ export async function loopActionSetA(
 }
 
 
-// intended for production servers to be self-aware when creating
-export async function createTargetCommunity(account: API) {
-  const name = targetCommunityName;
-  // await resolveCommunity(account, name);
-  let communityRes = await createCommunity(account, name);
-  totalCommunityCount++;
-  expect(communityRes.community_view.community.name).toBe(name);
-}
-
 // SetA uses leaked usernames, SetB does all with one user
 //   SetB uses a fixed single community for live server
 export async function loopActionSetB(
@@ -275,7 +279,8 @@ export async function loopActionSetB(
 export async function postActionSetA(
   account: API,
   tag: string,
-  quantity: number = 25
+  quantity_posts: number = 25,
+  quantity_comments_per_post: number = 13,
 ) {
   let prevPost: PostResponse | undefined;
 
@@ -286,7 +291,7 @@ export async function postActionSetA(
 
   // For the sake of woodpecker builds, only run 13 loops because these tests are slow
   // If performance improves,
-  for (let i = 0; i < quantity; i++) {
+  for (let i = 0; i < quantity_posts; i++) {
     const now = new Date();
     // NOTE: the default createPost is a URL post which does network connects outbound
     //   it is much slower to do url posts
@@ -302,39 +307,84 @@ export async function postActionSetA(
       let postRes = await account.client.createPost(form);
       totalPostCount++;
       prevPost = postRes;
+      await createSomeCommentsOnPost(account, postRes.post_view, quantity_comments_per_post);
     } catch (e0) {
       console.error("Exception creating post on communuity %s", targetCommunityName);
       console.log(e0);
       process.exit(80);
-    }
+    };
+
+    if (i % 66 == 0) {
+      console.log("postActionSetA finish: errors %d, total communities %d posts %d comments %d", serviceUnavailableCount, totalCommunityCount, totalPostCount, totalCommentCount);
+    };
   }
-  console.log("postActionSetA finish: errors %d, total communities %d posts %d comments %d", serviceUnavailableCount, totalCommunityCount, totalPostCount, totalCommentCount);
+  console.log("postActionSetA progress: errors %d, total communities %d posts %d comments %d", serviceUnavailableCount, totalCommunityCount, totalPostCount, totalCommentCount);
 }
 
 
+export function generateCommentBodyA(now: Date, commentIndex : number, outNote0 : string) {
+  return "BulletinTree.com testing of live servers.\n" +
+  "It is suggested you do not subscribe to community.\n\n" +
+  now.toISOString() + "  " +
+  outNote0 + 
+  " comment " +
+  commentIndex +
+  " session same " +
+  sameCommentCount +
+  " totalCommentCount " +
+  totalCommentCount;
+}
+
+export async function createSomeCommentsOnPost(account: API, post: PostView, quantity: number) {
+  let inreply_id = undefined;
+  sameCommentCount = 0;
+
+  for (let j = 0; j < quantity; j++) {
+    let now = new Date();
+    let body = generateCommentBodyA(now, j, "reply to post_id " + post.post.id);
+
+    try {
+      let newComment = await createComment(account, post.post.id, inreply_id, body);
+      // if exception was hit, this won't increment
+      totalCommentCount++;
+      if (j > 3) {
+        if (sameCommentCount > 2) {
+          inreply_id = undefined;
+        }
+
+        if (!inreply_id) {
+          // WARN: will overflow depth at some point
+          inreply_id = newComment.comment_view.comment.id;
+          sameCommentCount = 0;
+        } else {
+          sameCommentCount++;
+        }
+      }
+    } catch (e0) {
+      if (e0=="Service Temporarily Unavailable") {
+        serviceUnavailableCount++;
+        console.log("'Service Temporarily Unavailable' %d, sleeping, i %d j %d total comments %d", serviceUnavailableCount, j, totalCommentCount);
+        await delay(5000);
+        j--;  // NOTE: this is modifyng the for loop to do a retry.
+      } else {
+        console.error("Unrecognized exception");
+        console.log(e0);
+        process.exit(30);
+      }
+    }
+  }
+}
+
+
+// this function is a bit of a mess, called from within a loop
 export async function createTrunkCommentsOnPost(i : number, account: API, post: PostView) {
   let prevComment;
 
   // create 50 trunk comments, users who comment but don't read and reply
   for (let j = 0; j < 50; j++) {
     let now = new Date();
-    let body =
-      "BulletinTree.com testing of live servers.\n" +
-      "It is suggested you do not subscribe to community.\n\n" +
-      now.toISOString() + "  " +
-      "trunk reply to post " +
-      i +
-      " comment " +
-      j +
-      " same " +
-      sameCount +
-      " branchLevel " +
-      "TRUNK" +
-      " total " +
-      totalCommentCount;
-    if (totalCommentCount % 5 == 0) {
-      await delay(1000);
-    }
+    let body = generateCommentBodyA(now, j, "trunk reply to post " + i + " post_id " + post.post.id);
+
     try {
       let newComment = await createComment(account, post.post.id, undefined, body);
       // next statement will only set if no excepton.
@@ -405,7 +455,7 @@ export async function manyCommunitiesManyPosts(account: API) {
 export async function manyPostsWithAFewCommentsSameCommunity(account: API) {
   const postLoop = 25;
   for (let b = 0; b < postLoop; b++) {
-    await postActionSetA(account, "MP_", 100);
+    await postActionSetA(account, "MP_", 100, 13);
   }
   console.log("manyPosts finish: errors %d, total communities %d posts %d comments %d", serviceUnavailableCount, totalCommunityCount, totalPostCount, totalCommentCount);
 }
@@ -425,13 +475,10 @@ export async function nestedCommentsOnMostRecentPostsSpecificCommunityA(account:
     type_: "Local",
   };
   let posts = await account.client.getPosts(form);
-  // let posts = await getPostsMax(alpha, undefined, "New");
 
   let postLoop = 4;
   expect(posts.posts.length).toBeGreaterThanOrEqual(postLoop);
 
-  sameCount = 0;
-  serviceUnavailableCount = 0;
   for (let i = 0; i < postLoop; i++) {
     let post = posts.posts[i];
 
@@ -452,11 +499,10 @@ export async function nestedCommentsOnPost(i: number, account: API, post: PostVi
   let parent_id = undefined;
   let branchLevel = 0;
   const maxBranchLevel = 14;
+  sameCommentCount = 0;
 
   for (let j = 0; j < i * 1000; j++) {
-    sameCount++;
     if (j % 30 == 0) {
-      sameCount = 0;
       branchLevel++;
       if (branchLevel > maxBranchLevel) {
         branchLevel = 0;
@@ -464,27 +510,16 @@ export async function nestedCommentsOnPost(i: number, account: API, post: PostVi
       } else {
         parent_id = prevComment.comment_view.comment.id;
       }
+      sameCommentCount = 0;
     } else {
       // after one cycle of undefined, start a chain
       if (!parent_id) {
         parent_id = prevComment.comment_view.comment.id;
+        sameCommentCount = 0;
       }
     }
     let now = new Date();
-    let body =
-      "BulletinTree.com testing of live servers.\n" +
-      "It is suggested you do not subscribe to community.\n\n" +
-      now.toISOString() + "  " +
-      "reply to post " +
-      i +
-      " comment " +
-      j +
-      " same " +
-      sameCount +
-      " branchLevel " +
-      branchLevel +
-      " total " +
-      totalCommentCount;
+    let body = generateCommentBodyA(now, j, "nested reply (branchlevel " + branchLevel + ") to post_id " + post.post.id);
 
     if (totalCommentCount % 50 == 0) {
       console.log("progress: errors %d, i %d j %d total communuities %d posts %d comments %d branchLevel %d", serviceUnavailableCount, i, j, totalCommunityCount, totalPostCount, totalCommentCount, branchLevel);
@@ -496,6 +531,9 @@ export async function nestedCommentsOnPost(i: number, account: API, post: PostVi
       prevComment = newComment;
       // total only incremented if exception not hit
       totalCommentCount++;
+      if (parent_id) {
+        sameCommentCount++;
+      }
     } catch (e0) {
       if (e0=="Service Temporarily Unavailable") {
         serviceUnavailableCount++;
@@ -541,42 +579,65 @@ export async function getCommentsOnMostRecentPosts() {
 
 
 export async function setToBotAccount(account: API) {
-    // are we even using a logged-in account?
-    if (account.auth) {
-      let site = await getSite(account);
-      if (site.my_user) {
-        console.log(site.site_view.site);
-        // case-sensitive on domain name, so do not use .name field of site
-        let stripActor = site.site_view.site.actor_id.replace("https://", "").replace("/", "");
-        let apShortname = `@${site.my_user.local_user_view.person.name}@${stripActor}`;
-  
-        console.log("is this the user? %s", apShortname);
-        let personObject = (await resolvePerson(account, apShortname)).person;
-        console.log("am I still here? %s", apShortname);
-        if (personObject) {
-          let a = personObject.person.bot_account;
-          // a = false;
-          if (!a) {
-            // set bot account attribute
-            console.log("not a bot account, setting as bot since it is a live server");
-            let saveResult = await saveUserSettings(account, {
-              auth: account.auth,
-              bot_account: true,
-              bio: "BulletinTree.com special bot account for local server stress testing.\n\n" +
-              "It is advised you do not follow the testing communities created by this bot account.\n\n" +
-              "Thank you!"
-            });
-            expect(saveResult.jwt).toBeDefined();
-          } else {
-            console.log("already a bot account!");
-          }
+  // are we even using a logged-in account?
+  if (account.auth) {
+    let site = await getSite(account);
+    if (site.my_user) {
+      console.log(site.site_view.site);
+      // case-sensitive on domain name, so do not use .name field of site
+      let stripActor = site.site_view.site.actor_id.replace("https://", "").replace("/", "");
+      let apShortname = `@${site.my_user.local_user_view.person.name}@${stripActor}`;
+
+      console.log("is this the user? %s", apShortname);
+      let personObject = (await resolvePerson(account, apShortname)).person;
+      console.log("am I still here? %s", apShortname);
+      if (personObject) {
+        let a = personObject.person.bot_account;
+        // a = false;
+        if (!a) {
+          // set bot account attribute
+          console.log("not a bot account, setting as bot since it is a live server");
+          let saveResult = await saveUserSettings(account, {
+            auth: account.auth,
+            bot_account: true,
+            bio: "BulletinTree.com special bot account for local server stress testing.\n\n" +
+            "It is advised you do not follow the testing communities created by this bot account.\n\n" +
+            "Thank you!"
+          });
+          expect(saveResult.jwt).toBeDefined();
         } else {
-          console.log("can't find person object for %s", apShortname);
+          console.log("already a bot account!");
         }
       } else {
-        console.log("can't find my_user on site object to set bot account");
+        console.log("can't find person object for %s", apShortname);
       }
     } else {
-      console.log("no session available to set bot account");
+      console.log("can't find my_user on site object to set bot account");
     }
+  } else {
+    console.log("no session available to set bot account");
+  }
+}
+
+
+/*
+Hot vs. Active vs. New
+anonymous user and logged-in user
+logged-in virgin user vs. logged-in user with many people on block list and community block list
+PROBLEM: Hot and Active get scheduled updates and this test doesn't run long enough
+  BUT without purging data, a kill and start of lemmy_server does these?
+  ToDo: API to let an admin execute scheduled jobs on-demand
+*/
+export async function getPostsForTargetCommunity(account: API, limit : number, sort: SortType) {
+  expect(targetCommunityName).toBeDefined();
+  let form: GetPosts = {
+    moderator_view: false,
+    auth: account.auth,
+    limit: limit,
+    sort: sort,
+    community_name: targetCommunityName,
+    type_: "All",
+  };
+  let postsResult = await account.client.getPosts(form);
+  expect(postsResult.posts.length).toBeGreaterThanOrEqual(limit);
 }

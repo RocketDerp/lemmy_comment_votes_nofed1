@@ -192,6 +192,8 @@ fn queries<'a>() -> Queries<
     let local_user_id = options.local_user.map(|l| l.local_user.id);
 
     // The left join below will return None in this case
+    //let person_id_join = person_id.unwrap_or(PersonId(-1));
+    //let local_user_id_join = local_user_id.unwrap_or(LocalUserId(-1));
     let person_id_join = person_id.unwrap_or(PersonId(-1));
     let local_user_id_join = local_user_id.unwrap_or(LocalUserId(-1));
 
@@ -212,6 +214,14 @@ fn queries<'a>() -> Queries<
       )
       .select(selection);
 
+    if options.community_id.is_none() {
+      query = query.then_order_by(post_aggregates::featured_local.desc());
+    } else if let Some(community_id) = options.community_id {
+      query = query
+        .filter(post_aggregates::community_id.eq(community_id))
+        .then_order_by(post_aggregates::featured_community.desc());
+    }
+
     let is_creator = options.creator_id == options.local_user.map(|l| l.person.id);
     // only show deleted posts to creator
     if is_creator {
@@ -226,14 +236,6 @@ fn queries<'a>() -> Queries<
       query = query
         .filter(community::removed.eq(false))
         .filter(post::removed.eq(false));
-    }
-
-    if options.community_id.is_none() {
-      query = query.then_order_by(post_aggregates::featured_local.desc());
-    } else if let Some(community_id) = options.community_id {
-      query = query
-        .filter(post_aggregates::community_id.eq(community_id))
-        .then_order_by(post_aggregates::featured_community.desc());
     }
 
     if let Some(creator_id) = options.creator_id {
@@ -319,7 +321,7 @@ fn queries<'a>() -> Queries<
 
     if options.local_user.is_some() {
       // Filter out the rows with missing languages
-      // query = query.filter(local_user_language::language_id.is_not_null());
+      query = query.filter(local_user_language::language_id.is_not_null());
 
       // Don't show blocked communities or persons
       query = query.filter(community_block::person_id.is_null());
@@ -391,7 +393,7 @@ fn queries<'a>() -> Queries<
 
     query = query.limit(limit).offset(offset);
 
-    debug!("Post View Query: {:?}", debug_query::<Pg, _>(&query));
+    tracing.warn!(target: "SQLwatch", "Post View Query: {:?}", debug_query::<Pg, _>(&query));
 
     query.load::<PostViewTuple>(&mut conn).await
   };

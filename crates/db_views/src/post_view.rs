@@ -167,7 +167,8 @@ fn queries<'a>() -> Queries<
     .select(selection);
 
     // Hide deleted and removed for non-admins or mods
-    if !is_mod_or_admin.unwrap_or(false) {
+    // mod of what? do you just have to be mod of a single community when browing posts for all communities?
+    //if !is_mod_or_admin.unwrap_or(false) {
       query = query
         .filter(community::removed.eq(false))
         .filter(post::removed.eq(false))
@@ -182,7 +183,7 @@ fn queries<'a>() -> Queries<
             .eq(false)
             .or(post::creator_id.eq(person_id_join)),
         );
-    }
+    //}
 
     query.first::<PostViewTuple>(&mut conn).await
   };

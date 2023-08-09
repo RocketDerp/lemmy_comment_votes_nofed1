@@ -393,7 +393,7 @@ fn queries<'a>() -> Queries<
 
     query = query.limit(limit).offset(offset);
 
-    tracing.warn!(target: "SQLwatch", "Post View Query: {:?}", debug_query::<Pg, _>(&query));
+    tracing::warn!(target: "SQLwatch", "Post View Query: {:?}", debug_query::<Pg, _>(&query));
 
     query.load::<PostViewTuple>(&mut conn).await
   };

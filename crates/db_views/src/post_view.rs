@@ -209,7 +209,7 @@ fn queries<'a>() -> Queries<
     if person_id_join == PersonId(1704435) {
       tracing::warn!(target: "SQLwatch", "person-hack spotD");
       person_id_join = PersonId(-1);
-      local_user_id_join = LocalUserId(-1);
+      // local_user_id_join = LocalUserId(-1);
     }
 
     let mut query = all_joins(post_aggregates::table.into_boxed(), person_id)

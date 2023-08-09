@@ -315,10 +315,10 @@ export async function postActionSetA(
     };
 
     if (i % 66 == 0) {
-      console.log("postActionSetA finish: errors %d, total communities %d posts %d comments %d", serviceUnavailableCount, totalCommunityCount, totalPostCount, totalCommentCount);
+      console.log("postActionSetA progress: errors %d, total communities %d posts %d comments %d", serviceUnavailableCount, totalCommunityCount, totalPostCount, totalCommentCount);
     };
   }
-  console.log("postActionSetA progress: errors %d, total communities %d posts %d comments %d", serviceUnavailableCount, totalCommunityCount, totalPostCount, totalCommentCount);
+  console.log("postActionSetA finish: errors %d, total communities %d posts %d comments %d", serviceUnavailableCount, totalCommunityCount, totalPostCount, totalCommentCount);
 }
 
 

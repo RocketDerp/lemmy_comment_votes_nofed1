@@ -102,14 +102,15 @@ fn queries<'a>() -> Queries<
             .and(post_saved::person_id.eq(person_id_join)),
         ),
       )
+      /*
       .left_join(
         post_read::table.on(
           post_aggregates::post_id
             .eq(post_read::post_id)
-            // hack .and(post_read::person_id.eq(person_id_join)),
-            .and(post_read::person_id.eq(-1)),
+            .and(post_read::person_id.eq(person_id_join)),
         ),
       )
+      */
       .left_join(
         person_block::table.on(
           post_aggregates::creator_id

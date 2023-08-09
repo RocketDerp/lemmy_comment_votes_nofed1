@@ -333,10 +333,12 @@ fn queries<'a>() -> Queries<
     query = match options.sort.unwrap_or(SortType::Hot) {
       SortType::Active => query
         .then_order_by(post_aggregates::hot_rank_active.desc())
-        .then_order_by(post_aggregates::published.desc()),
+        .then_order_by(post_aggregates::published.desc())
+        .filter(post_aggregates::published.gt(now - 1.weeks())),
       SortType::Hot => query
         .then_order_by(post_aggregates::hot_rank.desc())
-        .then_order_by(post_aggregates::published.desc()),
+        .then_order_by(post_aggregates::published.desc())
+        .filter(post_aggregates::published.gt(now - 1.weeks())),
       SortType::Controversial => query.then_order_by(post_aggregates::controversy_rank.desc()),
       SortType::New => query.then_order_by(post_aggregates::published.desc()),
       SortType::Old => query.then_order_by(post_aggregates::published.asc()),

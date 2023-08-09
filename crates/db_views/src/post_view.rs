@@ -367,7 +367,8 @@ fn queries<'a>() -> Queries<
       query = query.filter(local_user_language::language_id.is_not_null());
 
       // Don't show blocked communities or persons
-      // query = query.filter(community_block::person_id.is_null());
+// the next line is likely the performance trouble:
+      query = query.filter(community_block::person_id.is_null());
       if !options.moderator_view.unwrap_or(false) {
         tracing::warn!(target: "SQLwatch", "trace_a:Q1");
         query = query.filter(person_block::person_id.is_null());

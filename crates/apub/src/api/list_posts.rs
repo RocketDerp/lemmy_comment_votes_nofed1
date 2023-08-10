@@ -50,6 +50,14 @@ pub async fn list_posts(
     community_id,
   )?);
 
+  let mut db_pool_choice;
+  let do_change_test = false;
+  if do_change_test {
+    db_pool_choice = context.read_pool();
+  } else {
+    db_pool_choice = context.pool();
+  }
+
   let posts = PostQuery {
     local_user: local_user_view.as_ref(),
     listing_type,
@@ -63,7 +71,7 @@ pub async fn list_posts(
     limit,
     ..Default::default()
   }
-  .list(&mut context.pool())
+  .list(&mut db_pool_choice)
   .await
   .with_lemmy_type(LemmyErrorType::CouldntGetPosts)?;
 

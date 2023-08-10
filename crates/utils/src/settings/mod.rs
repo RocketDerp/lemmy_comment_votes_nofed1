@@ -44,6 +44,11 @@ impl Settings {
     Ok(config)
   }
 
+  // can a second user be added and connection pool?
+  //  that way PostgreSQL activity can be followed by user?
+  //  This would also allow caching servers and replicated servres to be used
+  //  for read-only performance-sensitive purposes.
+  //  What is the name of that MIT caching PostgreSQL proxy server app?
   pub fn get_database_url(&self) -> String {
     match &self.database.connection {
       DatabaseConnection::Uri { uri } => uri.clone(),
@@ -52,6 +57,22 @@ impl Settings {
           "postgres://{}:{}@{}:{}/{}",
           utf8_percent_encode(&parts.user, NON_ALPHANUMERIC),
           utf8_percent_encode(&parts.password, NON_ALPHANUMERIC),
+          parts.host,
+          parts.port,
+          utf8_percent_encode(&parts.database, NON_ALPHANUMERIC),
+        )
+      }
+    }
+  }
+
+  pub fn get_database_read_url(&self) -> String {
+    match &self.database.read_connection {
+      DatabaseConnection::Uri { uri } => uri.clone(),
+      DatabaseConnection::Parts(parts) => {
+        format!(
+          "postgres://{}:{}@{}:{}/{}",
+          utf8_percent_encode(&parts.read_user, NON_ALPHANUMERIC),
+          utf8_percent_encode(&parts.read_password, NON_ALPHANUMERIC),
           parts.host,
           parts.port,
           utf8_percent_encode(&parts.database, NON_ALPHANUMERIC),

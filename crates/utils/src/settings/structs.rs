@@ -69,10 +69,13 @@ pub struct PictrsConfig {
 pub struct DatabaseConfig {
   #[serde(flatten, default)]
   pub connection: DatabaseConnection,
+  pub read_connection: DatabaseConnection,
 
   /// Maximum number of active sql connections
   #[default(5)]
   pub pool_size: usize,
+  #[default(12)]
+  pub read_pool_size: usize,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, SmartDefault, Document)]
@@ -114,6 +117,12 @@ pub struct DatabaseConnectionParts {
   /// Password to connect to postgres
   #[default("password")]
   pub password: String,
+  /// Username to connect to postgres
+  #[default("lemmy_read0")]
+  pub(super) read_user: String,
+  /// Password to connect to postgres
+  #[default("readpassword")]
+  pub read_password: String,
   #[default("localhost")]
   /// Host where postgres is running
   pub host: String,

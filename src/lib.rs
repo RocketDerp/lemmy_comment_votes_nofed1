@@ -34,7 +34,7 @@ use lemmy_apub::{
 };
 use lemmy_db_schema::{
   source::secret::Secret,
-  utils::{build_db_pool, get_database_url, run_migrations},
+  utils::{build_db_pool, build_db_read_pool, get_database_url, run_migrations},
 };
 use lemmy_routes::{feeds, images, nodeinfo, webfinger};
 use lemmy_utils::{
@@ -76,8 +76,11 @@ pub async fn start_lemmy_server() -> Result<(), LemmyError> {
   let db_url = get_database_url(Some(&settings));
   run_migrations(&db_url);
 
-  // Set up the connection pool
+  // Set up the database connection pool
   let pool = build_db_pool(&settings).await?;
+
+  // Set up the database read user connection pool
+  let read_pool = build_db_read_pool(&settings).await?;
 
   // Run the Code-required migrations
   run_advanced_migrations(&mut (&pool).into(), &settings).await?;
@@ -128,6 +131,7 @@ pub async fn start_lemmy_server() -> Result<(), LemmyError> {
 
   let context = LemmyContext::create(
     pool.clone(),
+    read_pool.clone(),
     client.clone(),
     secret.clone(),
     rate_limit_cell.clone(),

@@ -50,7 +50,9 @@ use url::Url;
 
 const FETCH_LIMIT_DEFAULT: i64 = 10;
 pub const FETCH_LIMIT_MAX: i64 = 50;
-const POOL_TIMEOUT: Option<Duration> = Some(Duration::from_secs(5));
+// ToDo: split out the various pool timeout values
+const POOL_TIMEOUT: Option<Duration> = Some(Duration::from_secs(12));
+const POOL_READ_TIMEOUT: Option<Duration> = Some(Duration::from_secs(9));
 
 pub type ActualDbPool = Pool<AsyncPgConnection>;
 
@@ -151,6 +153,10 @@ macro_rules! try_join_with_pool {
 
 pub fn get_database_url_from_env() -> Result<String, VarError> {
   env::var("LEMMY_DATABASE_URL")
+}
+
+pub fn get_database_read_url_from_env() -> Result<String, VarError> {
+  env::var("LEMMY_DATABASE_READ_URL")
 }
 
 pub fn fuzzy_search(q: &str) -> String {
@@ -268,6 +274,31 @@ async fn build_db_pool_settings_opt(
   Ok(pool)
 }
 
+async fn build_db_read_pool_settings_opt(
+  settings: Option<&Settings>,
+) -> Result<ActualDbPool, LemmyError> {
+  let db_url = get_database_read_url(settings);
+  let pool_size = settings.map(|s| s.database.read_pool_size).unwrap_or(12);
+  // We only support TLS with sslmode=require currently
+  let tls_enabled = db_url.contains("sslmode=require");
+  let manager = if tls_enabled {
+    // diesel-async does not support any TLS connections out of the box, so we need to manually
+    // provide a setup function which handles creating the connection
+    AsyncDieselConnectionManager::<AsyncPgConnection>::new_with_setup(&db_url, establish_connection)
+  } else {
+    AsyncDieselConnectionManager::<AsyncPgConnection>::new(&db_url)
+  };
+  let pool = Pool::builder(manager)
+    .max_size(pool_size)
+    .wait_timeout(POOL_READ_TIMEOUT)
+    .create_timeout(POOL_READ_TIMEOUT)
+    .recycle_timeout(POOL_READ_TIMEOUT)
+    .runtime(Runtime::Tokio1)
+    .build()?;
+
+  Ok(pool)
+}
+
 fn establish_connection(config: &str) -> BoxFuture<ConnectionResult<AsyncPgConnection>> {
   let fut = async {
     let rustls_config = rustls::ClientConfig::builder()
@@ -323,6 +354,10 @@ pub async fn build_db_pool(settings: &Settings) -> Result<ActualDbPool, LemmyErr
   build_db_pool_settings_opt(Some(settings)).await
 }
 
+pub async fn build_db_read_pool(settings: &Settings) -> Result<ActualDbPool, LemmyError> {
+  build_db_read_pool_settings_opt(Some(settings)).await
+}
+
 pub async fn build_db_pool_for_tests() -> ActualDbPool {
   build_db_pool_settings_opt(None)
     .await
@@ -336,6 +371,18 @@ pub fn get_database_url(settings: Option<&Settings>) -> String {
     Err(e) => match settings {
       Some(settings) => settings.get_database_url(),
       None => panic!("Failed to read database URL from env var LEMMY_DATABASE_URL: {e}"),
+    },
+  }
+}
+
+pub fn get_database_read_url(settings: Option<&Settings>) -> String {
+  // The env var should override anything in the settings config
+  match get_database_read_url_from_env() {
+    Ok(url) => url,
+    Err(e) => match settings {
+      Some(settings) => settings.get_database_read_url(),
+      // do not panic and fall-back to single URL?
+      None => panic!("Failed to read database URL from env var LEMMY_DATABASE_READ_URL: {e}"),
     },
   }
 }

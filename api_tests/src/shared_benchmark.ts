@@ -578,48 +578,6 @@ export async function getCommentsOnMostRecentPosts() {
 }
 
 
-export async function setToBotAccount(account: API) {
-  // are we even using a logged-in account?
-  if (account.auth) {
-    let site = await getSite(account);
-    if (site.my_user) {
-      console.log(site.site_view.site);
-      // case-sensitive on domain name, so do not use .name field of site
-      let stripActor = site.site_view.site.actor_id.replace("https://", "").replace("/", "");
-      let apShortname = `@${site.my_user.local_user_view.person.name}@${stripActor}`;
-
-      console.log("is this the user? %s", apShortname);
-      let personObject = (await resolvePerson(account, apShortname)).person;
-      console.log("am I still here? %s", apShortname);
-      if (personObject) {
-        let a = personObject.person.bot_account;
-        // a = false;
-        if (!a) {
-          // set bot account attribute
-          console.log("not a bot account, setting as bot since it is a live server");
-          let saveResult = await saveUserSettings(account, {
-            auth: account.auth,
-            bot_account: true,
-            bio: "BulletinTree.com special bot account for local server stress testing.\n\n" +
-            "It is advised you do not follow the testing communities created by this bot account.\n\n" +
-            "Thank you!"
-          });
-          expect(saveResult.jwt).toBeDefined();
-        } else {
-          console.log("already a bot account!");
-        }
-      } else {
-        console.log("can't find person object for %s", apShortname);
-      }
-    } else {
-      console.log("can't find my_user on site object to set bot account");
-    }
-  } else {
-    console.log("no session available to set bot account");
-  }
-}
-
-
 /*
 Hot vs. Active vs. New
 anonymous user and logged-in user

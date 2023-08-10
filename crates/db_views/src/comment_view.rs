@@ -149,7 +149,11 @@ fn queries<'a>() -> Queries<
       )
       .select(selection);
 
+    let mut is_profile_view = false;
+    // profile view where this is a query for only one specific user
     if let Some(creator_id) = options.creator_id {
+      is_profile_view = true;
+      tracing::warn!(target: "SQLwatch", "comment_view specific creator_id {:?}, is profile? {}", options.creator_id, options.is_profile_view);
       query = query.filter(comment::creator_id.eq(creator_id));
     };
 
@@ -223,11 +227,13 @@ fn queries<'a>() -> Queries<
       // Filter out the rows with missing languages
       query = query.filter(local_user_language::language_id.is_not_null());
 
-      // Don't show blocked communities or persons
-      if options.post_id.is_none() {
-        query = query.filter(community_block::person_id.is_null());
+      if !is_profile_view {
+        // Don't show blocked communities or persons
+        if options.post_id.is_none() {
+          query = query.filter(community_block::person_id.is_null());
+        }
+        query = query.filter(person_block::person_id.is_null());
       }
-      query = query.filter(person_block::person_id.is_null());
     }
 
     // A Max depth given means its a tree fetch

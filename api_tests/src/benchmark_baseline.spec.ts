@@ -21,14 +21,12 @@ import {
   setupBenchmarkLogins,
 } from "./shared_benchmark";
 
-
 beforeAll(async () => {
   await setupLogins();
   await setupBenchmarkLogins("0");
 });
 
 afterAll(async () => {});
-
 
 test("benchmark creating an account", async () => {
   // alpha_user_casual0 = await registerUserClient(alpha, "alpha_casual0");
@@ -78,7 +76,9 @@ This tries to create tiny comments to primarily exercise the PostgreSQL INDEX up
 test.skip(
   "variability due to quantity of comments on post",
   async () => {
-    let timeTaken = await nestedCommentsOnMostRecentPostsSpecificCommunityA(alpha);
+    let timeTaken = await nestedCommentsOnMostRecentPostsSpecificCommunityA(
+      alpha,
+    );
   },
   2 * 60 * 60 * 1000,
 );
@@ -131,5 +131,10 @@ test.skip("benchmark baseline, reading: comments off list of posts sorted by Mos
 test("site counts", async () => {
   let siteRes = await getSite(alpha);
   let c = siteRes.site_view.counts;
-  console.log("getSite counts, comments %d posts %d communities %d", c.comments, c.posts, c.communities);
+  console.log(
+    "getSite counts, comments %d posts %d communities %d",
+    c.comments,
+    c.posts,
+    c.communities,
+  );
 });

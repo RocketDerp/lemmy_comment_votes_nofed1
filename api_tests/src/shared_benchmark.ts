@@ -117,7 +117,6 @@ export async function setupBenchmarkLogins(tag: string) {
   alpha_user_casual0 = await registerUserClient(alpha, "alpha_casual" + tag);
 }
 
-
 // 2023-08-08 testing, looks like my production server has 9 subscribers on community
 //    in response, start with a new community
 export let targetCommunityName = "BT_test_quantity2";
@@ -127,7 +126,6 @@ let totalCommentCount = 0;
 let totalPostCount = 0;
 let totalCommunityCount = 0;
 let serviceUnavailableCount = 0;
-
 
 export function setTargetCommunityName(name: string) {
   targetCommunityName = name;
@@ -142,7 +140,6 @@ export async function createTargetCommunity(account: API) {
   totalCommunityCount++;
   expect(communityRes.community_view.community.name).toBe(name);
 }
-
 
 export async function loopActionSetA(
   account: API,
@@ -214,7 +211,6 @@ export async function loopActionSetA(
   return end - start;
 }
 
-
 // SetA uses leaked usernames, SetB does all with one user
 //   SetB uses a fixed single community for live server
 export async function loopActionSetB(
@@ -236,7 +232,6 @@ export async function loopActionSetB(
   // For the sake of woodpecker builds, only run 13 loops because these tests are slow
   // If performance improves,
   for (let i = 0; i < 13; i++) {
-
     // NOTE: the default createPost is a URL post which does network connects outbound
     //   it is much slower to do url posts
     let form: CreatePost = {
@@ -273,14 +268,13 @@ export async function loopActionSetB(
   return end - start;
 }
 
-
 //  uses a fixed single community for live server
 //  does NOT cope with exceptions / rate limit on live server
 export async function postActionSetA(
   account: API,
   tag: string,
-  quantity_posts: number = 25,
-  quantity_comments_per_post: number = 13,
+  quantity_posts = 25,
+  quantity_comments_per_post = 13,
 ) {
   let prevPost: PostResponse | undefined;
 
@@ -296,10 +290,21 @@ export async function postActionSetA(
     // NOTE: the default createPost is a URL post which does network connects outbound
     //   it is much slower to do url posts
     let form: CreatePost = {
-      name: "TESTING POST, benchmark post " + i + " " + tag + " " + now.toISOString(),
-      body: now.toISOString() + "\n\n" +
-       "BulletinTree.com performance testing on live database. Please ignore.\n\n" +
-       "Body of post without link " + randomString(10) + " " + tag,
+      name:
+        "TESTING POST, benchmark post " +
+        i +
+        " " +
+        tag +
+        " " +
+        now.toISOString(),
+      body:
+        now.toISOString() +
+        "\n\n" +
+        "BulletinTree.com performance testing on live database. Please ignore.\n\n" +
+        "Body of post without link " +
+        randomString(10) +
+        " " +
+        tag,
       auth: account.auth,
       community_id: communityRes.community_view.community.id,
     };
@@ -307,35 +312,64 @@ export async function postActionSetA(
       let postRes = await account.client.createPost(form);
       totalPostCount++;
       prevPost = postRes;
-      await createSomeCommentsOnPost(account, postRes.post_view, quantity_comments_per_post);
+      await createSomeCommentsOnPost(
+        account,
+        postRes.post_view,
+        quantity_comments_per_post,
+      );
     } catch (e0) {
-      console.error("Exception creating post on communuity %s", targetCommunityName);
+      console.error(
+        "Exception creating post on communuity %s",
+        targetCommunityName,
+      );
       console.log(e0);
       process.exit(80);
-    };
+    }
 
     if (i % 66 == 0) {
-      console.log("postActionSetA progress: errors %d, total communities %d posts %d comments %d", serviceUnavailableCount, totalCommunityCount, totalPostCount, totalCommentCount);
-    };
+      console.log(
+        "postActionSetA progress: errors %d, total communities %d posts %d comments %d",
+        serviceUnavailableCount,
+        totalCommunityCount,
+        totalPostCount,
+        totalCommentCount,
+      );
+    }
   }
-  console.log("postActionSetA finish: errors %d, total communities %d posts %d comments %d", serviceUnavailableCount, totalCommunityCount, totalPostCount, totalCommentCount);
+  console.log(
+    "postActionSetA finish: errors %d, total communities %d posts %d comments %d",
+    serviceUnavailableCount,
+    totalCommunityCount,
+    totalPostCount,
+    totalCommentCount,
+  );
 }
 
-
-export function generateCommentBodyA(now: Date, commentIndex : number, outNote0 : string) {
-  return "BulletinTree.com testing of live servers.\n" +
-  "It is suggested you do not subscribe to community.\n\n" +
-  now.toISOString() + "  " +
-  outNote0 + 
-  " comment " +
-  commentIndex +
-  " session same " +
-  sameCommentCount +
-  " totalCommentCount " +
-  totalCommentCount;
+export function generateCommentBodyA(
+  now: Date,
+  commentIndex: number,
+  outNote0: string,
+) {
+  return (
+    "BulletinTree.com testing of live servers.\n" +
+    "It is suggested you do not subscribe to community.\n\n" +
+    now.toISOString() +
+    "  " +
+    outNote0 +
+    " comment " +
+    commentIndex +
+    " session same " +
+    sameCommentCount +
+    " totalCommentCount " +
+    totalCommentCount
+  );
 }
 
-export async function createSomeCommentsOnPost(account: API, post: PostView, quantity: number) {
+export async function createSomeCommentsOnPost(
+  account: API,
+  post: PostView,
+  quantity: number,
+) {
   let inreply_id = undefined;
   sameCommentCount = 0;
 
@@ -344,7 +378,12 @@ export async function createSomeCommentsOnPost(account: API, post: PostView, qua
     let body = generateCommentBodyA(now, j, "reply to post_id " + post.post.id);
 
     try {
-      let newComment = await createComment(account, post.post.id, inreply_id, body);
+      let newComment = await createComment(
+        account,
+        post.post.id,
+        inreply_id,
+        body,
+      );
       // if exception was hit, this won't increment
       totalCommentCount++;
       if (j > 3) {
@@ -361,11 +400,16 @@ export async function createSomeCommentsOnPost(account: API, post: PostView, qua
         }
       }
     } catch (e0) {
-      if (e0=="Service Temporarily Unavailable") {
+      if (e0 == "Service Temporarily Unavailable") {
         serviceUnavailableCount++;
-        console.log("'Service Temporarily Unavailable' %d, sleeping, i %d j %d total comments %d", serviceUnavailableCount, j, totalCommentCount);
+        console.log(
+          "'Service Temporarily Unavailable' %d, sleeping, i %d j %d total comments %d",
+          serviceUnavailableCount,
+          j,
+          totalCommentCount,
+        );
         await delay(5000);
-        j--;  // NOTE: this is modifyng the for loop to do a retry.
+        j--; // NOTE: this is modifyng the for loop to do a retry.
       } else {
         console.error("Unrecognized exception");
         console.log(e0);
@@ -375,28 +419,46 @@ export async function createSomeCommentsOnPost(account: API, post: PostView, qua
   }
 }
 
-
 // this function is a bit of a mess, called from within a loop
-export async function createTrunkCommentsOnPost(i : number, account: API, post: PostView) {
+export async function createTrunkCommentsOnPost(
+  i: number,
+  account: API,
+  post: PostView,
+) {
   let prevComment;
 
   // create 50 trunk comments, users who comment but don't read and reply
   for (let j = 0; j < 50; j++) {
     let now = new Date();
-    let body = generateCommentBodyA(now, j, "trunk reply to post " + i + " post_id " + post.post.id);
+    let body = generateCommentBodyA(
+      now,
+      j,
+      "trunk reply to post " + i + " post_id " + post.post.id,
+    );
 
     try {
-      let newComment = await createComment(account, post.post.id, undefined, body);
+      let newComment = await createComment(
+        account,
+        post.post.id,
+        undefined,
+        body,
+      );
       // next statement will only set if no excepton.
       prevComment = newComment;
       // if exception was hit, this won't increment
       totalCommentCount++;
     } catch (e0) {
-      if (e0=="Service Temporarily Unavailable") {
+      if (e0 == "Service Temporarily Unavailable") {
         serviceUnavailableCount++;
-        console.log("'Service Temporarily Unavailable' %d, sleeping, i %d j %d tc %d", serviceUnavailableCount, i, j, totalCommentCount);
+        console.log(
+          "'Service Temporarily Unavailable' %d, sleeping, i %d j %d tc %d",
+          serviceUnavailableCount,
+          i,
+          j,
+          totalCommentCount,
+        );
         await delay(5000);
-        j--;  // NOTE: this is modifyng the for loop to do a retry.
+        j--; // NOTE: this is modifyng the for loop to do a retry.
       } else {
         console.error("Unrecognized exception");
         console.log(e0);
@@ -413,7 +475,6 @@ export function resetTotal() {
   totalPostCount = 0;
   totalCommunityCount = 0;
 }
-
 
 // not recommended to call this in live server
 //   as it will create many cmmmunities
@@ -437,31 +498,52 @@ export async function manyCommunitiesManyPosts(account: API) {
       // ToDo: add to community description with full startNow string
       communityRes = await createCommunity(account, name);
       totalCommunityCount++;
-    } catch(e0) {
-      console.error("Exception creating community, are you running against live server?");
+    } catch (e0) {
+      console.error(
+        "Exception creating community, are you running against live server?",
+      );
       console.log(e0);
       process.exit(70);
     }
     targetCommunityName = name;
     await postActionSetA(account, name);
     if (a % 50) {
-      console.log("community + post progress: errors %d, a %d total communities %d posts %d comments %d", serviceUnavailableCount, a, totalCommunityCount, totalPostCount, totalCommentCount);
+      console.log(
+        "community + post progress: errors %d, a %d total communities %d posts %d comments %d",
+        serviceUnavailableCount,
+        a,
+        totalCommunityCount,
+        totalPostCount,
+        totalCommentCount,
+      );
     }
   }
-  console.log("community + post finish: errors %d, total communities %d posts %d comments %d", serviceUnavailableCount, totalCommunityCount, totalPostCount, totalCommentCount);
+  console.log(
+    "community + post finish: errors %d, total communities %d posts %d comments %d",
+    serviceUnavailableCount,
+    totalCommunityCount,
+    totalPostCount,
+    totalCommentCount,
+  );
 }
-
 
 export async function manyPostsWithAFewCommentsSameCommunity(account: API) {
   const postLoop = 25;
   for (let b = 0; b < postLoop; b++) {
     await postActionSetA(account, "MP_", 100, 13);
   }
-  console.log("manyPosts finish: errors %d, total communities %d posts %d comments %d", serviceUnavailableCount, totalCommunityCount, totalPostCount, totalCommentCount);
+  console.log(
+    "manyPosts finish: errors %d, total communities %d posts %d comments %d",
+    serviceUnavailableCount,
+    totalCommunityCount,
+    totalPostCount,
+    totalCommentCount,
+  );
 }
 
-
-export async function nestedCommentsOnMostRecentPostsSpecificCommunityA(account: API) {
+export async function nestedCommentsOnMostRecentPostsSpecificCommunityA(
+  account: API,
+) {
   // IMPORTANT: live server, live-wire testing.
   //    only Local
   //    only recognized test community
@@ -485,17 +567,29 @@ export async function nestedCommentsOnMostRecentPostsSpecificCommunityA(account:
     let prevComment = await createTrunkCommentsOnPost(i, account, post);
 
     if (!prevComment) {
-      throw ("At least one comment had to be created prior to here");
+      throw "At least one comment had to be created prior to here";
     }
 
     await nestedCommentsOnPost(i, account, post, prevComment);
 
-    console.log("finished post, progress: errors %d, i %d total communities %d posts %d comments %d", serviceUnavailableCount, i, totalCommunityCount, totalPostCount, totalCommentCount);
+    console.log(
+      "finished post, progress: errors %d, i %d total communities %d posts %d comments %d",
+      serviceUnavailableCount,
+      i,
+      totalCommunityCount,
+      totalPostCount,
+      totalCommentCount,
+    );
   }
 }
 
 // does work against live servers with rate-limiting nginx known excception
-export async function nestedCommentsOnPost(i: number, account: API, post: PostView, prevComment: CommentResponse) {
+export async function nestedCommentsOnPost(
+  i: number,
+  account: API,
+  post: PostView,
+  prevComment: CommentResponse,
+) {
   let parent_id = undefined;
   let branchLevel = 0;
   const maxBranchLevel = 14;
@@ -519,14 +613,35 @@ export async function nestedCommentsOnPost(i: number, account: API, post: PostVi
       }
     }
     let now = new Date();
-    let body = generateCommentBodyA(now, j, "nested reply (branchlevel " + branchLevel + ") to post_id " + post.post.id);
+    let body = generateCommentBodyA(
+      now,
+      j,
+      "nested reply (branchlevel " +
+        branchLevel +
+        ") to post_id " +
+        post.post.id,
+    );
 
     if (totalCommentCount % 50 == 0) {
-      console.log("progress: errors %d, i %d j %d total communuities %d posts %d comments %d branchLevel %d", serviceUnavailableCount, i, j, totalCommunityCount, totalPostCount, totalCommentCount, branchLevel);
+      console.log(
+        "progress: errors %d, i %d j %d total communuities %d posts %d comments %d branchLevel %d",
+        serviceUnavailableCount,
+        i,
+        j,
+        totalCommunityCount,
+        totalPostCount,
+        totalCommentCount,
+        branchLevel,
+      );
     }
 
     try {
-      let newComment = await createComment(account, post.post.id, parent_id, body);
+      let newComment = await createComment(
+        account,
+        post.post.id,
+        parent_id,
+        body,
+      );
       // next statement will only set if no excepton.
       prevComment = newComment;
       // total only incremented if exception not hit
@@ -535,11 +650,18 @@ export async function nestedCommentsOnPost(i: number, account: API, post: PostVi
         sameCommentCount++;
       }
     } catch (e0) {
-      if (e0=="Service Temporarily Unavailable") {
+      if (e0 == "Service Temporarily Unavailable") {
         serviceUnavailableCount++;
-        console.log("'Service Temporarily Unavailable' %d, sleeping, i %d j %d total comments %d branchLevel %d", serviceUnavailableCount, i, j, totalCommentCount, branchLevel);
+        console.log(
+          "'Service Temporarily Unavailable' %d, sleeping, i %d j %d total comments %d branchLevel %d",
+          serviceUnavailableCount,
+          i,
+          j,
+          totalCommentCount,
+          branchLevel,
+        );
         await delay(5000);
-        j--;  // NOTE: this is modifyng the for loop to do a retry.
+        j--; // NOTE: this is modifyng the for loop to do a retry.
       } else {
         console.error("Unrecognized exception, ABEND");
         console.log(e0);
@@ -548,7 +670,6 @@ export async function nestedCommentsOnPost(i: number, account: API, post: PostVi
     }
   } // loop of comments with levels
 }
-
 
 export async function getCommentsMax(
   api: API,
@@ -577,7 +698,6 @@ export async function getCommentsOnMostRecentPosts() {
   }
 }
 
-
 /*
 Hot vs. Active vs. New
 anonymous user and logged-in user
@@ -586,7 +706,11 @@ PROBLEM: Hot and Active get scheduled updates and this test doesn't run long eno
   BUT without purging data, a kill and start of lemmy_server does these?
   ToDo: API to let an admin execute scheduled jobs on-demand
 */
-export async function getPostsForTargetCommunity(account: API, limit : number, sort: SortType) {
+export async function getPostsForTargetCommunity(
+  account: API,
+  limit: number,
+  sort: SortType,
+) {
   expect(targetCommunityName).toBeDefined();
   let form: GetPosts = {
     moderator_view: false,

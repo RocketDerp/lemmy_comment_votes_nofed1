@@ -752,12 +752,17 @@ test("alpha moderator creates comment 'speaking as moderator', gamma validates",
   expect(gammaPostComments.comments[0].comment.distinguished).toBe(true);
 });
 
-
 async function blockUserAllowedaToCreateOnPosts(unusedvar: boolean) {
-  let gamma_user_to_block0 = await registerUserClient(alpha, "gamma_user_block0");
+  let gamma_user_to_block0 = await registerUserClient(
+    alpha,
+    "gamma_user_block0",
+  );
   let alpha_user_carl = await registerUserClient(alpha, "alpha_user_carl");
   let newPost0 = await createPost(alpha_user_carl, alphaCommunityRemote.id);
-  let newComment0 = await createComment(alpha_user_carl, newPost0.post_view.post.id);
+  let newComment0 = await createComment(
+    alpha_user_carl,
+    newPost0.post_view.post.id,
+  );
 
   // the user on gamma has to find the newest post to locate localized id numbers
   // gamma reads it
@@ -775,7 +780,12 @@ async function blockUserAllowedaToCreateOnPosts(unusedvar: boolean) {
   // create a comment by the person to be blocked just to get their person ID
   // make it a reply to carl that inspires the blocking of the user
   const commentBody0 = "go ahead, make my day";
-  let blockPersonComment0 = await createComment(gamma_user_to_block0, gammaNewestComment.post.id, gammaNewestComment.comment.id, commentBody0);
+  let blockPersonComment0 = await createComment(
+    gamma_user_to_block0,
+    gammaNewestComment.post.id,
+    gammaNewestComment.comment.id,
+    commentBody0,
+  );
 
   // We could load notifications for Carl to get a reference...
   let carlUnread0 = await getUnreadCount(alpha_user_carl);
@@ -796,10 +806,12 @@ async function blockUserAllowedaToCreateOnPosts(unusedvar: boolean) {
   let exhaustiveTest = true;
   if (exhaustiveTest) {
     let carlReplies0 = await alpha_user_carl.client.getReplies({
-      auth: alpha_user_carl.auth
+      auth: alpha_user_carl.auth,
     });
     expect(carlReplies0.replies.length).toBe(1);
-    expect(carlReplies0.replies[0].comment.id).toBe(alphaPostComments.comments[0].comment.id);
+    expect(carlReplies0.replies[0].comment.id).toBe(
+      alphaPostComments.comments[0].comment.id,
+    );
     expect(carlReplies0.replies[0].comment.content).toBe(commentBody0);
 
     // at this poiint the commenbt will NOT be marked as read
@@ -815,9 +827,9 @@ async function blockUserAllowedaToCreateOnPosts(unusedvar: boolean) {
     */
 
     await alpha_user_carl.client.markAllAsRead({
-      auth: alpha_user_carl.auth
+      auth: alpha_user_carl.auth,
     });
-  };
+  }
 
   // did that count as reading the comment?
   let carlUnread1 = await getUnreadCount(alpha_user_carl);
@@ -827,12 +839,17 @@ async function blockUserAllowedaToCreateOnPosts(unusedvar: boolean) {
   let blockAction0 = await alpha_user_carl.client.blockPerson({
     auth: alpha_user_carl.auth,
     person_id: alphaPostComments.comments[0].comment.creator_id,
-    block: true
+    block: true,
   });
 
   // can the blocked person comment on Carl's post?
   const commentBody1 = "I'm a San Francisco cop named Harry!";
-  let blockPersonComment1 = await createComment(gamma_user_to_block0, gammaNewestComment.post.id, gammaNewestComment.comment.id, commentBody1);
+  let blockPersonComment1 = await createComment(
+    gamma_user_to_block0,
+    gammaNewestComment.post.id,
+    gammaNewestComment.comment.id,
+    commentBody1,
+  );
 
   let carlUnread2 = await getUnreadCount(alpha_user_carl);
   expect(carlUnread2.replies).toBe(0);
@@ -841,7 +858,7 @@ async function blockUserAllowedaToCreateOnPosts(unusedvar: boolean) {
   let blockAction1 = await alpha_user_carl.client.blockPerson({
     auth: alpha_user_carl.auth,
     person_id: alphaPostComments.comments[0].comment.creator_id,
-    block: false
+    block: false,
   });
 
   // Carl refreshes his page on alpha
@@ -856,19 +873,27 @@ async function blockUserAllowedaToCreateOnPosts(unusedvar: boolean) {
   expect(alphaPostCommentsAfter.comments[1].comment.content).toBe(commentBody0);
 }
 
-
 async function moderatorBlockUserPostsMultiCommunity(unusedvar: boolean) {
-// the moderator is concdrned if blocking a user ends up
-// interfering with their moderation duties on a community
-// So the target user creates posts in two communities
-// One of which the moderator does moderate, the other which they do not
-// in the community they moderate, the block should be bypassed
+  // the moderator is concdrned if blocking a user ends up
+  // interfering with their moderation duties on a community
+  // So the target user creates posts in two communities
+  // One of which the moderator does moderate, the other which they do not
+  // in the community they moderate, the block should be bypassed
 
   // let alpha admin create a new community of which no others will moderate
   let gpCommunityResult = await createCommunity(alpha, "general_purpose0");
-  let alpha_user_to_block0 = await registerUserClient(alpha, "alpha_user_block0");
-  let newPost0 = await createPost(alpha_user_to_block0, gpCommunityResult.community_view.community.id);
-  let newPost1 = await createPost(alpha_user_to_block0, alphaCommunityRemote.id);
+  let alpha_user_to_block0 = await registerUserClient(
+    alpha,
+    "alpha_user_block0",
+  );
+  let newPost0 = await createPost(
+    alpha_user_to_block0,
+    gpCommunityResult.community_view.community.id,
+  );
+  let newPost1 = await createPost(
+    alpha_user_to_block0,
+    alphaCommunityRemote.id,
+  );
 
   let communityNameFull = betaCommunityHome.name + "@lemmy-beta";
 
@@ -885,14 +910,14 @@ async function moderatorBlockUserPostsMultiCommunity(unusedvar: boolean) {
   let modAction0 = await alpha_user_mod.client.blockPerson({
     auth: alpha_user_mod.auth,
     person_id: newPost0.post_view.post.creator_id,
-    block: true
+    block: true,
   });
 
   let afterBlockPosts = await getCommunityPostsFromListNew(
     alpha_user_mod,
     communityNameFull,
   );
-  
+
   // it is debatable if this should be the expected behavior
   //  WHen a moderator is looking at posts and comments in communities they moderate
   //  should person to person blocking be honored. And can this be implemented
@@ -900,7 +925,6 @@ async function moderatorBlockUserPostsMultiCommunity(unusedvar: boolean) {
   //  could impact perfomrance in untested ways.
   expect(beforeBlockPosts.posts.length).toBe(afterBlockPosts.posts.length + 1);
 }
-
 
 async function doBanUnbanUser(with_remove_data: boolean) {
   let communityNameFull = betaCommunityHome.name + "@lemmy-beta";
@@ -1014,7 +1038,6 @@ test("non-admin moderator blocks ordinary user, does it impact their view in mod
 test("2 non-admin mon-moderator ordinary users, can blocked user comment on post or comments?", async () => {
   await blockUserAllowedaToCreateOnPosts(false);
 });
-
 
 test.skip("once the replication bugs previously identified are fixed, compare post & comment lists between alpha and gamma instances", async () => {
   // ToDo; include comparing from anonymous vs. logged-in accounts
@@ -1315,9 +1338,5 @@ export async function serverFetchJSON0(params0: any) {
   return result0;
 }
 
-
-
-
 // removed communities removed
 // https://github.com/LemmyNet/lemmy/issues/3801
-

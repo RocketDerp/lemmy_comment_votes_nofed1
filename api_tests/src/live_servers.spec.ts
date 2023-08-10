@@ -76,8 +76,6 @@ test("lemmy.ml comment", async () => {
   expect(comment.comment_view.comment.id).toBe(comments.comments[0].comment.id);
 });
 
-
-
 test.skip("lemm.ee comment, child_count", async () => {
   let targetComment = 1799656;
   targetComment = 1153351;
@@ -98,10 +96,7 @@ test.skip("lemm.ee comment, child_count", async () => {
   // expect(comment.comment_view.comment.id).toBe(comments.comments[0].comment.id);
 });
 
-
-
 test.skip("bulletintree.com comment", async () => {
-
   let targetComment = 1470326;
   targetComment = 1493691;
   let client = new LemmyHttp("https://bulletintree.com/");
@@ -143,7 +138,6 @@ test.skip("bulletintree.com comment", async () => {
   console.log(postForm);
   console.log(commentsForm);
 });
-
 
 function showComments(comments: CommentView[]) {
   for (let i = 0; i < comments.length; i++) {

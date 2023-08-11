@@ -28,3 +28,4 @@ pub mod registration_application;
 pub mod secret;
 pub mod site;
 pub mod tagline;
+pub mod database_ad_hoc;

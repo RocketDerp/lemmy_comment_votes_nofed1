@@ -51,7 +51,7 @@ pub async fn list_posts(
   )?);
 
   let mut db_pool_choice;
-  let do_change_test = false;
+  let do_change_test = true;
   if do_change_test {
     db_pool_choice = context.read_pool();
   } else {

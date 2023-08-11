@@ -80,6 +80,8 @@ pub async fn start_lemmy_server() -> Result<(), LemmyError> {
   let pool = build_db_pool(&settings).await?;
 
   // Set up the database read user connection pool
+  // ToDo: TEST a read query that the username and password are valid, and disable this pool
+  //       and use the primary PostgreSQL URL
   let read_pool = build_db_read_pool(&settings).await?;
 
   // Run the Code-required migrations

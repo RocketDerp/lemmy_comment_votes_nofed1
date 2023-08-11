@@ -330,6 +330,10 @@ pub fn config(cfg: &mut web::ServiceConfig, rate_limit: &RateLimitCell) {
               .route("/community", web::post().to(route_post::<PurgeCommunity>))
               .route("/post", web::post().to(route_post::<PurgePost>))
               .route("/comment", web::post().to(route_post::<PurgeComment>)),
+          )
+          .service(
+            web::scope("/database")
+              .route("/checkbug0", web::post().to(route_post::<GetReportCount>)),
           ),
       )
       .service(

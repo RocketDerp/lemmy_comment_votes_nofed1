@@ -4,7 +4,15 @@ set -e
 bypass_pg_purge=true;
 bypass_drone_prep=false;
 
-export LEMMY_DATABASE_URL=postgres://lemmy:zbbs84952@localhost:5432
+declare -a allinstances=("alpha" "beta" "gamma" "delta" "epsilon")
+
+# NOTE: these URL environment variables do not have the database name on end.
+#   They are only used for testing scripts, not used directly by thee lemmy_server app.
+#   Since they are non-standard format, the "BASE_" prefix was added.
+export BASE_LEMMY_DATABASE_URL=postgres://lemmy:password@localhost:5432
+export BASE_LEMMY_DATABASE_READ_URL=postgres://lemmy_read0:readpassword@localhost:5432
+# TO DISALBLE 2nd account usage, USE: export BASE_LEMMY_DATABASE_READ_URL to the same value as BASE_LEMMY_DATABASE_URL
+
 export LEMMY_SYNCHRONOUS_FEDERATION=1 # currently this is true in debug by default, but still.
 pushd ..
 cargo build
@@ -23,13 +31,15 @@ bypass_yarn=true
 
 yarn
 
-for INSTANCE in lemmy_alpha lemmy_beta lemmy_gamma lemmy_delta lemmy_epsilon; do
+# does this raelly need to be done per instance, or just once per PostgreSQL system?
+for INSTANCENAME in "${allinstances[@]}"; do
+  INSTANCE=lemmy_$INSTANCENAME
   # reminder: PostgreSQL can convert to JSON
   # in postgress config file, set:
   #   shared_preload_libraries = 'pg_stat_statements'	# (change requires restart)
   #   pg_stat_statements.track = all
-  psql "$LEMMY_DATABASE_URL" -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
-  psql "$LEMMY_DATABASE_URL" -c "SELECT pg_stat_statements_reset();"
+  #psql "$BASE_LEMMY_DATABASE_URL/$INSTANCENAME" -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
+  #psql "$BASE_LEMMY_DATABASE_URL/$INSTANCENAME" -c "SELECT pg_stat_statements_reset();"
 done
 
 
@@ -66,8 +76,8 @@ else
   #runjest community.spec.ts
   #runjest remote_to_remote.spec.ts
   #runjest aggregates.spec.ts
-  # runjest remote_home_remote.spec.ts
-  runjest benchmark_baseline.spec.ts
+  runjest remote_home_remote.spec.ts
+  # runjest benchmark_baseline.spec.ts
   # runjest benchmark_concurrent.spec.ts
   # runjest live_servers.spec.ts
   # runjest live_servers_stress.spec.ts
@@ -76,9 +86,10 @@ else
 
 fi
 
-for INSTANCE in lemmy_alpha lemmy_beta lemmy_gamma lemmy_delta lemmy_epsilon; do
+for INSTANCENAME in "${allinstances[@]}"; do
+  INSTANCE=lemmy_$INSTANCENAME
   # reminder: PostgreSQL can convert to JSON
-  psql "$LEMMY_DATABASE_URL" -c "SELECT queryid, calls, rows, mean_exec_time, query FROM pg_stat_statements ORDER BY calls DESC;" > /tmp/${INSTANCE}_stat_statements.txt
+  #psql "$BASE_LEMMY_DATABASE_URL" -c "SELECT queryid, calls, rows, mean_exec_time, query FROM pg_stat_statements ORDER BY calls DESC;" > /tmp/${INSTANCE}_stat_statements.txt
 done
 
 
@@ -86,8 +97,9 @@ if [ "$bypass_pg_purge" = false ]; then
 
 killall -s1 lemmy_server
 
-for INSTANCE in lemmy_alpha lemmy_beta lemmy_gamma lemmy_delta lemmy_epsilon; do
-  psql "$LEMMY_DATABASE_URL" -c "DROP DATABASE $INSTANCE"
+for INSTANCENAME in "${allinstances[@]}"; do
+  INSTANCE=lemmy_$INSTANCENAME
+  psql "$BASE_LEMMY_DATABASE_URL/lemmy" -c "DROP DATABASE $INSTANCE"
 done
 
 fi

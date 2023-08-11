@@ -10,14 +10,31 @@ bypass_pg_create=true;
 export RUST_BACKTRACE=1
 export RUST_LOG="warn,lemmy_server=debug,lemmy_api=debug,lemmy_api_common=debug,lemmy_api_crud=debug,lemmy_apub=debug,lemmy_db_schema=debug,lemmy_db_views=debug,lemmy_db_views_actor=debug,lemmy_db_views_moderator=debug,lemmy_routes=debug,lemmy_utils=debug,lemmy_websocket=debug"
 
+## declare an array variable with the base instance names
+declare -a allinstances=("alpha" "beta" "gamma" "delta" "epsilon")
+
+lemmy_read_username=lemmy_read0
+
 if [ "$bypass_pg_create" = false ]
 then
-echo "ready PosgreSQL for drone instances"
-for INSTANCE in lemmy_alpha lemmy_beta lemmy_gamma lemmy_delta lemmy_epsilon; do
-  echo "DB URL: ${LEMMY_DATABASE_URL} INSTANCE: $INSTANCE"
-  psql "${LEMMY_DATABASE_URL}/lemmy" -c "DROP DATABASE IF EXISTS $INSTANCE"
-  echo "create database"
-  psql "${LEMMY_DATABASE_URL}/lemmy" -c "CREATE DATABASE $INSTANCE"
+echo "prepare PostgreSQL for drone instances"
+for INSTANCENAME in "${allinstances[@]}"; do
+  INSTANCE=lemmy_$INSTANCENAME
+  echo "DB URL: ${BASE_LEMMY_DATABASE_URL} INSTANCE: $INSTANCE"
+  psql "${BASE_LEMMY_DATABASE_URL}/lemmy" -c "DROP DATABASE IF EXISTS $INSTANCE"
+  echo "create database $INSTANCE"
+  psql "${BASE_LEMMY_DATABASE_URL}/lemmy" -c "CREATE DATABASE $INSTANCE"
+
+  # create secondary user only one time
+  # sudo -iu postgres psql -c "CREATE USER lemmy_read0 WITH PASSWORD 'readpassword';"
+  # only need to do once
+  # psql "${BASE_LEMMY_DATABASE_URL}/lemmy" -c "ALTER ROLE $lemmy_read_username SET statement_timeout = 8000;  -- milliseconds"
+
+  # this needs to be done after every CREATE DATABASE
+  psql "${BASE_LEMMY_DATABASE_URL}/lemmy" -c "GRANT ALL PRIVILEGES ON DATABASE $INSTANCE TO $lemmy_read_username;"
+  psql "${BASE_LEMMY_DATABASE_URL}/lemmy" -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $lemmy_read_username;"
+
+  psql "${BASE_LEMMY_DATABASE_URL}/lemmy" -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO $lemmy_read_username;"
 done
 fi
 
@@ -43,41 +60,48 @@ killall lemmy_server || true
 
 echo "$PWD"
 
-echo "start alpha"
-LEMMY_CONFIG_LOCATION=./docker/federation/lemmy_alpha.hjson \
-LEMMY_DATABASE_URL="${LEMMY_DATABASE_URL}/lemmy_alpha" \
-target/lemmy_server >/tmp/lemmy_alpha.out 2>&1 &
+# this function uses binary executable prefix to pass the real lemmy_server environment variables names
+launch_lemmy_server_for () {
+   echo "start lemmy_server for $1"
+LEMMY_CONFIG_LOCATION=./docker/federation/lemmy_$1.hjson \
+LEMMY_DATABASE_URL="${BASE_LEMMY_DATABASE_URL}/lemmy_$1" \
+LEMMY_DATABASE_READ_URL="${BASE_LEMMY_DATABASE_READ_URL}/lemmy_$1" \
+target/lemmy_server >/tmp/lemmy_$1.out 2>&1 &
+}
 
-echo "start beta"
-LEMMY_CONFIG_LOCATION=./docker/federation/lemmy_beta.hjson \
-LEMMY_DATABASE_URL="${LEMMY_DATABASE_URL}/lemmy_beta" \
-target/lemmy_server >/tmp/lemmy_beta.out 2>&1 &
+for i in "${allinstances[@]}"
+do
+  launch_lemmy_server_for "$i"
+done
 
-echo "start gamma"
-LEMMY_CONFIG_LOCATION=./docker/federation/lemmy_gamma.hjson \
-LEMMY_DATABASE_URL="${LEMMY_DATABASE_URL}/lemmy_gamma" \
-target/lemmy_server >/tmp/lemmy_gamma.out 2>&1 &
+# proves faster to start them all in parallel then wait
 
-echo "start delta"
-# An instance with only an allowlist for beta
-LEMMY_CONFIG_LOCATION=./docker/federation/lemmy_delta.hjson \
-LEMMY_DATABASE_URL="${LEMMY_DATABASE_URL}/lemmy_delta" \
-target/lemmy_server >/tmp/lemmy_delta.out 2>&1 &
+onport=8531
 
-echo "start epsilon"
-# An instance who has a blocklist, with lemmy-alpha blocked
-LEMMY_CONFIG_LOCATION=./docker/federation/lemmy_epsilon.hjson \
-LEMMY_DATABASE_URL="${LEMMY_DATABASE_URL}/lemmy_epsilon" \
-target/lemmy_server >/tmp/lemmy_epsilon.out 2>&1 &
+for INSTANCENAME in "${allinstances[@]}"
+do
+  let "onport+=10"
+  newhost='lemmy-'$INSTANCENAME:$onport
+  apifull=$newhost/api/v3/site
+  while [[ "$(curl -s -o /dev/null -w '%{http_code}' $apifull)" != "200" ]]; do sleep 0.25; done
+  echo "$INSTANCENAME started"
+done
 
-echo "wait for all instances to start"
-while [[ "$(curl -s -o /dev/null -w '%{http_code}' 'lemmy-alpha:8541/api/v3/site')" != "200" ]]; do sleep 0.3; done
-echo "alpha started"
-while [[ "$(curl -s -o /dev/null -w '%{http_code}' 'lemmy-beta:8551/api/v3/site')" != "200" ]]; do sleep 0.3; done
-echo "beta started"
-while [[ "$(curl -s -o /dev/null -w '%{http_code}' 'lemmy-gamma:8561/api/v3/site')" != "200" ]]; do sleep 0.3; done
-echo "gamma started"
-while [[ "$(curl -s -o /dev/null -w '%{http_code}' 'lemmy-delta:8571/api/v3/site')" != "200" ]]; do sleep 0.3; done
-echo "delta started"
-while [[ "$(curl -s -o /dev/null -w '%{http_code}' 'lemmy-epsilon:8581/api/v3/site')" != "200" ]]; do sleep 0.3; done
-echo "epsilon started. All started"
+
+# since they are started, migrations are complete, tables in place
+for INSTANCENAME in "${allinstances[@]}"; do
+  INSTANCE=lemmy_$INSTANCENAME
+  # create secondary user only one time
+  # sudo -iu postgres psql -c "CREATE USER lemmy_read0 WITH PASSWORD 'readpassword';"
+  # only need to do once
+  # psql "${BASE_LEMMY_DATABASE_URL}/lemmy" -c "ALTER ROLE $lemmy_read_username SET statement_timeout = 8000;  -- milliseconds"
+
+  # this needs to be done after every CREATE DATABASE
+  # psql "${BASE_LEMMY_DATABASE_URL}/lemmy" -c "GRANT ALL PRIVILEGES ON DATABASE $INSTANCE TO $lemmy_read_username;"
+  # psql "${BASE_LEMMY_DATABASE_URL}/lemmy" -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $lemmy_read_username;"
+
+  # the schema is named "lemmy", regardless of the instance DATABASE?
+  # psql "${BASE_LEMMY_DATABASE_URL}/lemmy" -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $lemmy_read_username;"
+done
+
+echo "after GRANT loop"

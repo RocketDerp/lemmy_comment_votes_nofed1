@@ -47,6 +47,9 @@ import {
   getUnreadCount,
 } from "./shared";
 
+import {serverFetchJSON0} from "./shared_experimental"
+
+
 beforeAll(async () => {
   await setupLogins();
 });
@@ -1281,62 +1284,6 @@ test("hiding a community", async () => {
     console.log(modActionResult);
   }
 });
-
-export async function serverFetchJSON0(params0: any) {
-  let result0 = {
-    params0: params0,
-    failureCode: -1,
-    failureText: "",
-    json: {},
-  };
-  let serverURL0 = params0.serverChoice0 + params0.serverURLpath0;
-  if (serverURL0.indexOf("?") > 0) {
-    serverURL0 += "&z0=lemmy_helper";
-  } else {
-    serverURL0 += "?z0=lemmy_helper";
-  }
-
-  const startTime = process.hrtime();
-  try {
-    let resp;
-    if (params0.bodyJSON0) {
-      resp = await fetch(serverURL0, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: params0.bodyJSON0,
-      });
-    } else {
-      // GET method instead of POST
-      resp = await fetch(serverURL0);
-    }
-    //result0.timeConnect = parseHrtimeToSeconds(process.hrtime(startTime));
-
-    if (resp.ok) {
-      const queryTimeStart = process.hrtime();
-      try {
-        result0.json = await resp.json();
-        // console.log(result0.json);
-      } catch (e0) {
-        console.error("JSON parse exception ", serverURL0);
-        console.log(e0);
-        result0.failureCode = -1000;
-        result0.failureText = "JSON parse failure";
-      }
-      //result0.timeParse = parseHrtimeToSeconds(process.hrtime(queryTimeStart))
-    } else {
-      console.error("fetch was not OK ", serverURL0);
-      result0.failureCode = resp.status;
-      result0.failureText = resp.statusText;
-    }
-  } catch (err) {
-    console.error("fetch exception ", serverURL0);
-    console.log(err);
-    result0.failureCode = -2000;
-    result0.failureText = err;
-  }
-
-  return result0;
-}
 
 // removed communities removed
 // https://github.com/LemmyNet/lemmy/issues/3801

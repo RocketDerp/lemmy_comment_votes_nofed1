@@ -51,6 +51,7 @@ use lemmy_api_common::{
     GetFederatedInstances,
     GetModlog,
     GetUnreadRegistrationApplicationCount,
+    GetDatabaseBugCheck0Count,
     LeaveAdmin,
     ListRegistrationApplications,
     PurgeComment,
@@ -333,8 +334,24 @@ pub fn config(cfg: &mut web::ServiceConfig, rate_limit: &RateLimitCell) {
           )
           .service(
             web::scope("/database")
-              .route("/checkbug0", web::post().to(route_post::<GetReportCount>)),
-          ),
+// code was modeled after GetUnreadRegistrationApplicationCount
+//  why does compiler say:
+//      the trait `SendActivity` is not implemented for `GetDatabaseBugCheck0Count`
+//      why would GetUnreadRegistrationApplicationCount need SendActivity?
+//      isn't this fundamentally a read-only operation?
+// does GetUnreadCount have that SendActivity trait?... GetUnreadCount
+//    and another:
+//    the trait `SendActivity` is not implemented for `GetBugCheckAzA`
+// what about simpler-read-only calls such as: get_site (which takes parameter?)
+//          .route("", web::get().to(get_site))
+// .route("/unread_count", web::get().to(route_get::<GetUnreadCount>))
+// well, ok, maybe my testing code is faulty for not grasping get vs. put change, oops!
+          // WORKS: .route("/checkbug0", web::post().to(route_post::<GetReportCount>)),
+          // WORKS: .route("/checkbug0", web::get().to(route_get::<GetUnreadRegistrationApplicationCount>)),
+          // WORKS: .route("/checkbug0", web::get().to(route_get::<GetUnreadCount>)),
+          // WORKS: .route("/checkbug0", web::get().to(route_get::<GetBugCheckAzA>)),
+        .route("/checkbug0", web::get().to(route_get::<GetDatabaseBugCheck0Count>)),
+        ),
       )
       .service(
         web::scope("/custom_emoji")

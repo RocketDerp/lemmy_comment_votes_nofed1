@@ -17,7 +17,7 @@ This test goes out of band, bypassing JavaScript client library
   because it uses an API not yet published.
 */
 test(
-  "admin bugcheck0",
+  "admin bugcheck0 HTTP put",
   async () => {
     let a = {
       auth: alpha.auth,
@@ -26,6 +26,20 @@ test(
       serverChoice0: "http://lemmy-alpha:8541/",
       serverURLpath0: "api/v3/admin/database/checkbug0",
       bodyJSON0: JSON.stringify(a),
+    };
+    let adminActionResult = await serverFetchJSON0(params);
+    console.log(adminActionResult);
+    },
+  2 * 60 * 60 * 1000,
+);
+
+test(
+  "admin bugcheck0 HTTP get",
+  async () => {
+    let params = {
+      serverChoice0: "http://lemmy-alpha:8541/",
+      serverURLpath0: "api/v3/admin/database/checkbug0"
+                      + "?auth=" + alpha.auth,
     };
     let adminActionResult = await serverFetchJSON0(params);
     console.log(adminActionResult);

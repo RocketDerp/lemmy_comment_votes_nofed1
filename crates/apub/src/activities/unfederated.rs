@@ -94,6 +94,8 @@ use lemmy_api_common::{
     GetSiteResponse,
     GetUnreadRegistrationApplicationCount,
     GetUnreadRegistrationApplicationCountResponse,
+    GetDatabaseBugCheck0Count,
+    GetUDatabaseBugCheck0CountResponse,
     LeaveAdmin,
     ListRegistrationApplications,
     ListRegistrationApplicationsResponse,
@@ -161,6 +163,10 @@ impl SendActivity for AddAdmin {
 
 impl SendActivity for GetUnreadRegistrationApplicationCount {
   type Response = GetUnreadRegistrationApplicationCountResponse;
+}
+
+impl SendActivity for GetDatabaseBugCheck0Count {
+  type Response = GetUDatabaseBugCheck0CountResponse;
 }
 
 impl SendActivity for ListRegistrationApplications {

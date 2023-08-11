@@ -459,3 +459,19 @@ pub struct GetUnreadRegistrationApplicationCount {
 pub struct GetUnreadRegistrationApplicationCountResponse {
   pub registration_applications: i64,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[cfg_attr(feature = "full", derive(TS))]
+#[cfg_attr(feature = "full", ts(export))]
+/// Gets a count of database records found with bug.
+pub struct GetDatabaseBugCheck0Count {
+  pub auth: Sensitive<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[cfg_attr(feature = "full", derive(TS))]
+#[cfg_attr(feature = "full", ts(export))]
+/// The count of rows found in database with bug.
+pub struct GetUDatabaseBugCheck0CountResponse {
+  pub database_rows_count: i64,
+}

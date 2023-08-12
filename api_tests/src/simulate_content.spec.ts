@@ -10,38 +10,44 @@ Perhaps try to run this before all other tests
 jest.setTimeout(20 * 60 * 1000);
 
 import { alpha, setupLogins } from "./shared";
-import { sim_create_accounts, sim_create_communities, sim_create_reply_comments_to_posts, sim_create_stress_test_communities, sim_create_welcome_posts, sim_follow_two_communities, sim_join_personal_communities, sim_users_update_profile } from "./shared_simulation";
-
+import {
+  sim_create_accounts,
+  sim_create_communities,
+  sim_create_reply_comments_to_posts,
+  sim_create_stress_test_communities,
+  sim_create_welcome_posts,
+  sim_follow_two_communities,
+  sim_join_personal_communities,
+  sim_users_update_profile,
+} from "./shared_simulation";
 
 beforeAll(async () => {
   await setupLogins();
 });
 
-afterAll(async () => {
-});
-
+afterAll(async () => {});
 
 test(
   "create usernames",
   async () => {
-      await sim_create_accounts(alpha);
-    },
+    await sim_create_accounts(alpha);
+  },
   3 * 60 * 1000,
 );
 
 test(
   "create communities",
   async () => {
-      await sim_create_communities();
-    },
+    await sim_create_communities();
+  },
   3 * 60 * 1000,
 );
 
 test(
   "users update their profile",
   async () => {
-      await sim_users_update_profile();
-    },
+    await sim_users_update_profile();
+  },
   3 * 60 * 1000,
 );
 
@@ -64,8 +70,8 @@ test(
 test(
   "create welcome posts by members",
   async () => {
-      await sim_create_welcome_posts();
-    },
+    await sim_create_welcome_posts();
+  },
   15 * 60 * 1000,
 );
 
@@ -76,16 +82,15 @@ Another approach is to load a list of posts in /c/welcome
 test(
   "replies and upvotes to welcome posts by members",
   async () => {
-      await sim_create_reply_comments_to_posts();
-    },
+    await sim_create_reply_comments_to_posts();
+  },
   10 * 60 * 1000,
 );
-
 
 test(
   "create stress-test communities",
   async () => {
-      await sim_create_stress_test_communities();
-    },
+    await sim_create_stress_test_communities();
+  },
   3 * 60 * 1000,
 );

@@ -47,8 +47,7 @@ import {
   getUnreadCount,
 } from "./shared";
 
-import {serverFetchJSON0} from "./shared_experimental"
-
+import { serverFetchJSON0 } from "./shared_experimental";
 
 beforeAll(async () => {
   await setupLogins();

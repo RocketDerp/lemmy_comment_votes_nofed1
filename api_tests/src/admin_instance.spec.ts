@@ -1,16 +1,16 @@
 jest.setTimeout(10 * 60 * 1000);
 
 import { alpha, setupLogins } from "./shared";
-import { lemmyServerDattabaseStatement, serverFetchJSON0 } from "./shared_experimental";
-
+import {
+  lemmyServerDattabaseStatement,
+  serverFetchJSON0,
+} from "./shared_experimental";
 
 beforeAll(async () => {
   await setupLogins();
 });
 
-afterAll(async () => {
-});
-
+afterAll(async () => {});
 
 /*
 This test goes out of band, bypassing JavaScript client library
@@ -29,33 +29,30 @@ test.skip(
     };
     let adminActionResult = await serverFetchJSON0(params);
     console.log(adminActionResult);
-    },
+  },
   2 * 60 * 60 * 1000,
 );
-
-
-
 
 test(
   "admin bugcheck0 HTTP get",
   async () => {
-      await lemmyServerDattabaseStatement(1);
-    },
+    await lemmyServerDattabaseStatement(1);
+  },
   1 * 60 * 1000,
 );
 
 test(
   "admin bugcheck0 HTTP get statement 2",
   async () => {
-      await lemmyServerDattabaseStatement(2);
-    },
+    await lemmyServerDattabaseStatement(2);
+  },
   1 * 60 * 1000,
 );
 
 test(
   "admin bugcheck0 HTTP get statement 3",
   async () => {
-      await lemmyServerDattabaseStatement(3);
-    },
+    await lemmyServerDattabaseStatement(3);
+  },
   1 * 60 * 1000,
 );

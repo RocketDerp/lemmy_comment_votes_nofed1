@@ -535,8 +535,8 @@ export async function likeComment(
 export async function createCommunity(
   api: API,
   name_: string = randomString(8),
-  title: string = "",
-  description: string = ""
+  title = "",
+  description = "",
 ): Promise<CommunityResponse> {
   // some tests rely on auto-generated parameters
   let description_out = "a sample description for " + name_;

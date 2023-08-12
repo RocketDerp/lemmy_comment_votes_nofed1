@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-bypass_pg_purge=false;
+bypass_pg_purge=true;
 bypass_drone_prep=false;
 
 declare -a allinstances=("alpha" "beta" "gamma" "delta" "epsilon")
@@ -68,9 +68,10 @@ else
 
 # why do some have src? others do not?
 # package.json has this too
+  runjest simulate_content.spec.ts
   #runjest src/follow.spec.ts
-  # runjest post.spec.ts
-  #runjest comment.spec.ts
+  runjest post.spec.ts
+  runjest comment.spec.ts
   #runjest private_message.spec.ts
   # runjest user.spec.ts
   #runjest community.spec.ts

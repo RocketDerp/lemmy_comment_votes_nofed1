@@ -70,9 +70,11 @@ export async function registerUserClient(withapi: API, username: string) {
 export async function createNoLinkPost(
   api: API,
   community_id: number,
+  name: string = "Post without link " + randomString(5),
+  body: string = "Body of post without link " + randomString(10),
 ): Promise<PostResponse> {
-  let name = "Post without link " + randomString(5);
-  let body = "Body of post without link " + randomString(10);
+  //let name = "Post without link " + randomString(5);
+  // let body = "Body of post without link " + randomString(10);
   let url = undefined;
   let form: CreatePost = {
     name,

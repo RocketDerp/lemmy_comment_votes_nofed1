@@ -466,6 +466,7 @@ pub struct GetUnreadRegistrationApplicationCountResponse {
 /// Gets a count of database records found with bug.
 pub struct GetDatabaseBugCheck0Count {
   pub auth: Sensitive<String>,
+  pub statement: Option<i64>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

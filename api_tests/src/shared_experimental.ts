@@ -1,3 +1,5 @@
+import { alpha } from "./shared";
+
 /*
 When experimenting and prototyping, the JavaScript library may not yet have a call.
 Yes, this code is spaghetti, combat-wounded ;)
@@ -57,3 +59,15 @@ export async function serverFetchJSON0(params0: any) {
   
     return result0;
   }
+
+
+export async function lemmyServerDattabaseStatement(statement_number: number) {
+  let params = {
+    serverChoice0: "http://lemmy-alpha:8541/",
+    serverURLpath0: "api/v3/admin/database/checkbug0"
+                    + "?statement=" + statement_number
+                    + "&auth=" + alpha.auth,
+  };
+  let adminActionResult = await serverFetchJSON0(params);
+  console.log(adminActionResult);
+}

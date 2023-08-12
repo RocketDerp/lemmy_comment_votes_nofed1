@@ -534,13 +534,23 @@ export async function likeComment(
 
 export async function createCommunity(
   api: API,
-  name_: string = randomString(5),
+  name_: string = randomString(8),
+  title: string = "",
+  description: string = ""
 ): Promise<CommunityResponse> {
-  let description = "a sample description";
+  // some tests rely on auto-generated parameters
+  let description_out = "a sample description for " + name_;
+  if (description.length > 0) {
+    description_out = description;
+  }
+  let title_out = name_;
+  if (title.length > 0) {
+    title_out = title;
+  }
   let form: CreateCommunity = {
     name: name_,
-    title: name_,
-    description,
+    title: title_out,
+    description: description_out,
     auth: api.auth,
   };
   return api.client.createCommunity(form);

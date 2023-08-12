@@ -9,8 +9,8 @@ declare -a allinstances=("alpha" "beta" "gamma" "delta" "epsilon")
 # NOTE: these URL environment variables do not have the database name on end.
 #   They are only used for testing scripts, not used directly by thee lemmy_server app.
 #   Since they are non-standard format, the "BASE_" prefix was added.
-export BASE_LEMMY_DATABASE_URL=postgres://lemmy:password@localhost:5432
-export BASE_LEMMY_DATABASE_READ_URL=postgres://lemmy_read0:readpassword@localhost:5432
+export DISABLED_BASE_LEMMY_DATABASE_URL=postgres://lemmy:password@localhost:5432
+export DISABLED_BASE_LEMMY_DATABASE_READ_URL=postgres://lemmy_read0:readpassword@localhost:5432
 # TO DISALBLE 2nd account usage, USE: export BASE_LEMMY_DATABASE_READ_URL to the same value as BASE_LEMMY_DATABASE_URL
 
 export LEMMY_SYNCHRONOUS_FEDERATION=1 # currently this is true in debug by default, but still.
@@ -70,8 +70,8 @@ else
 # package.json has this too
   runjest simulate_content.spec.ts
   #runjest src/follow.spec.ts
-  runjest post.spec.ts
-  runjest comment.spec.ts
+  #runjest post.spec.ts
+  #runjest comment.spec.ts
   #runjest private_message.spec.ts
   # runjest user.spec.ts
   #runjest community.spec.ts

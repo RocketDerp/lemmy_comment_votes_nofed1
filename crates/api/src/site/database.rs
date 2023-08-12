@@ -59,6 +59,9 @@ impl Perform for GetDatabaseBugCheck0Count {
       FROM generate_series(1, 50);
       ;
       ",
+      Some(200) =>
+      "-- ToDo: tickle scheduled jobs to rebuild sorting orders, on admin demand"
+      ,
       _ => "SELECT -1::bigint AS count;",
   };
 

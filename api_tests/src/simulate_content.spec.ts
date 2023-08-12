@@ -10,7 +10,7 @@ Perhaps try to run this before all other tests
 jest.setTimeout(20 * 60 * 1000);
 
 import { alpha, setupLogins } from "./shared";
-import { sim_create_accounts, sim_create_communities, sim_create_reply_comments_to_posts, sim_create_stress_test_communities, sim_create_welcome_posts, sim_follow_two_communities } from "./shared_simulation";
+import { sim_create_accounts, sim_create_communities, sim_create_reply_comments_to_posts, sim_create_stress_test_communities, sim_create_welcome_posts, sim_follow_two_communities, sim_join_personal_communities, sim_users_update_profile } from "./shared_simulation";
 
 
 beforeAll(async () => {
@@ -38,9 +38,25 @@ test(
 );
 
 test(
+  "users update their profile",
+  async () => {
+      await sim_users_update_profile();
+    },
+  3 * 60 * 1000,
+);
+
+test(
   "all follow 2 communities",
   async () => {
     await sim_follow_two_communities();
+  },
+  3 * 60 * 1000,
+);
+
+test(
+  "all follow personal communities",
+  async () => {
+    await sim_join_personal_communities();
   },
   3 * 60 * 1000,
 );
@@ -50,7 +66,7 @@ test(
   async () => {
       await sim_create_welcome_posts();
     },
-  3 * 60 * 1000,
+  15 * 60 * 1000,
 );
 
 /*

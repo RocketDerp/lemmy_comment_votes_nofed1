@@ -1,5 +1,5 @@
 import { PostResponse, CommentResponse, CommunityResponse, PostView } from "lemmy-js-client";
-import { API, alpha, createComment, createCommunity, followCommunity, likePost } from "./shared";
+import { API, alpha, createComment, createCommunity, followCommunity, likePost, resolveCommunity, saveUserSettings } from "./shared";
 import { createNoLinkPost, registerUserClient } from "./shared_benchmark";
 
 export interface UserAccount {
@@ -11,18 +11,23 @@ export interface UserAccount {
     NSFW?: boolean,
     first_post?: PostResponse,
     // most recent comment
-    recent_comment?: CommentResponse
+    recent_comment?: CommentResponse,
+    join?: string[],
   };
   
   export let username_list : UserAccount[] = [
     { name: "HCE",
-      display: "Humphrey Chimpden Earwicker"
+    display: "Humphrey C Earwicker",
+      biography: "Humphrey Chimpden Earwicker.\n\n I own/operate a pub."
     },
     { name: "ALP",
-      display: "Anna Livia Plurabelle"
+      display: "Anna L Plurabelle",
+      biography: "Anna Livia Plurabelle. I'm married to Humphrey Chimpden Earwicker."
     },
     { name: "Issy",
-      display: "Issy Plurabelle-Earwicker"
+      // ToDo: lemmy support longer names: display: "Issy Plurabelle-Earwicker",
+      display: "Issay P-E",
+      biography: "Issy Plurabelle-Earwicker."
     },
     { name: "Shem",
       display: "Shem the Penman"
@@ -85,7 +90,9 @@ biography: "I work as a nurse!"
 },
 { name: "Carr",
 display: "Private Carr",
-biography: "british soldier"},
+biography: "british soldier",
+join: ["military"],
+},
 { name: "The_Citizen",
 display: "The Citizen",
 biography: "go ahead, I've been banned from better social media sites!"
@@ -94,6 +101,31 @@ biography: "go ahead, I've been banned from better social media sites!"
 display: "Martha Clifford",
 biography: "I enjoy correspondence"
 },
+{ name: "MacCool",
+display: "Finn MacCool"},
+{ name: "Tim",
+display: "Tim Finnegan",
+biography: "I work in construction. I live on Watling street."},
+{ name: "Annie",
+display: "Annie Finnegan",
+biography: "I like creating original dishes in the kitchen."},
+{ name: "simon",
+display: "Simon Dedalus"},
+{ name: "Paddy",
+display: "Patrick Dignam",
+biography: "RIP Paddy, this is his wife using the account.\n\number 9, Newbridge Avenue, Sandymount"
+},
+{ name: "Patsy",
+display: "Patrick A Dignam",
+biography: "Patrick Aloysius Dignam. people call me Patsy."},
+{ name: "bob",
+display: "Bob Doran",
+biography: "I got kicked off another Lemmy instance, but they like me at !pub_Kiernan still!"},
+{ name: "lt_Gardner",
+display: "Lieutenant Gardner",
+biography: "I'm a British soldier.",
+join: ["military"],
+}
   ];
   
   export interface CommunityHolder {
@@ -101,6 +133,7 @@ biography: "I enjoy correspondence"
     display: string,
     creator_index: number,
     community?: CommunityResponse,
+    test_community?: CommunityResponse,
     client?: API,
     creator?: API,
     biography?: string,
@@ -149,6 +182,14 @@ biography: "I enjoy correspondence"
 display: "Barney Kiernan's pub",
 creator_index: 24
 },
+{ name: "wake",
+display: "funeral wake",
+creator_index: 28
+},
+{ name: "military",
+display: "military service",
+creator_index: 33
+},
   ];
 
   
@@ -157,6 +198,28 @@ export async function sim_create_accounts(admin_account: API) {
         const u = username_list[i];
         u.client = await registerUserClient(alpha, u.name);
         u.creator = alpha;
+    }
+}
+
+export async function sim_users_update_profile() {
+    for (let i=0; i < username_list.length; i++) {
+        const u = username_list[i];
+        if (! u.client) {
+            throw "client missing for user on profile update";
+        }
+        try {
+            await saveUserSettings(u.client, {
+                auth: u.client.auth,
+                display_name: u.display,
+                bio: u.biography,
+                blur_nsfw: u.NSFW || false,
+                show_nsfw: u.NSFW || false,
+            });
+        } catch (e0) {
+            console.error("exception updating user profile, %d %s", i, u.name);
+            console.log(e0);
+        }
+
     }
 }
 
@@ -188,6 +251,26 @@ export async function sim_follow_two_communities() {
         }
         await followCommunity(u.client, true, cid);
       }
+}
+
+export async function sim_join_personal_communities() {
+    for (let i=0; i < username_list.length; i++) {
+        const u = username_list[i];
+        if (! u.client) {
+            throw "need user client to follow";
+        }
+        if (u.join) {
+            for (let c=0; c < u.join.length; c++) {
+                let name = u.join[c];
+                let resolveResult = await resolveCommunity(u.client, name);
+                let cid = resolveResult.community?.community.id;
+                if (! cid) {
+                    throw "community id missing after searching by name?"
+                };
+                await followCommunity(u.client, true, cid);
+            }
+        }
+    }
 }
 
 export async function sim_create_welcome_posts() {
@@ -250,6 +333,9 @@ export async function sim_create_stress_test_communities() {
         if (! cc) {
           throw "community creator client not found";
         }
-        c.community = await createCommunity(cc, "zy_" + c.name);
+        c.test_community = await createCommunity(cc, "zy_" + c.name);
     }
+    // 3 is testing community, in double level of meaning
+    let c = community_list[3].test_community?.community_view;
+    console.log("id of test community %s %d", c?.community.name, c?.community.id);
 }

@@ -22,7 +22,8 @@ export interface UserAccount {
     },
     { name: "ALP",
       display: "Anna L Plurabelle",
-      biography: "Anna Livia Plurabelle. I'm married to Humphrey Chimpden Earwicker."
+      biography: "Anna Livia Plurabelle. I'm married to Humphrey Chimpden Earwicker.",
+      join: ["pub", "wakes"],
     },
     { name: "Issy",
       // ToDo: lemmy support longer names: display: "Issy Plurabelle-Earwicker",
@@ -48,10 +49,13 @@ export interface UserAccount {
     display: "Johnny Mac Dougall"
     },
     { name: "maid",
-    display: "Kate"
+    display: "Kate",
+    biography: "I'm Joe's peer.",
     },
     { name: "barman",
-    display: "Joe"
+    display: "Joe",
+    biography: "handyman, and, at times, the bartender.",
+    join: ["pub"],
     },
     { name: "quadrivial",
     display: "quadrivial"},
@@ -79,7 +83,9 @@ display: "Almidano Artifoni",
 biography: "opera singer"},
   { name: "Richard",
 display: "Richard Best",
-biography: "Celtic scholar"},
+biography: "Celtic scholar",
+join: ["books", "celtic_legends"],
+},
 { name: "Denis",
 display: "Denis Breen"},
 { name: "Josie",
@@ -105,7 +111,9 @@ biography: "I enjoy correspondence"
 display: "Finn MacCool"},
 { name: "Tim",
 display: "Tim Finnegan",
-biography: "I work in construction. I live on Watling street."},
+biography: "I work in construction. I live on Watling street.",
+join: ["Dublin"],
+},
 { name: "Annie",
 display: "Annie Finnegan",
 biography: "I like creating original dishes in the kitchen."},
@@ -113,14 +121,17 @@ biography: "I like creating original dishes in the kitchen."},
 display: "Simon Dedalus"},
 { name: "Paddy",
 display: "Patrick Dignam",
-biography: "RIP Paddy, this is his wife using the account.\n\number 9, Newbridge Avenue, Sandymount"
+biography: "RIP Paddy, this is his wife using the account.\n\number 9, Newbridge Avenue, Sandymount",
+join: ["wakes"],
 },
 { name: "Patsy",
 display: "Patrick A Dignam",
 biography: "Patrick Aloysius Dignam. people call me Patsy."},
 { name: "bob",
 display: "Bob Doran",
-biography: "I got kicked off another Lemmy instance, but they like me at !pub_Kiernan still!"},
+biography: "I got kicked off another Lemmy instance, but they like me at !pub_Kiernan still!",
+join: ["pub_Kiernan"],
+},
 { name: "lt_Gardner",
 display: "Lieutenant Gardner",
 biography: "I'm a British soldier.",
@@ -138,7 +149,8 @@ join: ["military"],
     creator?: API,
     biography?: string,
     NSFW?: boolean,
-    first_post?: PostView
+    first_post?: PostView,
+    description?: string,
   };
   
   export let community_list: CommunityHolder[] = [
@@ -182,14 +194,20 @@ join: ["military"],
 display: "Barney Kiernan's pub",
 creator_index: 24
 },
-{ name: "wake",
-display: "funeral wake",
+{ name: "wakes",
+display: "funeral wakes",
 creator_index: 28
 },
 { name: "military",
 display: "military service",
 creator_index: 33
 },
+{
+ name: "celtic_legends",
+ display: 'Celtic legends',
+ description: "Anyone heard the story of Tristan and Isole?",
+ creator_index: 1,
+}
   ];
 
   
@@ -262,12 +280,19 @@ export async function sim_join_personal_communities() {
         if (u.join) {
             for (let c=0; c < u.join.length; c++) {
                 let name = u.join[c];
-                let resolveResult = await resolveCommunity(u.client, name);
-                let cid = resolveResult.community?.community.id;
-                if (! cid) {
-                    throw "community id missing after searching by name?"
-                };
-                await followCommunity(u.client, true, cid);
+                // this is the convention that Lemmy testing utilizes in other test files.
+                let searchShort = `!${name}@lemmy-alpha:8541`;
+                try {
+                    let resolveResult = await resolveCommunity(u.client, searchShort);
+                    let cid = resolveResult.community?.community.id;
+                    if (! cid) {
+                        throw "community id missing after searching by name?"
+                    };
+                    await followCommunity(u.client, true, cid);
+                } catch (e0) {
+                    console.error("failure to resolve or follow community %s", name);
+                    console.log(e0);
+                }
             }
         }
     }

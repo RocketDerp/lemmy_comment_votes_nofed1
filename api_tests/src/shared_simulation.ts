@@ -304,11 +304,6 @@ export async function sim_create_welcome_posts() {
 }
 
 export async function sim_create_reply_comments_to_posts() {
-  let c = community_list[6];
-  if (!c.community) {
-    throw "community missing for creating posts";
-  }
-  let cid = c.community?.community_view.community.id;
   for (let i = 0; i < username_list.length; i++) {
     const u = username_list[i];
     const fp = u.first_post?.post_view;

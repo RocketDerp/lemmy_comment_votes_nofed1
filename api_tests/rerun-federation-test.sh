@@ -73,7 +73,7 @@ else
     echo "************ $INSTANCE"
     echo "************"
     # output shows rows inserted, let it go to screen
-    psql "$BASE_LEMMY_DATABASE_URL/$INSTANCE" --file mass_insert0.sql
+    time psql "$BASE_LEMMY_DATABASE_URL/$INSTANCE" --file mass_insert0.sql
   }
 
 

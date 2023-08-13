@@ -17,7 +17,7 @@
 					),
 				true,
 				timezone('utc', NOW()) - ( random() * ( NOW() + '95 days' - NOW() ) )
-			FROM generate_series(1, 25000) AS source(i)
+			FROM generate_series(1, 30000) AS source(i)
 			;
 
 -- lemmy_helper benchmark_fill_post3
@@ -33,7 +33,7 @@
 					),
 				true,
 				timezone('utc', NOW()) - ( random() * ( NOW() + '128 days' - NOW() ) )
-			FROM generate_series(1, 25000) AS source(i)
+			FROM generate_series(1, 40000) AS source(i)
 			;
 
 
@@ -66,7 +66,7 @@
 					),
 				true,
 				timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
-			FROM generate_series(1, 5000) AS source(i)
+			FROM generate_series(1, 25000) AS source(i)
 			;
 
 -- lemmy_helper comment2
@@ -93,7 +93,7 @@
 					),
 				true,
 				timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
-			FROM generate_series(1, 500) AS source(i)
+			FROM generate_series(1, 25000) AS source(i)
 			;
 
 
@@ -128,7 +128,7 @@
 					-- AND path level < 14?
 					)
 			AND local=true
-			LIMIT 12000
+			LIMIT 20000
 			;
 
 -- repeat 1
@@ -163,7 +163,7 @@
 					-- AND path level < 14?
 					)
 			AND local=true
-			LIMIT 12000
+			LIMIT 20000
 			;
 
 -- repeat 2
@@ -197,5 +197,5 @@
 					-- AND path level < 14?
 					)
 			AND local=true
-			LIMIT 12000
+			LIMIT 50000
 			;

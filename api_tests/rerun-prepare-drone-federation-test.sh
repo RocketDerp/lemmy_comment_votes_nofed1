@@ -31,10 +31,10 @@ for INSTANCENAME in "${allinstances[@]}"; do
   # psql "${BASE_LEMMY_DATABASE_URL}/lemmy" -c "ALTER ROLE $lemmy_read_username SET statement_timeout = 8000;  -- milliseconds"
 
   # this needs to be done after every CREATE DATABASE
-  psql "${BASE_LEMMY_DATABASE_URL}/lemmy" -c "GRANT ALL PRIVILEGES ON DATABASE $INSTANCE TO $lemmy_read_username;"
-  psql "${BASE_LEMMY_DATABASE_URL}/lemmy" -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $lemmy_read_username;"
+  #psql "${BASE_LEMMY_DATABASE_URL}/lemmy" -c "GRANT ALL PRIVILEGES ON DATABASE $INSTANCE TO $lemmy_read_username;"
+  #psql "${BASE_LEMMY_DATABASE_URL}/lemmy" -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $lemmy_read_username;"
 
-  psql "${BASE_LEMMY_DATABASE_URL}/lemmy" -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO $lemmy_read_username;"
+  #psql "${BASE_LEMMY_DATABASE_URL}/lemmy" -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO $lemmy_read_username;"
 done
 fi
 

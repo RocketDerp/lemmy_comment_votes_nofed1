@@ -21,6 +21,56 @@
 -- benchmark references
 --    https://www.tangramvision.com/blog/how-to-benchmark-postgresql-queries-well
 
+/*
+For some reason, PostgreSQL was dragging down even with DROP DATABASE between runs.
+I deleted the PostgreSQL database directory and recreated the cluster
+    sudo -iu postgres /usr/lib/postgresql/15/bin/initdb -D /WorkSpot0/postgres_data
+
+Now the code runs at this performance as it is created here:
+
+CREATE FUNCTION
+         avg          |  min  |  q1   | median |  q3   |         p95          |  max  | repeats 
+----------------------+-------+-------+--------+-------+----------------------+-------+---------
+ 0.004520000000000003 | 0.003 | 0.003 |  0.003 | 0.003 | 0.006099999999999994 | 0.052 |      50
+(1 row)
+
+CREATE FUNCTION
+    avg    |    min    |    q1     |  median   |    q3     |    p95    |    max    | repeats 
+-----------+-----------+-----------+-----------+-----------+-----------+-----------+---------
+ 13192.173 | 13192.173 | 13192.173 | 13192.173 | 13192.173 | 13192.173 | 13192.173 |       1
+(1 row)
+
+CREATE FUNCTION
+    avg    |    min    |    q1     |  median   |    q3     |    p95    |    max    | repeats 
+-----------+-----------+-----------+-----------+-----------+-----------+-----------+---------
+ 31059.783 | 31059.783 | 31059.783 | 31059.783 | 31059.783 | 31059.783 | 31059.783 |       1
+(1 row)
+
+CREATE FUNCTION
+    avg     |    min     |     q1     |   median   |     q3     |    p95     |    max     | repeats 
+------------+------------+------------+------------+------------+------------+------------+---------
+ 211249.527 | 211249.527 | 211249.527 | 211249.527 | 211249.527 | 211249.527 | 211249.527 |       1
+(1 row)
+
+CREATE FUNCTION
+    avg     |    min     |     q1     |   median   |     q3     |    p95     |    max     | repeats 
+------------+------------+------------+------------+------------+------------+------------+---------
+ 188812.358 | 188812.358 | 188812.358 | 188812.358 | 188812.358 | 188812.358 | 188812.358 |       1
+(1 row)
+
+CREATE FUNCTION
+   avg    |   min    |    q1    |  median  |    q3    |   p95    |   max    | repeats 
+----------+----------+----------+----------+----------+----------+----------+---------
+ 2324.161 | 2324.161 | 2324.161 | 2324.161 | 2324.161 | 2324.161 | 2324.161 |       1
+(1 row)
+
+
+real	7m26.742s
+user	0m0.023s
+sys	0m0.010s
+
+*/
+
 
 -- scripts/clock_timestamp_function.sql
 CREATE OR REPLACE FUNCTION bench(query TEXT, iterations INTEGER = 100, warmup_iterations INTEGER = 5)
@@ -65,9 +115,7 @@ END
 $$
 LANGUAGE plpgsql;
 
-
 SELECT * FROM bench('SELECT 1', 50, 0);
-
 
 
 -- lemmy_helper benchmark_fill_post2
@@ -223,7 +271,6 @@ CREATE OR REPLACE FUNCTION benchmark_fill_comment_reply0()
 RETURNS VOID AS
 $$
 BEGIN
-
 
 			INSERT INTO comment
 			( id, path, ap_id, content, post_id, creator_id, local, published )

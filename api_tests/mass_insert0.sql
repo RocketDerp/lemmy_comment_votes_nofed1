@@ -69,6 +69,25 @@ real	7m26.742s
 user	0m0.023s
 sys	0m0.010s
 
+
+Without delete of Linuxc files and entire reuild of cluster:
+
+CREATE FUNCTION
+    avg     |    min     |     q1     |   median   |     q3     |    p95     |    max     | repeats 
+------------+------------+------------+------------+------------+------------+------------+---------
+ 203954.196 | 203954.196 | 203954.196 | 203954.196 | 203954.196 | 203954.196 | 203954.196 |       1
+(1 row)
+
+CREATE FUNCTION
+   avg    |   min    |    q1    |  median  |    q3    |   p95    |   max    | repeats 
+----------+----------+----------+----------+----------+----------+----------+---------
+ 2334.262 | 2334.262 | 2334.262 | 2334.262 | 2334.262 | 2334.262 | 2334.262 |       1
+(1 row)
+
+
+real	33m41.817s
+
+
 */
 
 
@@ -120,7 +139,7 @@ SELECT * FROM bench('SELECT 1', 50, 0);
 
 -- lemmy_helper benchmark_fill_post2
 
-CREATE OR REPLACE FUNCTION benchmark_fill_post2()
+CREATE OR REPLACE FUNCTION benchmark_fill_post2(how_many BigInt)
 RETURNS VOID AS
 $$
 BEGIN
@@ -142,19 +161,19 @@ BEGIN
 					),
 				true,
 				timezone('utc', NOW()) - ( random() * ( NOW() + '95 days' - NOW() ) )
-			FROM generate_series(1, 30000) AS source(i)
+			FROM generate_series(1, how_many) AS source(i)
 			;
 
 END
 $$
 LANGUAGE plpgsql;
 
-SELECT * FROM bench('SELECT benchmark_fill_post2();', 1, 0);
+SELECT * FROM bench('SELECT benchmark_fill_post2(30000);', 1, 0);
 
 
 -- lemmy_helper benchmark_fill_post3
 
-CREATE OR REPLACE FUNCTION benchmark_fill_post3()
+CREATE OR REPLACE FUNCTION benchmark_fill_post3(how_many BigInt)
 RETURNS VOID AS
 $$
 BEGIN
@@ -170,19 +189,19 @@ BEGIN
 					),
 				true,
 				timezone('utc', NOW()) - ( random() * ( NOW() + '128 days' - NOW() ) )
-			FROM generate_series(1, 40000) AS source(i)
+			FROM generate_series(1, how_many) AS source(i)
 			;
 
 END
 $$
 LANGUAGE plpgsql;
 
-SELECT * FROM bench('SELECT benchmark_fill_post3();', 1, 0);
+SELECT * FROM bench('SELECT benchmark_fill_post3(40000);', 1, 0);
 
 
 -- lemmy_helper benchmark_fill_comment1
 
-CREATE OR REPLACE FUNCTION benchmark_fill_comment1()
+CREATE OR REPLACE FUNCTION benchmark_fill_comment1(how_many BigInt)
 RETURNS VOID AS
 $$
 BEGIN
@@ -215,19 +234,19 @@ BEGIN
 					),
 				true,
 				timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
-			FROM generate_series(1, 25000) AS source(i)
+			FROM generate_series(1, how_many) AS source(i)
 			;
 
 END
 $$
 LANGUAGE plpgsql;
 
-SELECT * FROM bench('SELECT benchmark_fill_comment1();', 1, 0);
+SELECT * FROM bench('SELECT benchmark_fill_comment1(25000);', 1, 0);
 
 
 -- lemmy_helper comment2
 
-CREATE OR REPLACE FUNCTION benchmark_fill_comment2()
+CREATE OR REPLACE FUNCTION benchmark_fill_comment2(how_many BigInt)
 RETURNS VOID AS
 $$
 BEGIN
@@ -254,20 +273,20 @@ BEGIN
 					),
 				true,
 				timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
-			FROM generate_series(1, 25000) AS source(i)
+			FROM generate_series(1, how_many) AS source(i)
 			;
 
 END
 $$
 LANGUAGE plpgsql;
 
-SELECT * FROM bench('SELECT benchmark_fill_comment2();', 1, 0);
+SELECT * FROM bench('SELECT benchmark_fill_comment2(25000);', 1, 0);
 
 
 -- lemmy_helper benchmark_fill_comment_reply0
 -- running multiple passes will give replies to replies
 
-CREATE OR REPLACE FUNCTION benchmark_fill_comment_reply0()
+CREATE OR REPLACE FUNCTION benchmark_fill_comment_reply0(how_many BigInt)
 RETURNS VOID AS
 $$
 BEGIN
@@ -296,11 +315,11 @@ BEGIN
 					-- AND path level < 14?
 					)
 			AND local=true
-			LIMIT 5000
+			LIMIT how_many
 			;
 
 END
 $$
 LANGUAGE plpgsql;
 
-SELECT * FROM bench('SELECT benchmark_fill_comment_reply0();', 1, 0);
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply0(5000);', 1, 0);

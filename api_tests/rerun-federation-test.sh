@@ -66,9 +66,20 @@ else
       fi
   }
 
+  database_mass_insert() {
+    INSTANCE=lemmy_alpha
+    # reminder: PostgreSQL can convert to JSON
+    echo "************"
+    echo "************ major SQL script"
+    echo "************ $INSTANCE"
+    echo "************"
+    psql "$BASE_LEMMY_DATABASE_URL/$INSTANCE" --file mass_insert0.sql > /tmp/${INSTANCE}_database_mass_insertstxt
+  }
+
 # why do some have src? others do not?
 # package.json has this too
   runjest simulate_content.spec.ts
+  database_mass_insert
   #runjest src/follow.spec.ts
   #runjest post.spec.ts
   #runjest comment.spec.ts
@@ -87,6 +98,8 @@ else
   runjest admin_instance.spec.ts
 
 fi
+
+
 
 for INSTANCENAME in "${allinstances[@]}"; do
   INSTANCE=lemmy_$INSTANCENAME

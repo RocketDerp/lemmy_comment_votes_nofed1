@@ -8,6 +8,8 @@
 -- user	0m0.021s
 -- sys	0m0.018s
 
+-- this run
+-- real	7m31.110s
 
 -- lemmy_helper benchmark_fill_post2
 			INSERT INTO post
@@ -130,12 +132,9 @@ BEGIN
 				post_id,
 				-- random person, but same person for all quantity
 				-- NOT: source=source
-				(SELECT id FROM person
-					WHERE local=true
-					ORDER BY random() LIMIT 1
-					),
+				7,
 				true,
-				timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
+				NOW()
 			FROM comment
 			WHERE post_id IN
 				(SELECT id FROM post
@@ -144,7 +143,7 @@ BEGIN
 					-- AND path level < 14?
 					)
 			AND local=true
-			LIMIT 25000
+			LIMIT 5000
 			;
 
 	END LOOP;

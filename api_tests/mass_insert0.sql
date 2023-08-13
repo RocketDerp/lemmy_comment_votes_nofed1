@@ -108,7 +108,7 @@
 				E'ZipGen Stress-Test message in Huge Community\n\n comment AAAA0000 c' || '?' || E'\n\n all from the same random user.'
 					|| ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') )
 					|| ' path ' || path::text
-					|| E'\n\n> ' || REPLACE(content, '\n', ' CRLF '),
+					|| E'\n\n> ' || REPLACE(content, E'\n', ' CRLF '),
 				-- NOT: source=source
 				-- just one single random post in community
 				post_id,
@@ -143,7 +143,7 @@
 				E'ZipGen Stress-Test message in Huge Community\n\n comment AAAA0001 c' || '?' || E'\n\n all from the same random user.'
 					|| ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') )
 					|| ' path ' || path::text
-					|| E'\n\n> ' || REPLACE(content, '\n', ' CRLF '),
+					|| E'\n\n> ' || REPLACE(content, E'\n', ' CRLF '),
 				-- NOT: source=source
 				-- just one single random post in community
 				post_id,
@@ -177,7 +177,7 @@
 				E'ZipGen Stress-Test message in Huge Community\n\n comment AAAA0002 c' || '?' || E'\n\n all from the same random user.'
 					|| ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') )
 					|| ' path ' || path::text
-					|| E'\n\n> ' || REPLACE(content, '\n', ' CRLF '),
+					|| E'\n\n> ' || REPLACE(content, E'\n', ' CRLF '),
 				-- NOT: source=source
 				-- just one single random post in community
 				post_id,

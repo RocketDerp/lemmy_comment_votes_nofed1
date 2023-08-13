@@ -10,8 +10,73 @@
 
 -- this run
 -- real	7m31.110s
+--
+-- INSERT 0 30000
+-- INSERT 0 40000
+-- INSERT 0 25000
+-- INSERT 0 25000
+-- DO
+-- real	7m56.587s
+
+-- benchmark references
+--    https://www.tangramvision.com/blog/how-to-benchmark-postgresql-queries-well
+
+
+-- scripts/clock_timestamp_function.sql
+CREATE OR REPLACE FUNCTION bench(query TEXT, iterations INTEGER = 100, warmup_iterations INTEGER = 5)
+RETURNS TABLE(avg FLOAT, min FLOAT, q1 FLOAT, median FLOAT, q3 FLOAT, p95 FLOAT, max FLOAT, repeats INTEGER) AS $$
+DECLARE
+  _start TIMESTAMPTZ;
+  _end TIMESTAMPTZ;
+  _delta DOUBLE PRECISION;
+BEGIN
+  CREATE TEMP TABLE IF NOT EXISTS _bench_results (
+      elapsed DOUBLE PRECISION
+  );
+
+  -- Warm the cache
+  FOR i IN 1..warmup_iterations LOOP
+    RAISE 'hello warmup %', i;
+    EXECUTE query;
+  END LOOP;
+
+  -- Run test and collect elapsed time into _bench_results table
+  FOR i IN 1..iterations LOOP
+    _start = clock_timestamp();
+    EXECUTE query;
+    _end = clock_timestamp();
+    _delta = 1000 * ( extract(epoch from _end) - extract(epoch from _start) );
+    INSERT INTO _bench_results VALUES (_delta);
+  END LOOP;
+
+  RETURN QUERY SELECT
+    avg(elapsed),
+    min(elapsed),
+    percentile_cont(0.25) WITHIN GROUP (ORDER BY elapsed),
+    percentile_cont(0.5) WITHIN GROUP (ORDER BY elapsed),
+    percentile_cont(0.75) WITHIN GROUP (ORDER BY elapsed),
+    percentile_cont(0.95) WITHIN GROUP (ORDER BY elapsed),
+    max(elapsed),
+    iterations
+    FROM _bench_results;
+  DROP TABLE IF EXISTS _bench_results;
+
+END
+$$
+LANGUAGE plpgsql;
+
+
+SELECT * FROM bench('SELECT 1', 50, 0);
+
+
 
 -- lemmy_helper benchmark_fill_post2
+
+CREATE OR REPLACE FUNCTION benchmark_fill_post2()
+RETURNS VOID AS
+$$
+BEGIN
+
 			INSERT INTO post
 			( name, body, community_id, creator_id, local, published )
 			SELECT 'ZipGen Stress-Test Community post AAAA0000 p' || i,
@@ -32,7 +97,19 @@
 			FROM generate_series(1, 30000) AS source(i)
 			;
 
+END
+$$
+LANGUAGE plpgsql;
+
+SELECT * FROM bench('SELECT benchmark_fill_post2();', 1, 0);
+
+
 -- lemmy_helper benchmark_fill_post3
+
+CREATE OR REPLACE FUNCTION benchmark_fill_post3()
+RETURNS VOID AS
+$$
+BEGIN
 			INSERT INTO post
 			( name, body, community_id, creator_id, local, published )
 			SELECT 'ZipGen Stress-Test Huge Community post AAAA0000 p' || i,
@@ -48,8 +125,20 @@
 			FROM generate_series(1, 40000) AS source(i)
 			;
 
+END
+$$
+LANGUAGE plpgsql;
+
+SELECT * FROM bench('SELECT benchmark_fill_post3();', 1, 0);
+
 
 -- lemmy_helper benchmark_fill_comment1
+
+CREATE OR REPLACE FUNCTION benchmark_fill_comment1()
+RETURNS VOID AS
+$$
+BEGIN
+
 			INSERT INTO comment
 			( id, path, ap_id, content, post_id, creator_id, local, published )
 			-- ( path, content, post_id, creator_id, local, published )
@@ -81,7 +170,19 @@
 			FROM generate_series(1, 25000) AS source(i)
 			;
 
+END
+$$
+LANGUAGE plpgsql;
+
+SELECT * FROM bench('SELECT benchmark_fill_comment1();', 1, 0);
+
+
 -- lemmy_helper comment2
+
+CREATE OR REPLACE FUNCTION benchmark_fill_comment2()
+RETURNS VOID AS
+$$
+BEGIN
 
 			INSERT INTO comment
 			( id, path, ap_id, content, post_id, creator_id, local, published )
@@ -108,16 +209,21 @@
 			FROM generate_series(1, 25000) AS source(i)
 			;
 
+END
+$$
+LANGUAGE plpgsql;
+
+SELECT * FROM bench('SELECT benchmark_fill_comment2();', 1, 0);
+
 
 -- lemmy_helper benchmark_fill_comment_reply0
 -- running multiple passes will give replies to replies
 
-DO
+CREATE OR REPLACE FUNCTION benchmark_fill_comment_reply0()
+RETURNS VOID AS
 $$
 BEGIN
 
-	FOR x IN 1..2
-	LOOP
 
 			INSERT INTO comment
 			( id, path, ap_id, content, post_id, creator_id, local, published )
@@ -146,7 +252,8 @@ BEGIN
 			LIMIT 5000
 			;
 
-	END LOOP;
-
-END;
+END
 $$
+LANGUAGE plpgsql;
+
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply0();', 1, 0);

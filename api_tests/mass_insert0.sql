@@ -45,7 +45,7 @@
 				nextval(pg_get_serial_sequence('comment', 'id')),
 				text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
 				'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-				'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 c' || i
+				E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 c' || i
 				    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
 				(SELECT id FROM post
 					WHERE source=source
@@ -69,7 +69,7 @@
 			FROM generate_series(1, 5000) AS source(i)
 			;
 
--- lemmy_helper comment3
+-- lemmy_helper comment2
 
 			INSERT INTO comment
 			( id, path, ap_id, content, post_id, creator_id, local, published )
@@ -77,16 +77,15 @@
 				nextval(pg_get_serial_sequence('comment', 'id')),
 				text2ltree('0.' || currval(pg_get_serial_sequence('comment', 'id')) ),
 				'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-				'ZipGen Stress-Test message in Huge Community\n\n comment AAAA0000 c' || i || '\n\n all from the same random user.'
+				E'ZipGen Stress-Test message in Huge Community\n\n comment AAAA0000 c' || i || E'\n\n all from the same random user.'
 					|| ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
-				-- NOT: source=source
-				-- just one single random post in community
 				(SELECT id FROM post
-					WHERE community_id = 19
+					WHERE source=source
+					AND community_id = 19
 					AND local=true
 					ORDER BY random() LIMIT 1
 					),
-				-- random person, but same person for all quantity
+			    -- random person, but same person for all quantity
 				-- NOT: source=source
 				(SELECT id FROM person
 					WHERE local=true
@@ -94,11 +93,11 @@
 					),
 				true,
 				timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
-			FROM generate_series(1, 2500) AS source(i)
+			FROM generate_series(1, 500) AS source(i)
 			;
 
 
--- lemmy_helper comment_reply0
+-- lemmy_helper benchmark_fill_comment_reply0
 
 			INSERT INTO comment
 			( id, path, ap_id, content, post_id, creator_id, local, published )
@@ -106,10 +105,10 @@
 				nextval(pg_get_serial_sequence('comment', 'id')),
 				text2ltree( path::text || '.' || currval(pg_get_serial_sequence('comment', 'id')) ),
 				'http://lemmy-slpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-				'ZipGen Stress-Test message in Huge Community\n\n comment AAAA0000 c' || '?' || '\n\n all from the same random user.'
+				E'ZipGen Stress-Test message in Huge Community\n\n comment AAAA0000 c' || '?' || E'\n\n all from the same random user.'
 					|| ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') )
 					|| ' path ' || path::text
-					|| '\n\n> ' || REPLACE(content, '\n', ' CRLF '),
+					|| E'\n\n> ' || REPLACE(content, '\n', ' CRLF '),
 				-- NOT: source=source
 				-- just one single random post in community
 				post_id,
@@ -141,10 +140,10 @@
 				nextval(pg_get_serial_sequence('comment', 'id')),
 				text2ltree( path::text || '.' || currval(pg_get_serial_sequence('comment', 'id')) ),
 				'http://lemmy-slpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-				'ZipGen Stress-Test message in Huge Community\n\n comment AAAA0000 c' || '?' || '\n\n all from the same random user.'
+				E'ZipGen Stress-Test message in Huge Community\n\n comment AAAA0001 c' || '?' || E'\n\n all from the same random user.'
 					|| ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') )
 					|| ' path ' || path::text
-					|| '\n\n> ' || REPLACE(content, '\n', ' CRLF '),
+					|| E'\n\n> ' || REPLACE(content, '\n', ' CRLF '),
 				-- NOT: source=source
 				-- just one single random post in community
 				post_id,
@@ -175,10 +174,10 @@
 				nextval(pg_get_serial_sequence('comment', 'id')),
 				text2ltree( path::text || '.' || currval(pg_get_serial_sequence('comment', 'id')) ),
 				'http://lemmy-slpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-				'ZipGen Stress-Test message in Huge Community\n\n comment AAAA0000 c' || '?' || '\n\n all from the same random user.'
+				E'ZipGen Stress-Test message in Huge Community\n\n comment AAAA0002 c' || '?' || E'\n\n all from the same random user.'
 					|| ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') )
 					|| ' path ' || path::text
-					|| '\n\n> ' || REPLACE(content, '\n', ' CRLF '),
+					|| E'\n\n> ' || REPLACE(content, '\n', ' CRLF '),
 				-- NOT: source=source
 				-- just one single random post in community
 				post_id,

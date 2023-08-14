@@ -213,6 +213,7 @@ BEGIN
                 timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
             FROM post_temp_id0
             -- no ORDER BY, already pre-random
+            LIMIT how_many
             ;
 
 END
@@ -243,6 +244,7 @@ BEGIN
                 timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
             FROM post_temp_id0
             -- no ORDER BY, already pre-random
+            LIMIT how_many
             ;
 
 END
@@ -394,14 +396,14 @@ BEGIN
                 true,
                 NOW()
             FROM comment_temp0
-            WHERE post_id IN
-                (SELECT id FROM post_temp_id0)
+            -- WHERE post_id NOT IN (100l 101)
             LIMIT how_many
             ;
 
 END
 $$
 LANGUAGE plpgsql;
+
 
 -- *************************************************************************************
 -- ** Revised Lemmy TRIGGER logic
@@ -593,17 +595,17 @@ SELECT pg_stat_statements_reset();
 
 -- Comments come next in Lemmy, they go onto a post
 SELECT 'simple comment0' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_comment_simple0(25000);', 1, 0);
+SELECT * FROM bench('SELECT benchmark_fill_comment_simple0(1000);', 1, 0);
 SELECT 'simple comment1' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_comment_simple1(25000);', 1, 0);
+SELECT * FROM bench('SELECT benchmark_fill_comment_simple1(1333);', 1, 0);
 --SELECT 'simple comment2' AS status_message;
 --SELECT * FROM bench('SELECT benchmark_fill_comment_simple2(25000);', 1, 0);
 SELECT 'simple comment3' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_comment_simple3(25000);', 1, 0);
+SELECT * FROM bench('SELECT benchmark_fill_comment_simple3(922);', 1, 0);
 SELECT 'simple comment4' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_comment_simple4(25000);', 1, 0);
+SELECT * FROM bench('SELECT benchmark_fill_comment_simple4(777);', 1, 0);
 SELECT 'benchmark_fill_comment_reply_using_temp0 kicking off' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(25000);', 1, 0);
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(2711);', 1, 0);
 
 SELECT COUNT(*) FROM comment_temp0 AS comment_temp0_cuunt;
 

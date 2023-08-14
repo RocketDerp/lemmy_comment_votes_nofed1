@@ -475,6 +475,7 @@ BEGIN
     IF TG_OP = 'INSERT' THEN
         -- assumption made that every new comment has an already existing post_aggregates row to reference
         -- LIMIT 1 used to satisfy PostgreSQL function, but there should never be duplicates for same post_id
+        -- Side benefit: this puts the taget UPDATE row into cache
         SELECT * INTO prev_post_aggregate FROM post_aggregates WHERE post_id = NEW.post_id LIMIT 1;    
 
         -- A 2 day necro-bump limit
@@ -484,6 +485,7 @@ BEGIN
                 UPDATE
                     post_aggregates pa
                 SET
+                    -- this statement should be for comment INSERT circumstance 1
                     newest_comment_time = NEW.published,
                     comments = comments + 1,
                     newest_comment_time_necro = NEW.published
@@ -498,6 +500,7 @@ BEGIN
             UPDATE
                 post_aggregates pa
             SET
+                -- this statement should be for comment INSERT circumstance 2
                 newest_comment_time = NEW.published,
                 comments = comments + 1
             WHERE
@@ -515,6 +518,9 @@ BEGIN
             p.id = OLD.post_id
         )
         THEN
+            -- Lemmy has an issue with counting comment replies
+            --   this might be a place to increment/decrement count
+            --   on comment_aggregate for children comments on restore/delete.
             IF (was_restored_or_created (TG_OP, OLD, NEW)) THEN
                 UPDATE
                     post_aggregates pa
@@ -649,15 +655,17 @@ SELECT * FROM bench('SELECT benchmark_fill_comment_simple4(25000);', 1, 0);
 
 SELECT COUNT(*) FROM comment_temp0 AS comment_temp0_cuunt;
 
--- copy in the temp post table to main post table
---   the poer-row trigger action going on for aggregates must make this slower and why temp table so much faster
---   could reproduce the trigger as a per-statement action for these operations, remove/restore existing trigger before/after
+/*
+copy in the temp post table to main post table
+  the per-row trigger action going on for aggregates must make this slower and why temp table so much faster
+   could reproduce the trigger as a per-statement action for these operations, remove/restore existing trigger before/after
+*/
 SELECT 'copy post temp table into main post table, kicking off' AS status_message;
 SELECT * FROM bench('INSERT INTO post SELECT * FROM post_temp0', 1, 0);
 SELECT 'copy comment temp table into main post table, kicking off' AS status_message;
 SELECT * FROM bench('INSERT INTO comment SELECT * FROM comment_temp0', 1, 0);
 
--- review results with lemmy-ui
+-- review results interactively with lemmy-ui
 
 /*
 SELECT 'benchmark_fill_comment1 kicking off' AS status_message;

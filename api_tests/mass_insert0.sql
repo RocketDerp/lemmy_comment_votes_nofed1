@@ -649,10 +649,13 @@ SELECT 'benchmark_fill_comment_reply_using_temp0 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(2711);', 1, 0);
 SELECT 'benchmark_fill_comment_reply_using_temp0 ROUND 2 kicking off 20 runs' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(3200);', 20, 0);
-SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 2 kicking off 2 runs' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200);', 2, 0);
+SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 2 kicking off 5 runs' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200);', 5, 0);
 
 SELECT COUNT(*) FROM comment_temp0 AS comment_temp0_cuunt;
+
+SELECT MAX(nlevel(path)) AS comment_temp0_path_max_level FROM comment_temp0;
+
 
 /*
 copy in the temp post table to main post table

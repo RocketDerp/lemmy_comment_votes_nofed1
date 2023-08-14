@@ -605,6 +605,9 @@ SELECT 'simple comment3' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_simple3(922);', 1, 0);
 SELECT 'simple comment4' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_simple4(777);', 1, 0);
+/*
+without child count on comment_aggregates, lemmy-ui may not show replies!
+*/
 SELECT 'benchmark_fill_comment_reply_using_temp0 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(2711);', 1, 0);
 

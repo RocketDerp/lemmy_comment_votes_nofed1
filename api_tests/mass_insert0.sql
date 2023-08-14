@@ -330,6 +330,44 @@ LANGUAGE plpgsql;
  benchmark_fill_comment_reply0 kicking off
  2521.066 | 2521.066 | 2521.066 | 2521.066 | 2521.066 | 2521.066 | 2521.066 |       1
 */
+
+/*
+revised order of post creation, yields:
+ benchmark_fill_post3 kicking off
+ 19381.957 | 19381.957 | 19381.957 | 19381.957 | 19381.957 | 19381.957 | 19381.957 |       1
+ benchmark_fill_post2 kicking off
+ 19996.972 | 19996.972 | 19996.972 | 19996.972 | 19996.972 | 19996.972 | 19996.972 |       1
+ benchmark_fill_comment1 kicking off
+ 253836.805 | 253836.805 | 253836.805 | 253836.805 | 253836.805 | 253836.805 | 253836.805 |       1
+ benchmark_fill_comment2 kicking off
+ 35345.686 | 35345.686 | 35345.686 | 35345.686 | 35345.686 | 35345.686 | 35345.686 |       1
+ benchmark_fill_comment_reply0 kicking off
+ 2933.079 | 2933.079 | 2933.079 | 2933.079 | 2933.079 | 2933.079 | 2933.079 |       1
+*/
+/*
+back to original order
+*/
+
+/*
+remove constraints for bulk insert
+doesn't work very well
+  -- probably better to create a temporary table then do bulk copy in.
+aggregates will still have constraints, but still...
+
+reading:
+https://www.enterprisedb.com/blog/7-best-practice-tips-postgresql-bulk-data-loading
+*/
+-- ALTER TABLE ONLY public.comment DROP CONSTRAINT comment_pkey;
+-- fails with: cannot drop constraint comment_pkey on table comment because other objects depend on it
+-- ALTER TABLE ONLY public.post DROP CONSTRAINT post_pkey;
+/*
+ALTER TABLE public.comment_like SET UNLOGGED;
+ALTER TABLE public.post_like SET UNLOGGED;
+ALTER TABLE public.comment SET UNLOGGED;
+ALTER TABLE public.post SET UNLOGGED;
+*/
+
+SELECT 'benchmark_fill_post2 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_post2(30000);', 1, 0);
 SELECT 'benchmark_fill_post3 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_post3(30000);', 1, 0);
@@ -340,3 +378,10 @@ SELECT * FROM bench('SELECT benchmark_fill_comment2(5000);', 1, 0);
 SELECT 'benchmark_fill_comment_reply0 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply0(5000);', 1, 0);
 
+/*
+-- ALTER TABLE ONLY public.comment ADD CONSTRAINT comment_pkey PRIMARY KEY (id);
+-- ALTER TABLE ONLY public.post ADD CONSTRAINT post_pkey PRIMARY KEY (id);
+
+ALTER TABLE public.comment SET LOGGED;
+ALTER TABLE public.post SET LOGGED;
+*/

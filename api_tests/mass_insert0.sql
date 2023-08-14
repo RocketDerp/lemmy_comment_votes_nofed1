@@ -4,19 +4,19 @@
 --   Linux sed command could be used to replace these values.
 --
 
--- real	55m2.853s
--- user	0m0.021s
--- sys	0m0.018s
+-- real 55m2.853s
+-- user 0m0.021s
+-- sys  0m0.018s
 
 -- this run
--- real	7m31.110s
+-- real 7m31.110s
 --
 -- INSERT 0 30000
 -- INSERT 0 40000
 -- INSERT 0 25000
 -- INSERT 0 25000
 -- DO
--- real	7m56.587s
+-- real 7m56.587s
 
 -- benchmark references
 --    https://www.tangramvision.com/blog/how-to-benchmark-postgresql-queries-well
@@ -65,9 +65,9 @@ CREATE FUNCTION
 (1 row)
 
 
-real	7m26.742s
-user	0m0.023s
-sys	0m0.010s
+real    7m26.742s
+user    0m0.023s
+sys 0m0.010s
 
 
 Without delete of Linuxc files and entire reuild of cluster:
@@ -85,7 +85,7 @@ CREATE FUNCTION
 (1 row)
 
 
-real	33m41.817s
+real    33m41.817s
 
 
 */
@@ -144,25 +144,25 @@ RETURNS VOID AS
 $$
 BEGIN
 
-			INSERT INTO post_temp0
-			( name, body, community_id, creator_id, local, published )
-			SELECT 'ZipGen Stress-Test Community post AAAA0000 p' || i,
-				'post body ' || i,
-				(SELECT id FROM community
-						WHERE source=source
-						AND local=true
-						AND name LIKE 'zy_%'
-						ORDER BY random() LIMIT 1
-						),
-				(SELECT id FROM person
-					WHERE source=source
-					AND local=true
-					ORDER BY random() LIMIT 1
-					),
-				true,
-				timezone('utc', NOW()) - ( random() * ( NOW() + '95 days' - NOW() ) )
-			FROM generate_series(1, how_many) AS source(i)
-			;
+            INSERT INTO post_temp0
+            ( name, body, community_id, creator_id, local, published )
+            SELECT 'ZipGen Stress-Test Community post AAAA0000 p' || i,
+                'post body ' || i,
+                (SELECT id FROM community
+                        WHERE source=source
+                        AND local=true
+                        AND name LIKE 'zy_%'
+                        ORDER BY random() LIMIT 1
+                        ),
+                (SELECT id FROM person
+                    WHERE source=source
+                    AND local=true
+                    ORDER BY random() LIMIT 1
+                    ),
+                true,
+                timezone('utc', NOW()) - ( random() * ( NOW() + '95 days' - NOW() ) )
+            FROM generate_series(1, how_many) AS source(i)
+            ;
 
 END
 $$
@@ -175,20 +175,20 @@ CREATE OR REPLACE FUNCTION benchmark_fill_post3(how_many BigInt)
 RETURNS VOID AS
 $$
 BEGIN
-			INSERT INTO post_temp0
-			( name, body, community_id, creator_id, local, published )
-			SELECT 'ZipGen Stress-Test Huge Community post AAAA0000 p' || i,
-				'post body ' || i,
-				19, -- targeted testing community from simulation
-				(SELECT id FROM person
-					WHERE source=source
-					AND local=true
-					ORDER BY random() LIMIT 1
-					),
-				true,
-				timezone('utc', NOW()) - ( random() * ( NOW() + '128 days' - NOW() ) )
-			FROM generate_series(1, how_many) AS source(i)
-			;
+            INSERT INTO post_temp0
+            ( name, body, community_id, creator_id, local, published )
+            SELECT 'ZipGen Stress-Test Huge Community post AAAA0000 p' || i,
+                'post body ' || i,
+                19, -- targeted testing community from simulation
+                (SELECT id FROM person
+                    WHERE source=source
+                    AND local=true
+                    ORDER BY random() LIMIT 1
+                    ),
+                true,
+                timezone('utc', NOW()) - ( random() * ( NOW() + '128 days' - NOW() ) )
+            FROM generate_series(1, how_many) AS source(i)
+            ;
 
 END
 $$
@@ -203,20 +203,20 @@ RETURNS VOID AS
 $$
 BEGIN
 
-			INSERT INTO comment_temp0
-			( id, path, ap_id, content, post_id, creator_id, local, published )
-			SELECT
-				nextval(pg_get_serial_sequence('comment', 'id')),
-				text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
-				'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-				E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 c' || i
-				    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
-				100,
-				7,
-				true,
-				timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
-			FROM generate_series(1, how_many) AS source(i)
-			;
+            INSERT INTO comment_temp0
+            ( id, path, ap_id, content, post_id, creator_id, local, published )
+            SELECT
+                nextval(pg_get_serial_sequence('comment', 'id')),
+                text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
+                'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
+                E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 c' || i
+                    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
+                100,
+                7,
+                true,
+                timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
+            FROM generate_series(1, how_many) AS source(i)
+            ;
 
 END
 $$
@@ -228,24 +228,24 @@ RETURNS VOID AS
 $$
 BEGIN
 
-			INSERT INTO comment_temp0
-			( id, path, ap_id, content, post_id, creator_id, local, published )
-			SELECT
-				nextval(pg_get_serial_sequence('comment', 'id')),
-				text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
-				'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-				E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 c' || i
-				    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
-				100,
-				(SELECT id FROM person
-					WHERE source=source
-					AND local=true
-					ORDER BY random() LIMIT 1
-					),
-				true,
-				timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
-			FROM generate_series(1, how_many) AS source(i)
-			;
+            INSERT INTO comment_temp0
+            ( id, path, ap_id, content, post_id, creator_id, local, published )
+            SELECT
+                nextval(pg_get_serial_sequence('comment', 'id')),
+                text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
+                'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
+                E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 c' || i
+                    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
+                100,
+                (SELECT id FROM person
+                    WHERE source=source
+                    AND local=true
+                    ORDER BY random() LIMIT 1
+                    ),
+                true,
+                timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
+            FROM generate_series(1, how_many) AS source(i)
+            ;
 
 END
 $$
@@ -257,23 +257,23 @@ RETURNS VOID AS
 $$
 BEGIN
 
-			INSERT INTO comment_temp0
-			( id, path, ap_id, content, post_id, creator_id, local, published )
-			SELECT
-				nextval(pg_get_serial_sequence('comment', 'id')),
-				text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
-				'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-				E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 c' || i
-				    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
-				(SELECT id FROM post_temp_id0
-					WHERE source=source
-					ORDER BY random() LIMIT 1
-					),
-				7,
-				true,
-				timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
-			FROM generate_series(1, how_many) AS source(i)
-			;
+            INSERT INTO comment_temp0
+            ( id, path, ap_id, content, post_id, creator_id, local, published )
+            SELECT
+                nextval(pg_get_serial_sequence('comment', 'id')),
+                text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
+                'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
+                E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 c' || i
+                    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
+                (SELECT id FROM post_temp_id0
+                    WHERE source=source
+                    ORDER BY random() LIMIT 1
+                    ),
+                7,
+                true,
+                timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
+            FROM generate_series(1, how_many) AS source(i)
+            ;
 
 END
 $$
@@ -284,21 +284,21 @@ RETURNS VOID AS
 $$
 BEGIN
 
-			INSERT INTO comment_temp0
-			( id, path, ap_id, content, post_id, creator_id, local, published )
-			SELECT
-				nextval(pg_get_serial_sequence('comment', 'id')),
-				text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
-				'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-				E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 post' || post_temp_id0.id
-				    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
-				post_temp_id0.id,
-				7,
-				true,
-				timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
-			FROM post_temp_id0
-			-- no ORDER BY, already pre-random
-			;
+            INSERT INTO comment_temp0
+            ( id, path, ap_id, content, post_id, creator_id, local, published )
+            SELECT
+                nextval(pg_get_serial_sequence('comment', 'id')),
+                text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
+                'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
+                E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 post' || post_temp_id0.id
+                    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
+                post_temp_id0.id,
+                7,
+                true,
+                timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
+            FROM post_temp_id0
+            -- no ORDER BY, already pre-random
+            ;
 
 END
 $$
@@ -310,25 +310,25 @@ RETURNS VOID AS
 $$
 BEGIN
 
-			INSERT INTO comment_temp0
-			( id, path, ap_id, content, post_id, creator_id, local, published )
-			SELECT
-				nextval(pg_get_serial_sequence('comment', 'id')),
-				text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
-				'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-				E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 post' || post_temp_id0.id
-				    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
-				post_temp_id0.id,
-				(SELECT id FROM person
-					WHERE post_temp_id0.id=post_temp_id0.id
-					AND local=true
-					ORDER BY random() LIMIT 1
-					),
-				true,
-				timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
-			FROM post_temp_id0
-			-- no ORDER BY, already pre-random
-			;
+            INSERT INTO comment_temp0
+            ( id, path, ap_id, content, post_id, creator_id, local, published )
+            SELECT
+                nextval(pg_get_serial_sequence('comment', 'id')),
+                text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
+                'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
+                E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 post' || post_temp_id0.id
+                    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
+                post_temp_id0.id,
+                (SELECT id FROM person
+                    WHERE post_temp_id0.id=post_temp_id0.id
+                    AND local=true
+                    ORDER BY random() LIMIT 1
+                    ),
+                true,
+                timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
+            FROM post_temp_id0
+            -- no ORDER BY, already pre-random
+            ;
 
 END
 $$
@@ -342,36 +342,36 @@ RETURNS VOID AS
 $$
 BEGIN
 
-			INSERT INTO comment
-			( id, path, ap_id, content, post_id, creator_id, local, published )
-			-- ( path, content, post_id, creator_id, local, published )
-			SELECT
-				nextval(pg_get_serial_sequence('comment', 'id')),
-				text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
-				'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-				E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 c' || i
-				    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
-				(SELECT id FROM post
-					WHERE source=source
-					AND community_id IN (
-						-- DO NOT put source=source, static query result is fine
-						SELECT id FROM community
-						WHERE local=true
-						AND id <> 19  -- exclude the big one to speed up inserts
-						AND name LIKE 'zy_%'
-						)
-					AND local=true
-					ORDER BY random() LIMIT 1
-					),
-				(SELECT id FROM person
-					WHERE source=source
-					AND local=true
-					ORDER BY random() LIMIT 1
-					),
-				true,
-				timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
-			FROM generate_series(1, how_many) AS source(i)
-			;
+            INSERT INTO comment
+            ( id, path, ap_id, content, post_id, creator_id, local, published )
+            -- ( path, content, post_id, creator_id, local, published )
+            SELECT
+                nextval(pg_get_serial_sequence('comment', 'id')),
+                text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
+                'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
+                E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 c' || i
+                    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
+                (SELECT id FROM post
+                    WHERE source=source
+                    AND community_id IN (
+                        -- DO NOT put source=source, static query result is fine
+                        SELECT id FROM community
+                        WHERE local=true
+                        AND id <> 19  -- exclude the big one to speed up inserts
+                        AND name LIKE 'zy_%'
+                        )
+                    AND local=true
+                    ORDER BY random() LIMIT 1
+                    ),
+                (SELECT id FROM person
+                    WHERE source=source
+                    AND local=true
+                    ORDER BY random() LIMIT 1
+                    ),
+                true,
+                timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
+            FROM generate_series(1, how_many) AS source(i)
+            ;
 
 END
 $$
@@ -385,30 +385,30 @@ RETURNS VOID AS
 $$
 BEGIN
 
-			INSERT INTO comment
-			( id, path, ap_id, content, post_id, creator_id, local, published )
-			SELECT
-				nextval(pg_get_serial_sequence('comment', 'id')),
-				text2ltree('0.' || currval(pg_get_serial_sequence('comment', 'id')) ),
-				'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-				E'ZipGen Stress-Test message in Huge Community\n\n comment AAAA0000 c' || i || E'\n\n all from the same random user.'
-					|| ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
-				(SELECT id FROM post
-					WHERE source=source
-					AND community_id = 19
-					AND local=true
-					ORDER BY random() LIMIT 1
-					),
-			    -- random person, but same person for all quantity
-				-- NOT: source=source
-				(SELECT id FROM person
-					WHERE local=true
-					ORDER BY random() LIMIT 1
-					),
-				true,
-				timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
-			FROM generate_series(1, how_many) AS source(i)
-			;
+            INSERT INTO comment
+            ( id, path, ap_id, content, post_id, creator_id, local, published )
+            SELECT
+                nextval(pg_get_serial_sequence('comment', 'id')),
+                text2ltree('0.' || currval(pg_get_serial_sequence('comment', 'id')) ),
+                'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
+                E'ZipGen Stress-Test message in Huge Community\n\n comment AAAA0000 c' || i || E'\n\n all from the same random user.'
+                    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
+                (SELECT id FROM post
+                    WHERE source=source
+                    AND community_id = 19
+                    AND local=true
+                    ORDER BY random() LIMIT 1
+                    ),
+                -- random person, but same person for all quantity
+                -- NOT: source=source
+                (SELECT id FROM person
+                    WHERE local=true
+                    ORDER BY random() LIMIT 1
+                    ),
+                true,
+                timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
+            FROM generate_series(1, how_many) AS source(i)
+            ;
 
 END
 $$
@@ -423,32 +423,32 @@ RETURNS VOID AS
 $$
 BEGIN
 
-			INSERT INTO comment
-			( id, path, ap_id, content, post_id, creator_id, local, published )
-			SELECT
-				nextval(pg_get_serial_sequence('comment', 'id')),
-				text2ltree( path::text || '.' || currval(pg_get_serial_sequence('comment', 'id')) ),
-				'http://lemmy-slpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-				E'ZipGen Stress-Test message in Huge Community\n\n comment AAAA0000 c' || '?' || E'\n\n all from the same random user.'
-					|| ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') )
-					|| ' path ' || path::text
-					|| E'\n\n> ' || REPLACE(content, E'\n', ' CRLF '),
-				post_id,
-				-- random person, but same person for all quantity
-				-- NOT: source=source
-				7,
-				true,
-				NOW()
-			FROM comment
-			WHERE post_id IN
-				(SELECT id FROM post
-					WHERE community_id = 19
-					AND local=true
-					-- AND path level < 14?
-					)
-			AND local=true
-			LIMIT how_many
-			;
+            INSERT INTO comment
+            ( id, path, ap_id, content, post_id, creator_id, local, published )
+            SELECT
+                nextval(pg_get_serial_sequence('comment', 'id')),
+                text2ltree( path::text || '.' || currval(pg_get_serial_sequence('comment', 'id')) ),
+                'http://lemmy-slpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
+                E'ZipGen Stress-Test message in Huge Community\n\n comment AAAA0000 c' || '?' || E'\n\n all from the same random user.'
+                    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') )
+                    || ' path ' || path::text
+                    || E'\n\n> ' || REPLACE(content, E'\n', ' CRLF '),
+                post_id,
+                -- random person, but same person for all quantity
+                -- NOT: source=source
+                7,
+                true,
+                NOW()
+            FROM comment
+            WHERE post_id IN
+                (SELECT id FROM post
+                    WHERE community_id = 19
+                    AND local=true
+                    -- AND path level < 14?
+                    )
+            AND local=true
+            LIMIT how_many
+            ;
 
 END
 $$
@@ -481,56 +481,56 @@ BEGIN
         -- A 2 day necro-bump limit
         IF prev_post_aggregate.published > ('now'::timestamp - '2 days'::interval) THEN
             -- Fix issue with being able to necro-bump your own post
-			IF NEW.creator_id != prev_post_aggregate.creator_id THEN
-				UPDATE
-					post_aggregates pa
-				SET
-					newest_comment_time = NEW.published,
-					comments = comments + 1,
-					newest_comment_time_necro = NEW.published
-				WHERE
-					pa.post_id = NEW.post_id;
-					
-				executed_update := TRUE;
-			END IF;
+            IF NEW.creator_id != prev_post_aggregate.creator_id THEN
+                UPDATE
+                    post_aggregates pa
+                SET
+                    newest_comment_time = NEW.published,
+                    comments = comments + 1,
+                    newest_comment_time_necro = NEW.published
+                WHERE
+                    pa.post_id = NEW.post_id;
+                    
+                executed_update := TRUE;
+            END IF;
         END IF;
         
         IF NOT executed_update THEN
             UPDATE
-				post_aggregates pa
-			SET
-				newest_comment_time = NEW.published,
-				comments = comments + 1
-			WHERE
-				pa.post_id = NEW.post_id;
-		END IF;
+                post_aggregates pa
+            SET
+                newest_comment_time = NEW.published,
+                comments = comments + 1
+            WHERE
+                pa.post_id = NEW.post_id;
+        END IF;
 
     -- ELSE not an INSERT
-	ELSIF EXISTS (
-	    -- If not INSERT, Check for post existence - it may not exist anymore
-		SELECT
-			1
-		FROM
-			post p
-		WHERE
-			p.id = OLD.post_id
-		)
-		THEN
-			IF (was_restored_or_created (TG_OP, OLD, NEW)) THEN
-				UPDATE
-					post_aggregates pa
-				SET
-					comments = comments + 1
-				WHERE
-					pa.post_id = NEW.post_id;
-			ELSIF (was_removed_or_deleted (TG_OP, OLD, NEW)) THEN
-				UPDATE
-					post_aggregates pa
-				SET
-					comments = comments - 1
-				WHERE
-					pa.post_id = OLD.post_id;
-			END IF;
+    ELSIF EXISTS (
+        -- If not INSERT, Check for post existence - it may not exist anymore
+        SELECT
+            1
+        FROM
+            post p
+        WHERE
+            p.id = OLD.post_id
+        )
+        THEN
+            IF (was_restored_or_created (TG_OP, OLD, NEW)) THEN
+                UPDATE
+                    post_aggregates pa
+                SET
+                    comments = comments + 1
+                WHERE
+                    pa.post_id = NEW.post_id;
+            ELSIF (was_removed_or_deleted (TG_OP, OLD, NEW)) THEN
+                UPDATE
+                    post_aggregates pa
+                SET
+                    comments = comments - 1
+                WHERE
+                    pa.post_id = OLD.post_id;
+            END IF;
     END IF;
 
     RETURN NULL;
@@ -540,7 +540,7 @@ $$;
 -- *************************************************************************************
 -- ** Execute
 -- *************************************************************************************
--- this takes: real	4m44.482s
+-- this takes: real 4m44.482s
 /*
  13440.881 | 13440.881 | 13440.881 | 13440.881 | 13440.881 | 13440.881 | 13440.881 |       1
  benchmark_fill_post3 kicking off

@@ -396,7 +396,8 @@ BEGIN
                 true,
                 NOW()
             FROM comment_temp0
-            -- WHERE post_id NOT IN (100l 101)
+            -- prior testing targeted some specific post id
+            WHERE post_id NOT IN (100, 101)
             LIMIT how_many
             ;
 

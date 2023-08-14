@@ -475,7 +475,6 @@ BEGIN
     IF TG_OP = 'INSERT' THEN
         -- assumption made that every new comment has an already existing post_aggregates row to reference
         -- LIMIT 1 used to satisfy PostgreSQL function, but there should never be duplicates for same post_id
-        -- prev_post_aggregate := (SELECT * FROM post_aggregates WHERE post_id = NEW.post_id LIMIT 1);    
         SELECT * INTO prev_post_aggregate FROM post_aggregates WHERE post_id = NEW.post_id LIMIT 1;    
 
         -- A 2 day necro-bump limit
@@ -490,7 +489,7 @@ BEGIN
                     newest_comment_time_necro = NEW.published
                 WHERE
                     pa.post_id = NEW.post_id;
-                    
+
                 executed_update := TRUE;
             END IF;
         END IF;

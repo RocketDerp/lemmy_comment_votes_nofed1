@@ -755,3 +755,173 @@ CREATE EXTENSION
 
 real	37m31.054s
 
+
+
+==========================
+Run with revised FUNCTION on post_aggregates for comments.
+Run against current .sql file content
+
+
+Time:        44.156 s
+Ran all test suites matching /simulate_content.spec.ts/i.
+:::: jest exited with code 0
+good test run
+************
+************ major SQL script
+************ lemmy_alpha
+************
+CREATE FUNCTION
+         avg          |  min  |  q1   | median |  q3   |         p95          |  max  | repeats 
+----------------------+-------+-------+--------+-------+----------------------+-------+---------
+ 0.005180000000000003 | 0.004 | 0.004 |  0.004 | 0.004 | 0.006549999999999998 | 0.037 |      50
+(1 row)
+
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TABLE
+CREATE TABLE
+CREATE SEQUENCE
+ setval 
+--------
+     34
+(1 row)
+
+ALTER TABLE
+CREATE SEQUENCE
+ setval 
+--------
+       
+(1 row)
+
+ALTER TABLE
+          status_message          
+----------------------------------
+ benchmark_fill_post2 kicking off
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 671.717 | 671.717 | 671.717 | 671.717 | 671.717 | 671.717 | 671.717 |       1
+(1 row)
+
+          status_message          
+----------------------------------
+ benchmark_fill_post3 kicking off
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 307.915 | 307.915 | 307.915 | 307.915 | 307.915 | 307.915 | 307.915 |       1
+(1 row)
+
+psql:mass_insert0.sql:627: NOTICE:  table "post_temp_id0" does not exist, skipping
+DROP TABLE
+             status_message             
+----------------------------------------
+ post targets post_temp_id0 kicking off
+(1 row)
+
+  avg   |  min   |   q1   | median |   q3   |  p95   |  max   | repeats 
+--------+--------+--------+--------+--------+--------+--------+---------
+ 27.216 | 27.216 | 27.216 | 27.216 | 27.216 | 27.216 | 27.216 |       1
+(1 row)
+
+CREATE EXTENSION
+ pg_stat_statements_reset 
+--------------------------
+ 
+(1 row)
+
+ status_message  
+-----------------
+ simple comment0
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 352.771 | 352.771 | 352.771 | 352.771 | 352.771 | 352.771 | 352.771 |       1
+(1 row)
+
+ status_message  
+-----------------
+ simple comment1
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 546.263 | 546.263 | 546.263 | 546.263 | 546.263 | 546.263 | 546.263 |       1
+(1 row)
+
+ status_message  
+-----------------
+ simple comment3
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 348.694 | 348.694 | 348.694 | 348.694 | 348.694 | 348.694 | 348.694 |       1
+(1 row)
+
+ status_message  
+-----------------
+ simple comment4
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 578.878 | 578.878 | 578.878 | 578.878 | 578.878 | 578.878 | 578.878 |       1
+(1 row)
+
+ count  
+--------
+ 100000
+(1 row)
+
+                     status_message                     
+--------------------------------------------------------
+ copy post temp table into main post table, kicking off
+(1 row)
+
+   avg    |   min    |    q1    |  median  |    q3    |   p95    |   max    | repeats 
+----------+----------+----------+----------+----------+----------+----------+---------
+ 69296.09 | 69296.09 | 69296.09 | 69296.09 | 69296.09 | 69296.09 | 69296.09 |       1
+(1 row)
+
+                      status_message                       
+-----------------------------------------------------------
+ copy comment temp table into main post table, kicking off
+(1 row)
+
+    avg     |    min     |     q1     |   median   |     q3     |    p95     |    max     | repeats 
+------------+------------+------------+------------+------------+------------+------------+---------
+ 732875.919 | 732875.919 | 732875.919 | 732875.919 | 732875.919 | 732875.919 | 732875.919 |       1
+(1 row)
+
+psql:mass_insert0.sql:739: ERROR:  syntax error at or near "action"
+LINE 72:  action going on for aggregates must make this slower and wh...
+          ^
+psql:mass_insert0.sql:740: ERROR:  duplicate key value violates unique constraint "post_pkey"
+DETAIL:  Key (id)=(35) already exists.
+CONTEXT:  SQL statement "INSERT INTO post SELECT * FROM post_temp0"
+PL/pgSQL function bench(text,integer,integer) line 20 at EXECUTE
+                      status_message                       
+-----------------------------------------------------------
+ copy comment temp table into main post table, kicking off
+(1 row)
+
+psql:mass_insert0.sql:742: ERROR:  duplicate key value violates unique constraint "comment_pkey"
+DETAIL:  Key (id)=(1) already exists.
+CONTEXT:  SQL statement "INSERT INTO comment SELECT * FROM comment_temp0"
+PL/pgSQL function bench(text,integer,integer) line 20 at EXECUTE
+
+real	13m25.218s
+

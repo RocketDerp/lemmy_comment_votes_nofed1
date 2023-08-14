@@ -223,6 +223,118 @@ $$
 LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION benchmark_fill_comment_simple1(how_many BigInt)
+RETURNS VOID AS
+$$
+BEGIN
+
+			INSERT INTO comment_temp0
+			( id, path, ap_id, content, post_id, creator_id, local, published )
+			SELECT
+				nextval(pg_get_serial_sequence('comment', 'id')),
+				text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
+				'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
+				E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 c' || i
+				    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
+				100,
+				(SELECT id FROM person
+					WHERE source=source
+					AND local=true
+					ORDER BY random() LIMIT 1
+					),
+				true,
+				timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
+			FROM generate_series(1, how_many) AS source(i)
+			;
+
+END
+$$
+LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION benchmark_fill_comment_simple2(how_many BigInt)
+RETURNS VOID AS
+$$
+BEGIN
+
+			INSERT INTO comment_temp0
+			( id, path, ap_id, content, post_id, creator_id, local, published )
+			SELECT
+				nextval(pg_get_serial_sequence('comment', 'id')),
+				text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
+				'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
+				E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 c' || i
+				    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
+				(SELECT id FROM post_temp_id0
+					WHERE source=source
+					ORDER BY random() LIMIT 1
+					),
+				7,
+				true,
+				timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
+			FROM generate_series(1, how_many) AS source(i)
+			;
+
+END
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION benchmark_fill_comment_simple3(how_many BigInt)
+RETURNS VOID AS
+$$
+BEGIN
+
+			INSERT INTO comment_temp0
+			( id, path, ap_id, content, post_id, creator_id, local, published )
+			SELECT
+				nextval(pg_get_serial_sequence('comment', 'id')),
+				text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
+				'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
+				E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 post' || post_temp_id0.id
+				    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
+				post_temp_id0.id,
+				7,
+				true,
+				timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
+			FROM post_temp_id0
+			-- no ORDER BY, already pre-random
+			;
+
+END
+$$
+LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION benchmark_fill_comment_simple4(how_many BigInt)
+RETURNS VOID AS
+$$
+BEGIN
+
+			INSERT INTO comment_temp0
+			( id, path, ap_id, content, post_id, creator_id, local, published )
+			SELECT
+				nextval(pg_get_serial_sequence('comment', 'id')),
+				text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
+				'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
+				E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 post' || post_temp_id0.id
+				    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
+				post_temp_id0.id,
+				(SELECT id FROM person
+					WHERE post_temp_id0.id=post_temp_id0.id
+					AND local=true
+					ORDER BY random() LIMIT 1
+					),
+				true,
+				timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
+			FROM post_temp_id0
+			-- no ORDER BY, already pre-random
+			;
+
+END
+$$
+LANGUAGE plpgsql;
+
+
 -- lemmy_helper benchmark_fill_comment1
 
 CREATE OR REPLACE FUNCTION benchmark_fill_comment1(how_many BigInt)
@@ -424,19 +536,44 @@ SELECT 'benchmark_fill_post3 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_post3(30000);', 1, 0);
 
 -- copy in the temp post table to main post table
-SELECT 'copy post temp table into main post table, kicking off' AS status_message;
-SELECT * FROM bench('INSERT INTO post SELECT * FROM post_temp0', 1, 0);
+--SELECT 'copy post temp table into main post table, kicking off' AS status_message;
+--SELECT * FROM bench('INSERT INTO post SELECT * FROM post_temp0', 1, 0);
+
+
+
+-- CREATE TEMP TABLE post_temp_id0 (LIKE post INCLUDING DEFAULTS);
+DROP TABLE IF EXISTS post_temp_id0;
+SELECT 'post targets post_temp_id0 kicking off' AS status_message;
+SELECT * FROM bench('
+CREATE TEMP TABLE IF NOT EXISTS post_temp_id0 AS (
+   SELECT id FROM post_temp0
+   ORDER BY random() LIMIT 25000
+);', 1, 0);
+
+
 
 -- Comments come next in Lemmy, they go onto a post
-SELECT 'simple comment' AS status_message;
+SELECT 'simple comment0' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_simple0(25000);', 1, 0);
+SELECT 'simple comment1' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_simple1(25000);', 1, 0);
+SELECT 'simple comment2' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_simple2(25000);', 1, 0);
+SELECT 'simple comment3' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_simple3(25000);', 1, 0);
+SELECT 'simple comment4' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_simple4(25000);', 1, 0);
 
+SELECT COUNT(*) FROM comment_temp0 AS comment_temp0_cuunt;
+
+/*
 SELECT 'benchmark_fill_comment1 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment1(25000);', 1, 0);
 SELECT 'benchmark_fill_comment2 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment2(5000);', 1, 0);
 SELECT 'benchmark_fill_comment_reply0 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply0(5000);', 1, 0);
+*/
 
 /*
 -- ALTER TABLE ONLY public.comment ADD CONSTRAINT comment_pkey PRIMARY KEY (id);

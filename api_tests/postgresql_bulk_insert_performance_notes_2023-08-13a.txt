@@ -477,3 +477,129 @@ real	4m44.762s
 user	0m0.031s
 sys	0m0.007s
 
+
+-------------------
+Last run as of time of git commit
+
+
+CREATE FUNCTION
+         avg          |  min  |  q1   | median |  q3   |         p95          |  max  | repeats 
+----------------------+-------+-------+--------+-------+----------------------+-------+---------
+ 0.004060000000000003 | 0.003 | 0.003 |  0.003 | 0.003 | 0.004549999999999998 | 0.035 |      50
+(1 row)
+
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TABLE
+CREATE TABLE
+psql:mass_insert0.sql:516: ERROR:  relation "post_temp0_seq" already exists
+ setval 
+--------
+     34
+(1 row)
+
+ALTER TABLE
+psql:mass_insert0.sql:521: ERROR:  relation "comment_temp0_seq" already exists
+ setval 
+--------
+       
+(1 row)
+
+ALTER TABLE
+          status_message          
+----------------------------------
+ benchmark_fill_post2 kicking off
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 393.832 | 393.832 | 393.832 | 393.832 | 393.832 | 393.832 | 393.832 |       1
+(1 row)
+
+          status_message          
+----------------------------------
+ benchmark_fill_post3 kicking off
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 250.651 | 250.651 | 250.651 | 250.651 | 250.651 | 250.651 | 250.651 |       1
+(1 row)
+
+psql:mass_insert0.sql:545: NOTICE:  table "post_temp_id0" does not exist, skipping
+DROP TABLE
+             status_message             
+----------------------------------------
+ post targets post_temp_id0 kicking off
+(1 row)
+
+  avg   |  min   |   q1   | median |   q3   |  p95   |  max   | repeats 
+--------+--------+--------+--------+--------+--------+--------+---------
+ 23.196 | 23.196 | 23.196 | 23.196 | 23.196 | 23.196 | 23.196 |       1
+(1 row)
+
+ status_message  
+-----------------
+ simple comment0
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 265.485 | 265.485 | 265.485 | 265.485 | 265.485 | 265.485 | 265.485 |       1
+(1 row)
+
+ status_message  
+-----------------
+ simple comment1
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 423.234 | 423.234 | 423.234 | 423.234 | 423.234 | 423.234 | 423.234 |       1
+(1 row)
+
+ status_message  
+-----------------
+ simple comment2
+(1 row)
+
+    avg    |    min    |    q1     |  median   |    q3     |    p95    |    max    | repeats 
+-----------+-----------+-----------+-----------+-----------+-----------+-----------+---------
+ 52232.931 | 52232.931 | 52232.931 | 52232.931 | 52232.931 | 52232.931 | 52232.931 |       1
+(1 row)
+
+ status_message  
+-----------------
+ simple comment3
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 316.985 | 316.985 | 316.985 | 316.985 | 316.985 | 316.985 | 316.985 |       1
+(1 row)
+
+ status_message  
+-----------------
+ simple comment4
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 466.512 | 466.512 | 466.512 | 466.512 | 466.512 | 466.512 | 466.512 |       1
+(1 row)
+
+ count  
+--------
+ 125000
+(1 row)
+
+
+real	0m54.536s

@@ -51,4 +51,25 @@ GROUP BY c.id
 /*
 Research and study:
    https://stackoverflow.com/questions/24954606/postgres-ltree-query-count-joined-items-on-each-level-of-tree
+   
+   useful?
+       https://stackoverflow.com/questions/66497208/select-rows-and-have-children-of-said-rows-as-a-column-using-ltree
 */
+
+select id, path,
+  (select array_agg(p.path)
+	from comment p
+	where p.path <@ t.path
+	)
+  from comment t
+  where nlevel(path) > 2
+  LIMIT 5
+  ;
+ 
+-- https://stackoverflow.com/questions/57519302/postgresql-ltree-query-to-get-comment-threads-nested-json-array-and-build-html-f
+
+SELECT nlevel(path) AS depth, id, path, subpath(path, 1, 1), post_id
+  FROM comment
+  ORDER BY nlevel(path) DESC
+  LIMIT 15
+  ;

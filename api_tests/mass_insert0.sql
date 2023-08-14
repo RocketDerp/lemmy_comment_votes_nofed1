@@ -610,8 +610,8 @@ without child count on comment_aggregates, lemmy-ui may not show replies!
 */
 SELECT 'benchmark_fill_comment_reply_using_temp0 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(2711);', 1, 0);
-SELECT 'benchmark_fill_comment_reply_using_temp0 ROUND 2 kicking off 5 runs' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(3464);', 5, 0);
+SELECT 'benchmark_fill_comment_reply_using_temp0 ROUND 2 kicking off 9 runs' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(3200);', 9, 0);
 
 SELECT COUNT(*) FROM comment_temp0 AS comment_temp0_cuunt;
 

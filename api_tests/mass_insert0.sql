@@ -550,6 +550,8 @@ CREATE TEMP TABLE IF NOT EXISTS post_temp_id0 AS (
    ORDER BY random() LIMIT 25000
 );', 1, 0);
 
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+SELECT pg_stat_statements_reset();
 
 
 -- Comments come next in Lemmy, they go onto a post
@@ -557,14 +559,24 @@ SELECT 'simple comment0' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_simple0(25000);', 1, 0);
 SELECT 'simple comment1' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_simple1(25000);', 1, 0);
-SELECT 'simple comment2' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_comment_simple2(25000);', 1, 0);
+--SELECT 'simple comment2' AS status_message;
+--SELECT * FROM bench('SELECT benchmark_fill_comment_simple2(25000);', 1, 0);
 SELECT 'simple comment3' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_simple3(25000);', 1, 0);
 SELECT 'simple comment4' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_simple4(25000);', 1, 0);
 
 SELECT COUNT(*) FROM comment_temp0 AS comment_temp0_cuunt;
+
+-- copy in the temp post table to main post table
+--   the poer-row trigger action going on for aggregates must make this slower and why temp table so much faster
+--   could reproduce the trigger as a per-statement action for these operations, remove/restore existing trigger before/after
+SELECT 'copy post temp table into main post table, kicking off' AS status_message;
+SELECT * FROM bench('INSERT INTO post SELECT * FROM post_temp0', 1, 0);
+SELECT 'copy comment temp table into main post table, kicking off' AS status_message;
+SELECT * FROM bench('INSERT INTO comment SELECT * FROM comment_temp0', 1, 0);
+
+-- review results with lemmy-ui
 
 /*
 SELECT 'benchmark_fill_comment1 kicking off' AS status_message;

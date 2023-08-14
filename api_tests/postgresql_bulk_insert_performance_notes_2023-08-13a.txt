@@ -603,3 +603,155 @@ DROP TABLE
 
 
 real	0m54.536s
+
+
+===========================
+run of code at time of commit
+
+
+Time:        43.98 s
+Ran all test suites matching /simulate_content.spec.ts/i.
+:::: jest exited with code 0
+good test run
+************
+************ major SQL script
+************ lemmy_alpha
+************
+CREATE FUNCTION
+         avg          |  min  |  q1   | median |   q3    |         p95          |  max  | repeats 
+----------------------+-------+-------+--------+---------+----------------------+-------+---------
+ 0.004600000000000003 | 0.003 | 0.003 |  0.003 | 0.00375 | 0.006099999999999994 | 0.055 |      50
+(1 row)
+
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TABLE
+CREATE TABLE
+CREATE SEQUENCE
+ setval 
+--------
+     34
+(1 row)
+
+ALTER TABLE
+CREATE SEQUENCE
+ setval 
+--------
+       
+(1 row)
+
+ALTER TABLE
+          status_message          
+----------------------------------
+ benchmark_fill_post2 kicking off
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 533.775 | 533.775 | 533.775 | 533.775 | 533.775 | 533.775 | 533.775 |       1
+(1 row)
+
+          status_message          
+----------------------------------
+ benchmark_fill_post3 kicking off
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 273.937 | 273.937 | 273.937 | 273.937 | 273.937 | 273.937 | 273.937 |       1
+(1 row)
+
+psql:mass_insert0.sql:545: NOTICE:  table "post_temp_id0" does not exist, skipping
+DROP TABLE
+             status_message             
+----------------------------------------
+ post targets post_temp_id0 kicking off
+(1 row)
+
+  avg   |  min   |   q1   | median |   q3   |  p95   |  max   | repeats 
+--------+--------+--------+--------+--------+--------+--------+---------
+ 26.948 | 26.948 | 26.948 | 26.948 | 26.948 | 26.948 | 26.948 |       1
+(1 row)
+
+CREATE EXTENSION
+ pg_stat_statements_reset 
+--------------------------
+ 
+(1 row)
+
+ status_message  
+-----------------
+ simple comment0
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 305.053 | 305.053 | 305.053 | 305.053 | 305.053 | 305.053 | 305.053 |       1
+(1 row)
+
+ status_message  
+-----------------
+ simple comment1
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 487.374 | 487.374 | 487.374 | 487.374 | 487.374 | 487.374 | 487.374 |       1
+(1 row)
+
+ status_message  
+-----------------
+ simple comment3
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 315.771 | 315.771 | 315.771 | 315.771 | 315.771 | 315.771 | 315.771 |       1
+(1 row)
+
+ status_message  
+-----------------
+ simple comment4
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 503.396 | 503.396 | 503.396 | 503.396 | 503.396 | 503.396 | 503.396 |       1
+(1 row)
+
+ count  
+--------
+ 100000
+(1 row)
+
+                     status_message                     
+--------------------------------------------------------
+ copy post temp table into main post table, kicking off
+(1 row)
+
+    avg    |    min    |    q1     |  median   |    q3     |    p95    |    max    | repeats 
+-----------+-----------+-----------+-----------+-----------+-----------+-----------+---------
+ 64658.239 | 64658.239 | 64658.239 | 64658.239 | 64658.239 | 64658.239 | 64658.239 |       1
+(1 row)
+
+                      status_message                       
+-----------------------------------------------------------
+ copy comment temp table into main post table, kicking off
+(1 row)
+
+     avg     |     min     |     q1      |   median    |     q3      |     p95     |     max     | repeats 
+-------------+-------------+-------------+-------------+-------------+-------------+-------------+---------
+ 2183758.383 | 2183758.383 | 2183758.383 | 2183758.383 | 2183758.383 | 2183758.383 | 2183758.383 |       1
+(1 row)
+
+
+real	37m31.054s
+

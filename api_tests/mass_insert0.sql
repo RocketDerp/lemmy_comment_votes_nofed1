@@ -610,6 +610,8 @@ without child count on comment_aggregates, lemmy-ui may not show replies!
 */
 SELECT 'benchmark_fill_comment_reply_using_temp0 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(2711);', 1, 0);
+SELECT 'benchmark_fill_comment_reply_using_temp0 ROUND 2 kicking off 5 runs' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(3464);', 5, 0);
 
 SELECT COUNT(*) FROM comment_temp0 AS comment_temp0_cuunt;
 
@@ -641,6 +643,18 @@ SELECT * FROM bench('SELECT benchmark_fill_comment_reply0(5000);', 1, 0);
 ALTER TABLE public.comment SET LOGGED;
 ALTER TABLE public.post SET LOGGED;
 */
+
+
+/*
+Can we come up with a way to update child count of comment_aggregates in mass?
+cound only those with nlevel(15), then 14, then 13
+and as we get to the lower levels, use prior counts from comment_aggregates instead of direct counts?
+Run this as own .sql file while developing?
+*/
+SELECT count(*) AS comments_with_child_count_rows
+    FROM comment_aggregates
+    WHERE child_count > 0;
+
 
 SELECT 'PostgreSQL seems to be confuused if next section is all commented out?';
 

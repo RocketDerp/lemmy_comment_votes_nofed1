@@ -406,6 +406,43 @@ $$
 LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION benchmark_fill_comment_reply_using_temp0_extendbranch(how_many BigInt)
+RETURNS VOID AS
+$$
+BEGIN
+
+            INSERT INTO comment_temp0
+            ( id, path, ap_id, content, post_id, creator_id, local, published )
+            SELECT
+                nextval(pg_get_serial_sequence('comment', 'id')),
+                text2ltree( path::text || '.' || currval(pg_get_serial_sequence('comment', 'id')) ),
+                'http://lemmy-slpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
+                E'ZipGen Stress-Test message comment_reply_using_temp0_extendbranch\n\n comment AAAA0000 c' || '?' || E'\n\n all from the same random user.'
+                    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') )
+                    || ' path ' || path::text
+                    || E'\n\n> ' || REPLACE(content, E'\n', ' CRLF '),
+                comment_temp0.post_id,
+                (SELECT id FROM person
+                    WHERE comment_temp0.id=comment_temp0.id
+                    AND local=true
+                    ORDER BY random() LIMIT 1
+                    ),
+                true,
+                NOW()
+            FROM comment_temp0
+            -- prior testing targeted some specific post id
+            WHERE post_id NOT IN (100, 101)
+            AND nlevel(path) > 3
+            LIMIT how_many
+            ;
+
+END
+$$
+LANGUAGE plpgsql;
+
+
+
+
 -- *************************************************************************************
 -- ** Revised Lemmy TRIGGER logic
 -- *************************************************************************************
@@ -610,8 +647,10 @@ without child count on comment_aggregates, lemmy-ui may not show replies!
 */
 SELECT 'benchmark_fill_comment_reply_using_temp0 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(2711);', 1, 0);
-SELECT 'benchmark_fill_comment_reply_using_temp0 ROUND 2 kicking off 9 runs' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(3200);', 9, 0);
+SELECT 'benchmark_fill_comment_reply_using_temp0 ROUND 2 kicking off 20 runs' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(3200);', 20, 0);
+SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 2 kicking off 2 runs' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200);', 2, 0);
 
 SELECT COUNT(*) FROM comment_temp0 AS comment_temp0_cuunt;
 

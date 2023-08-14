@@ -124,7 +124,7 @@ BEGIN
                 nextval(pg_get_serial_sequence('comment', 'id')),
                 text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
                 'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-                E'ZipGen Stress-Test message commnt_simple0 same post 100 same person 7\n\n comment AAAA0000 c' || i
+                E'ZipGen Stress-Test message comment_simple0 same post 100 same person 7\n\n comment AAAA0000 c' || i
                     || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
                 100,
                 7,
@@ -370,6 +370,39 @@ $$
 LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION benchmark_fill_comment_reply_using_temp0(how_many BigInt)
+RETURNS VOID AS
+$$
+BEGIN
+
+            INSERT INTO comment_temp0
+            ( id, path, ap_id, content, post_id, creator_id, local, published )
+            SELECT
+                nextval(pg_get_serial_sequence('comment', 'id')),
+                text2ltree( path::text || '.' || currval(pg_get_serial_sequence('comment', 'id')) ),
+                'http://lemmy-slpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
+                E'ZipGen Stress-Test message comment_reply_using_temp0\n\n comment AAAA0000 c' || '?' || E'\n\n all from the same random user.'
+                    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') )
+                    || ' path ' || path::text
+                    || E'\n\n> ' || REPLACE(content, E'\n', ' CRLF '),
+                comment_temp0.post_id,
+                (SELECT id FROM person
+                    WHERE comment_temp0.id=comment_temp0.id
+                    AND local=true
+                    ORDER BY random() LIMIT 1
+                    ),
+                true,
+                NOW()
+            FROM comment_temp0
+            WHERE post_id IN
+                (SELECT id FROM post_temp_id0)
+            LIMIT how_many
+            ;
+
+END
+$$
+LANGUAGE plpgsql;
+
 -- *************************************************************************************
 -- ** Revised Lemmy TRIGGER logic
 -- *************************************************************************************
@@ -569,6 +602,8 @@ SELECT 'simple comment3' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_simple3(25000);', 1, 0);
 SELECT 'simple comment4' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_simple4(25000);', 1, 0);
+SELECT 'benchmark_fill_comment_reply_using_temp0 kicking off' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(25000);', 1, 0);
 
 SELECT COUNT(*) FROM comment_temp0 AS comment_temp0_cuunt;
 

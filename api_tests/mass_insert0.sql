@@ -456,6 +456,88 @@ LANGUAGE plpgsql;
 
 
 -- *************************************************************************************
+-- ** Revised Lemmy TRIGGER logic
+-- *************************************************************************************
+
+/*
+PostgreSQL read of row carries far less overhead than an UPDATE to a row.
+*/
+CREATE OR REPLACE FUNCTION public.post_aggregates_comment_count() RETURNS trigger
+    LANGUAGE plpgsql
+    AS
+$$
+    DECLARE
+        prev_post_aggregate RECORD; -- previous post aggregate record
+        executed_update boolean DEFAULT FALSE;
+
+BEGIN
+
+    IF TG_OP = 'INSERT' THEN
+        -- assumption made that every new comment has an already existing post_aggregates row to reference
+        -- LIMIT 1 used to satisfy PostgreSQL function, but there should never be duplicates for same post_id
+        -- prev_post_aggregate := (SELECT * FROM post_aggregates WHERE post_id = NEW.post_id LIMIT 1);    
+        SELECT * INTO prev_post_aggregate FROM post_aggregates WHERE post_id = NEW.post_id LIMIT 1;    
+
+        -- A 2 day necro-bump limit
+        IF prev_post_aggregate.published > ('now'::timestamp - '2 days'::interval) THEN
+            -- Fix issue with being able to necro-bump your own post
+			IF NEW.creator_id != prev_post_aggregate.creator_id THEN
+				UPDATE
+					post_aggregates pa
+				SET
+					newest_comment_time = NEW.published,
+					comments = comments + 1,
+					newest_comment_time_necro = NEW.published
+				WHERE
+					pa.post_id = NEW.post_id;
+					
+				executed_update := TRUE;
+			END IF;
+        END IF;
+        
+        IF NOT executed_update THEN
+            UPDATE
+				post_aggregates pa
+			SET
+				newest_comment_time = NEW.published,
+				comments = comments + 1
+			WHERE
+				pa.post_id = NEW.post_id;
+		END IF;
+
+    -- ELSE not an INSERT
+	ELSIF EXISTS (
+	    -- If not INSERT, Check for post existence - it may not exist anymore
+		SELECT
+			1
+		FROM
+			post p
+		WHERE
+			p.id = OLD.post_id
+		)
+		THEN
+			IF (was_restored_or_created (TG_OP, OLD, NEW)) THEN
+				UPDATE
+					post_aggregates pa
+				SET
+					comments = comments + 1
+				WHERE
+					pa.post_id = NEW.post_id;
+			ELSIF (was_removed_or_deleted (TG_OP, OLD, NEW)) THEN
+				UPDATE
+					post_aggregates pa
+				SET
+					comments = comments - 1
+				WHERE
+					pa.post_id = OLD.post_id;
+			END IF;
+    END IF;
+
+    RETURN NULL;
+END
+$$;
+
+-- *************************************************************************************
 -- ** Execute
 -- *************************************************************************************
 -- this takes: real	4m44.482s
@@ -593,4 +675,62 @@ SELECT * FROM bench('SELECT benchmark_fill_comment_reply0(5000);', 1, 0);
 
 ALTER TABLE public.comment SET LOGGED;
 ALTER TABLE public.post SET LOGGED;
+*/
+
+
+/*
+Lemmhy 0.18.4 existing logic:
+
+CREATE FUNCTION public.post_aggregates_comment_count() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Check for post existence - it may not exist anymore
+    IF TG_OP = 'INSERT' OR EXISTS (
+        SELECT
+            1
+        FROM
+            post p
+        WHERE
+            p.id = OLD.post_id) THEN
+        IF (was_restored_or_created (TG_OP, OLD, NEW)) THEN
+            UPDATE
+                post_aggregates pa
+            SET
+                comments = comments + 1
+            WHERE
+                pa.post_id = NEW.post_id;
+        ELSIF (was_removed_or_deleted (TG_OP, OLD, NEW)) THEN
+            UPDATE
+                post_aggregates pa
+            SET
+                comments = comments - 1
+            WHERE
+                pa.post_id = OLD.post_id;
+        END IF;
+    END IF;
+    IF TG_OP = 'INSERT' THEN
+        UPDATE
+            post_aggregates pa
+        SET
+            newest_comment_time = NEW.published
+        WHERE
+            pa.post_id = NEW.post_id;
+        -- A 2 day necro-bump limit
+        UPDATE
+            post_aggregates pa
+        SET
+            newest_comment_time_necro = NEW.published
+        FROM
+            post p
+        WHERE
+            pa.post_id = p.id
+            AND pa.post_id = NEW.post_id
+            -- Fix issue with being able to necro-bump your own post
+            AND NEW.creator_id != p.creator_id
+            AND pa.published > ('now'::timestamp - '2 days'::interval);
+    END IF;
+    RETURN NULL;
+END
+$$;
 */

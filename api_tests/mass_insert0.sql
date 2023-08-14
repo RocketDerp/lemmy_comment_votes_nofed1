@@ -4,92 +4,7 @@
 --   Linux sed command could be used to replace these values.
 --
 
--- real 55m2.853s
--- user 0m0.021s
--- sys  0m0.018s
-
--- this run
--- real 7m31.110s
---
--- INSERT 0 30000
--- INSERT 0 40000
--- INSERT 0 25000
--- INSERT 0 25000
--- DO
--- real 7m56.587s
-
--- benchmark references
---    https://www.tangramvision.com/blog/how-to-benchmark-postgresql-queries-well
-
-/*
-For some reason, PostgreSQL was dragging down even with DROP DATABASE between runs.
-I deleted the PostgreSQL database directory and recreated the cluster
-    sudo -iu postgres /usr/lib/postgresql/15/bin/initdb -D /WorkSpot0/postgres_data
-
-Now the code runs at this performance as it is created here:
-
-CREATE FUNCTION
-         avg          |  min  |  q1   | median |  q3   |         p95          |  max  | repeats 
-----------------------+-------+-------+--------+-------+----------------------+-------+---------
- 0.004520000000000003 | 0.003 | 0.003 |  0.003 | 0.003 | 0.006099999999999994 | 0.052 |      50
-(1 row)
-
-CREATE FUNCTION
-    avg    |    min    |    q1     |  median   |    q3     |    p95    |    max    | repeats 
------------+-----------+-----------+-----------+-----------+-----------+-----------+---------
- 13192.173 | 13192.173 | 13192.173 | 13192.173 | 13192.173 | 13192.173 | 13192.173 |       1
-(1 row)
-
-CREATE FUNCTION
-    avg    |    min    |    q1     |  median   |    q3     |    p95    |    max    | repeats 
------------+-----------+-----------+-----------+-----------+-----------+-----------+---------
- 31059.783 | 31059.783 | 31059.783 | 31059.783 | 31059.783 | 31059.783 | 31059.783 |       1
-(1 row)
-
-CREATE FUNCTION
-    avg     |    min     |     q1     |   median   |     q3     |    p95     |    max     | repeats 
-------------+------------+------------+------------+------------+------------+------------+---------
- 211249.527 | 211249.527 | 211249.527 | 211249.527 | 211249.527 | 211249.527 | 211249.527 |       1
-(1 row)
-
-CREATE FUNCTION
-    avg     |    min     |     q1     |   median   |     q3     |    p95     |    max     | repeats 
-------------+------------+------------+------------+------------+------------+------------+---------
- 188812.358 | 188812.358 | 188812.358 | 188812.358 | 188812.358 | 188812.358 | 188812.358 |       1
-(1 row)
-
-CREATE FUNCTION
-   avg    |   min    |    q1    |  median  |    q3    |   p95    |   max    | repeats 
-----------+----------+----------+----------+----------+----------+----------+---------
- 2324.161 | 2324.161 | 2324.161 | 2324.161 | 2324.161 | 2324.161 | 2324.161 |       1
-(1 row)
-
-
-real    7m26.742s
-user    0m0.023s
-sys 0m0.010s
-
-
-Without delete of Linuxc files and entire reuild of cluster:
-
-CREATE FUNCTION
-    avg     |    min     |     q1     |   median   |     q3     |    p95     |    max     | repeats 
-------------+------------+------------+------------+------------+------------+------------+---------
- 203954.196 | 203954.196 | 203954.196 | 203954.196 | 203954.196 | 203954.196 | 203954.196 |       1
-(1 row)
-
-CREATE FUNCTION
-   avg    |   min    |    q1    |  median  |    q3    |   p95    |   max    | repeats 
-----------+----------+----------+----------+----------+----------+----------+---------
- 2334.262 | 2334.262 | 2334.262 | 2334.262 | 2334.262 | 2334.262 | 2334.262 |       1
-(1 row)
-
-
-real    33m41.817s
-
-
-*/
-
+SET TIME ZONE 'UTC';
 
 -- scripts/clock_timestamp_function.sql
 CREATE OR REPLACE FUNCTION bench(query TEXT, iterations INTEGER = 100, warmup_iterations INTEGER = 5)
@@ -209,7 +124,7 @@ BEGIN
                 nextval(pg_get_serial_sequence('comment', 'id')),
                 text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
                 'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-                E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 c' || i
+                E'ZipGen Stress-Test message commnt_simple0 same post 100 same person 7\n\n comment AAAA0000 c' || i
                     || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
                 100,
                 7,
@@ -234,9 +149,9 @@ BEGIN
                 nextval(pg_get_serial_sequence('comment', 'id')),
                 text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
                 'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-                E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 c' || i
+                E'ZipGen Stress-Test message comment_simple1 same post 101 random person\n\n comment AAAA0000 c' || i
                     || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
-                100,
+                101,
                 (SELECT id FROM person
                     WHERE source=source
                     AND local=true
@@ -263,13 +178,13 @@ BEGIN
                 nextval(pg_get_serial_sequence('comment', 'id')),
                 text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
                 'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-                E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 c' || i
+                E'ZipGen Stress-Test message comment_simple2 random post_temp_id0 post all person 8\n\n comment AAAA0000 c' || i
                     || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
                 (SELECT id FROM post_temp_id0
                     WHERE source=source
                     ORDER BY random() LIMIT 1
                     ),
-                7,
+                8,
                 true,
                 timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
             FROM generate_series(1, how_many) AS source(i)
@@ -290,10 +205,10 @@ BEGIN
                 nextval(pg_get_serial_sequence('comment', 'id')),
                 text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
                 'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-                E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 post' || post_temp_id0.id
+                E'ZipGen Stress-Test message comment_simple3 (all same person, 9)\n\n comment AAAA0000 post' || post_temp_id0.id
                     || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
                 post_temp_id0.id,
-                7,
+                9,
                 true,
                 timezone('utc', NOW()) - ( random() * ( NOW() + '93 days' - NOW() ) )
             FROM post_temp_id0
@@ -316,7 +231,7 @@ BEGIN
                 nextval(pg_get_serial_sequence('comment', 'id')),
                 text2ltree('0.' || currval( pg_get_serial_sequence('comment', 'id')) ),
                 'http://lemmy-alpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-                E'ZipGen Stress-Test message in spread of communities\n\n comment AAAA0000 post' || post_temp_id0.id
+                E'ZipGen Stress-Test message comment_simple4 (random person)\n\n comment AAAA0000 post' || post_temp_id0.id
                     || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') ),
                 post_temp_id0.id,
                 (SELECT id FROM person
@@ -636,6 +551,8 @@ CREATE TEMP TABLE IF NOT EXISTS post_temp_id0 AS (
    SELECT id FROM post_temp0
    ORDER BY random() LIMIT 25000
 );', 1, 0);
+-- spit out 10 to see what it looks like.
+SELECT * FROM post_temp_id0 LIMIT 10;
 
 CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 SELECT pg_stat_statements_reset();
@@ -684,13 +601,15 @@ ALTER TABLE public.comment SET LOGGED;
 ALTER TABLE public.post SET LOGGED;
 */
 
+SELECT 'PostgreSQL seems to be confuused if next section is all commented out?';
 
 /*
 Lemmhy 0.18.4 existing logic:
+removed dollar-dollar to prevent PostgreSQL confusion
 
 CREATE FUNCTION public.post_aggregates_comment_count() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
+    AS 
 BEGIN
     -- Check for post existence - it may not exist anymore
     IF TG_OP = 'INSERT' OR EXISTS (
@@ -739,5 +658,5 @@ BEGIN
     END IF;
     RETURN NULL;
 END
-$$;
+
 */

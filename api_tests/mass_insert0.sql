@@ -168,8 +168,6 @@ END
 $$
 LANGUAGE plpgsql;
 
-SELECT * FROM bench('SELECT benchmark_fill_post2(30000);', 1, 0);
-
 
 -- lemmy_helper benchmark_fill_post3
 
@@ -195,9 +193,6 @@ BEGIN
 END
 $$
 LANGUAGE plpgsql;
-
-SELECT 'benchmark_fill_post3 kicking off' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_post3(30000);', 1, 0);
 
 
 -- lemmy_helper benchmark_fill_comment1
@@ -242,9 +237,6 @@ END
 $$
 LANGUAGE plpgsql;
 
-SELECT 'benchmark_fill_comment1 kicking off' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_comment1(25000);', 1, 0);
-
 
 -- lemmy_helper comment2
 
@@ -281,9 +273,6 @@ BEGIN
 END
 $$
 LANGUAGE plpgsql;
-
-SELECT 'benchmark_fill_comment2 kicking off' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_comment2(5000);', 1, 0);
 
 
 -- lemmy_helper benchmark_fill_comment_reply0
@@ -325,5 +314,29 @@ END
 $$
 LANGUAGE plpgsql;
 
+
+-- *************************************************************************************
+-- ** Execute
+-- *************************************************************************************
+-- this takes: real	4m44.482s
+/*
+ 13440.881 | 13440.881 | 13440.881 | 13440.881 | 13440.881 | 13440.881 | 13440.881 |       1
+ benchmark_fill_post3 kicking off
+ 18826.093 | 18826.093 | 18826.093 | 18826.093 | 18826.093 | 18826.093 | 18826.093 |       1
+ benchmark_fill_comment1 kicking off
+ 218809.803 | 218809.803 | 218809.803 | 218809.803 | 218809.803 | 218809.803 | 218809.803 |       1
+ benchmark_fill_comment2 kicking off
+ 30791.385 | 30791.385 | 30791.385 | 30791.385 | 30791.385 | 30791.385 | 30791.385 |       1
+ benchmark_fill_comment_reply0 kicking off
+ 2521.066 | 2521.066 | 2521.066 | 2521.066 | 2521.066 | 2521.066 | 2521.066 |       1
+*/
+SELECT * FROM bench('SELECT benchmark_fill_post2(30000);', 1, 0);
+SELECT 'benchmark_fill_post3 kicking off' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_post3(30000);', 1, 0);
+SELECT 'benchmark_fill_comment1 kicking off' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment1(25000);', 1, 0);
+SELECT 'benchmark_fill_comment2 kicking off' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment2(5000);', 1, 0);
 SELECT 'benchmark_fill_comment_reply0 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply0(5000);', 1, 0);
+

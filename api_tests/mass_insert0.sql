@@ -196,7 +196,8 @@ END
 $$
 LANGUAGE plpgsql;
 
-SELECT * FROM bench('SELECT benchmark_fill_post3(40000);', 1, 0);
+SELECT 'benchmark_fill_post3 kicking off' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_post3(30000);', 1, 0);
 
 
 -- lemmy_helper benchmark_fill_comment1
@@ -241,6 +242,7 @@ END
 $$
 LANGUAGE plpgsql;
 
+SELECT 'benchmark_fill_comment1 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment1(25000);', 1, 0);
 
 
@@ -280,7 +282,8 @@ END
 $$
 LANGUAGE plpgsql;
 
-SELECT * FROM bench('SELECT benchmark_fill_comment2(25000);', 1, 0);
+SELECT 'benchmark_fill_comment2 kicking off' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment2(5000);', 1, 0);
 
 
 -- lemmy_helper benchmark_fill_comment_reply0
@@ -322,4 +325,5 @@ END
 $$
 LANGUAGE plpgsql;
 
+SELECT 'benchmark_fill_comment_reply0 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply0(5000);', 1, 0);

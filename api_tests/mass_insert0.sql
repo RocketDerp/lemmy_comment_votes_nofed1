@@ -1,9 +1,20 @@
--- hard-coded values
---   19 is targeted testing community from run of jest Lemmy activity simulation
---   'zy_' is a community name prefix from run of jest Lemmy activity simulation
---  post 100 and 101 are picked as hard-coded to nail down eprformance of queries
---   Linux sed command could be used to replace these values.
---
+/*
+ hard-coded values
+   19 is targeted testing community from run of jest Lemmy activity simulation
+   'zy_' is a community name prefix from run of jest Lemmy activity simulation
+   post 100 and 101 are picked as hard-coded to nail down eprformance of queries
+   Linux sed command could be used to replace these values.
+   lemmy-alpha testing server hard coded in ap_id URL.
+
+Some accomplishments of these INSERT statements:
+   1. ap_id and path of a comment require self-reference to the primary key id field
+      which is tied to a sequence. Lemmy's Rust code routinely does an UPDATE after INSERT.
+      These INSERT statements demonstrate it is possible to do it in a single statement.
+   2. A spread of dates for comment and post INSERT. This gives older content to test Lemmy
+      sorting behavior and performance against.
+   3. A spread of users create post and comments, simulating more how PostgreSQL has to join
+      tables.
+*/
 
 SET TIME ZONE 'UTC';
 
@@ -55,6 +66,30 @@ $$
 LANGUAGE plpgsql;
 
 SELECT * FROM bench('SELECT 1', 50, 0);
+
+
+-- create Lemmy communities in bulk
+
+CREATE OR REPLACE FUNCTION mass_create_communities(how_many BigInt)
+RETURNS VOID AS
+$$
+BEGIN
+
+			INSERT INTO community
+			( name, title, description, instance_id, local, public_key, actor_id )
+			SELECT 'zzy_com_' || i,
+			   'ZipGen Community ' || i,
+			   'description goes here, run AAAA0000 c' || i,
+			   1,
+			   true,
+			   'NEED_PUBLIC_KEY',
+			   'http://lemmy-alpha:8541/c/zzy_com_' || i
+			FROM generate_series(1, how_many) AS source(i)
+            ;
+
+END
+$$
+LANGUAGE plpgsql;
 
 
 -- lemmy_helper benchmark_fill_post2
@@ -496,10 +531,10 @@ BEGIN
                 nextval(pg_get_serial_sequence('comment', 'id')),
                 text2ltree( path::text || '.' || currval(pg_get_serial_sequence('comment', 'id')) ),
                 'http://lemmy-slpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-                E'ZipGen Stress-Test message comment_reply_using_temp0_extendbranch path nlevel '
+                E'ZipGen Stress-Test message comment_reply_using_temp0_extendbranch path nlevel param:'
                     || targetbranch || E'\n\n comment AAAA0000 c' || '?' || E'\n\n all from the same random user.'
                     || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') )
-                    || ' path ' || path::text
+                    || ' path ' || path::text || ' nlevel actual: ' || nlevel(path)
                     || E'\n\n> ' || REPLACE(content, E'\n', ' CRLF '),
                 comment_temp0.post_id,
                 (SELECT id FROM person

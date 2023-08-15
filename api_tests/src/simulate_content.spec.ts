@@ -5,7 +5,7 @@ Try to use screenshot worthy user names, community, posts.
 Perhaps try to run this before all other tests
    to have tests assume certain content / counting is done.
    Also by running first, a predictable set of id values for content.
-   And detecting changes in id generaiton behavior.
+   And detecting changes in id generation behavior.
 */
 jest.setTimeout(20 * 60 * 1000);
 

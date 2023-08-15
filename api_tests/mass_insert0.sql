@@ -778,8 +778,9 @@ SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranc
 SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 5 kicking off 5 runs level 11' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200, 11);', 5, 0);
 
-SELECT COUNT(*) FROM comment_temp0 AS comment_temp0_cuunt;
 
+SELECT COUNT(*) AS post_temp0_count FROM post_temp0;
+SELECT COUNT(*) AS comment_temp0_count FROM comment_temp0;
 SELECT MAX(nlevel(path)) AS comment_temp0_path_max_level FROM comment_temp0;
 
 

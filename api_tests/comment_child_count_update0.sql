@@ -29,16 +29,27 @@ can't use temp table while prototype in a different .sql file
 
 SELECT id, path, post_id
    FROM comment
-   WHERE nlevel(path) > (SELECT MAX(nlevel(path)) FROM comment) - 1
+   WHERE nlevel(path) >= (SELECT MAX(nlevel(path)) FROM comment)
    LIMIT 15
    ;
 
-SELECT id, path, post_id
-	FROM comment
-	WHERE nlevel(path) > 2
-	LIMIT 15
-	;
+/*
+combine with subquery of Lemmy Rust update
+   except count of all only one immediate level below
+   loop as a emans to batch?
+*/
+SELECT id, path, post_id, nlevel(path) AS path_nlevel
+   FROM comment AS c
+   WHERE nlevel(path) >= (SELECT MAX(nlevel(path)) FROM comment)
+   AND (
+      -- this assumes child-count is 
+      SELECT child_count
+      FROM comment_aggregates WHERE comment_id = c.id
+      ) = 0
+   LIMIT 15
+   ;
 
+  
 SELECT c.id, c.path, COUNT(c2.id) AS child_count
 FROM comment c
 JOIN comment c2 on c2.path <@ c.path
@@ -47,6 +58,12 @@ JOIN comment c2 on c2.path <@ c.path
 GROUP BY c.id
 ;
 
+
+SELECT id, path, post_id, nlevel(path) AS path_nlevel
+	FROM comment
+	WHERE nlevel(path) > 5
+	LIMIT 15
+	;
 
 /*
 Research and study:

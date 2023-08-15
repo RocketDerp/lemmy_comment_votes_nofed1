@@ -406,7 +406,7 @@ $$
 LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION benchmark_fill_comment_reply_using_temp0_extendbranch(how_many BigInt)
+CREATE OR REPLACE FUNCTION benchmark_fill_comment_reply_using_temp0_extendbranch(how_many BigInt, targetbranch BigInt)
 RETURNS VOID AS
 $$
 BEGIN
@@ -417,7 +417,8 @@ BEGIN
                 nextval(pg_get_serial_sequence('comment', 'id')),
                 text2ltree( path::text || '.' || currval(pg_get_serial_sequence('comment', 'id')) ),
                 'http://lemmy-slpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-                E'ZipGen Stress-Test message comment_reply_using_temp0_extendbranch\n\n comment AAAA0000 c' || '?' || E'\n\n all from the same random user.'
+                E'ZipGen Stress-Test message comment_reply_using_temp0_extendbranch path nlevel '
+                    || targetbranch || E'\n\n comment AAAA0000 c' || '?' || E'\n\n all from the same random user.'
                     || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') )
                     || ' path ' || path::text
                     || E'\n\n> ' || REPLACE(content, E'\n', ' CRLF '),
@@ -432,7 +433,7 @@ BEGIN
             FROM comment_temp0
             -- prior testing targeted some specific post id
             WHERE post_id NOT IN (100, 101)
-            AND nlevel(path) > 3
+            AND nlevel(path) > targetbranch
             LIMIT how_many
             ;
 
@@ -649,8 +650,14 @@ SELECT 'benchmark_fill_comment_reply_using_temp0 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(2711);', 1, 0);
 SELECT 'benchmark_fill_comment_reply_using_temp0 ROUND 2 kicking off 20 runs' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(3200);', 20, 0);
-SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 2 kicking off 5 runs' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200);', 5, 0);
+SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 1 kicking off 5 runs level 3' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200, 3);', 5, 0);
+SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 2 kicking off 5 runs level 4' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200, 4);', 5, 0);
+SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 3 kicking off 5 runs level 5' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200, 5);', 5, 0);
+SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 4 kicking off 3 runs level 6' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200, 6);', 3, 0);
 
 SELECT COUNT(*) FROM comment_temp0 AS comment_temp0_cuunt;
 

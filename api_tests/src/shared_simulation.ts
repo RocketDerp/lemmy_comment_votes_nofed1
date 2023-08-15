@@ -148,11 +148,8 @@ export let username_list: UserAccount[] = [
     biography: "I'm a British soldier.",
     join: ["military"],
   },
-  { name: "Eileen",
-    display: "Eileen Vance",
-  },
-  { name: "Aubrey",
-display: "Aubrey Mills"},
+  { name: "Eileen", display: "Eileen Vance" },
+  { name: "Aubrey", display: "Aubrey Mills" },
 ];
 
 export interface CommunityHolder {

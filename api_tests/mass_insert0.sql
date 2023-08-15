@@ -1,10 +1,15 @@
 -- hard-coded values
 --   19 is targeted testing community from run of jest Lemmy activity simulation
 --   'zy_' is a community name prefix from run of jest Lemmy activity simulation
+--  post 100 and 101 are picked as hard-coded to nail down eprformance of queries
 --   Linux sed command could be used to replace these values.
 --
 
 SET TIME ZONE 'UTC';
+
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+SELECT pg_stat_statements_reset();
+
 
 -- scripts/clock_timestamp_function.sql
 CREATE OR REPLACE FUNCTION bench(query TEXT, iterations INTEGER = 100, warmup_iterations INTEGER = 5)
@@ -638,57 +643,10 @@ $$;
 -- *************************************************************************************
 -- ** Execute
 -- *************************************************************************************
--- this takes: real 4m44.482s
-/*
- 13440.881 | 13440.881 | 13440.881 | 13440.881 | 13440.881 | 13440.881 | 13440.881 |       1
- benchmark_fill_post3 kicking off
- 18826.093 | 18826.093 | 18826.093 | 18826.093 | 18826.093 | 18826.093 | 18826.093 |       1
- benchmark_fill_comment1 kicking off
- 218809.803 | 218809.803 | 218809.803 | 218809.803 | 218809.803 | 218809.803 | 218809.803 |       1
- benchmark_fill_comment2 kicking off
- 30791.385 | 30791.385 | 30791.385 | 30791.385 | 30791.385 | 30791.385 | 30791.385 |       1
- benchmark_fill_comment_reply0 kicking off
- 2521.066 | 2521.066 | 2521.066 | 2521.066 | 2521.066 | 2521.066 | 2521.066 |       1
-*/
 
 /*
-revised order of post creation, yields:
- benchmark_fill_post3 kicking off
- 19381.957 | 19381.957 | 19381.957 | 19381.957 | 19381.957 | 19381.957 | 19381.957 |       1
- benchmark_fill_post2 kicking off
- 19996.972 | 19996.972 | 19996.972 | 19996.972 | 19996.972 | 19996.972 | 19996.972 |       1
- benchmark_fill_comment1 kicking off
- 253836.805 | 253836.805 | 253836.805 | 253836.805 | 253836.805 | 253836.805 | 253836.805 |       1
- benchmark_fill_comment2 kicking off
- 35345.686 | 35345.686 | 35345.686 | 35345.686 | 35345.686 | 35345.686 | 35345.686 |       1
- benchmark_fill_comment_reply0 kicking off
- 2933.079 | 2933.079 | 2933.079 | 2933.079 | 2933.079 | 2933.079 | 2933.079 |       1
-*/
-/*
-back to original order
-*/
-
-/*
-remove constraints for bulk insert
-doesn't work very well
-  -- probably better to create a temporary table then do bulk copy in.
-aggregates will still have constraints, but still...
-
-reading:
-https://www.enterprisedb.com/blog/7-best-practice-tips-postgresql-bulk-data-loading
-*/
--- ALTER TABLE ONLY public.comment DROP CONSTRAINT comment_pkey;
--- fails with: cannot drop constraint comment_pkey on table comment because other objects depend on it
--- ALTER TABLE ONLY public.post DROP CONSTRAINT post_pkey;
-/*
-ALTER TABLE public.comment_like SET UNLOGGED;
-ALTER TABLE public.post_like SET UNLOGGED;
-ALTER TABLE public.comment SET UNLOGGED;
-ALTER TABLE public.post SET UNLOGGED;
-*/
-
-/*
-ok, let's seee how the SELECCT performs without the INSERT overhead.
+ok, let's seee how the SELECT performs without the INSERT overhead.
+use temporary tables for post and comment building.
 */
 CREATE TEMP TABLE post_temp0 (LIKE post INCLUDING DEFAULTS);
 CREATE TEMP TABLE comment_temp0 (LIKE comment INCLUDING DEFAULTS);
@@ -696,14 +654,10 @@ CREATE TEMP TABLE comment_temp0 (LIKE comment INCLUDING DEFAULTS);
 CREATE SEQUENCE post_temp0_seq;
 SELECT setval('post_temp0_seq', (SELECT max(id) FROM post), true);
 ALTER TABLE post_temp0 ALTER id SET DEFAULT nextval('post_temp0_seq');
---ALTER SEQUENCE post_temp0_seq OWNED BY lemmy;
 
 CREATE SEQUENCE comment_temp0_seq;
 SELECT setval('comment_temp0_seq', (SELECT max(id) FROM comment), true);
 ALTER TABLE comment_temp0 ALTER id SET DEFAULT nextval('comment_temp0_seq');
---ALTER SEQUENCE comment_temp0_seq OWNED BY lemmy;
-
--- 23m55.409s with temporary post table?
 
 
 -- communities come first in Lemmy
@@ -715,15 +669,9 @@ SELECT * FROM bench('SELECT benchmark_fill_post2(30000);', 1, 0);
 SELECT 'benchmark_fill_post3 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_post3(30000);', 1, 0);
 
--- copy in the temp post table to main post table
---SELECT 'copy post temp table into main post table, kicking off' AS status_message;
---SELECT * FROM bench('INSERT INTO post SELECT * FROM post_temp0', 1, 0);
-
-
-
--- CREATE TEMP TABLE post_temp_id0 (LIKE post INCLUDING DEFAULTS);
-DROP TABLE IF EXISTS post_temp_id0;
+-- create a list of id numbers for posts to have rapid pull-from list.
 SELECT 'post targets post_temp_id0 kicking off' AS status_message;
+DROP TABLE IF EXISTS post_temp_id0;
 SELECT * FROM bench('
 CREATE TEMP TABLE IF NOT EXISTS post_temp_id0 AS (
    SELECT id FROM post_temp0
@@ -732,9 +680,7 @@ CREATE TEMP TABLE IF NOT EXISTS post_temp_id0 AS (
 -- spit out 10 to see what it looks like.
 SELECT * FROM post_temp_id0 LIMIT 10;
 
-CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 SELECT pg_stat_statements_reset();
-
 
 -- Comments come next in Lemmy, they go onto a post
 SELECT 'simple comment0' AS status_message;
@@ -802,91 +748,8 @@ SELECT * FROM bench('SELECT child_count_for_all_comments();', 1, 0);
 
 -- review results interactively with lemmy-ui
 
-/*
-SELECT 'benchmark_fill_comment1 kicking off' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_comment1(25000);', 1, 0);
-SELECT 'benchmark_fill_comment2 kicking off' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_comment2(5000);', 1, 0);
-SELECT 'benchmark_fill_comment_reply0 kicking off' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_comment_reply0(5000);', 1, 0);
-*/
 
-/*
--- ALTER TABLE ONLY public.comment ADD CONSTRAINT comment_pkey PRIMARY KEY (id);
--- ALTER TABLE ONLY public.post ADD CONSTRAINT post_pkey PRIMARY KEY (id);
-
-ALTER TABLE public.comment SET LOGGED;
-ALTER TABLE public.post SET LOGGED;
-*/
-
-
-/*
-Can we come up with a way to update child count of comment_aggregates in mass?
-cound only those with nlevel(15), then 14, then 13
-and as we get to the lower levels, use prior counts from comment_aggregates instead of direct counts?
-Run this as own .sql file while developing?
-*/
 SELECT count(*) AS comments_with_child_count_rows
     FROM comment_aggregates
     WHERE child_count > 0;
 
-
-SELECT 'PostgreSQL seems to be confuused if next section is all commented out?';
-
-/*
-Lemmhy 0.18.4 existing logic:
-removed dollar-dollar to prevent PostgreSQL confusion
-
-CREATE FUNCTION public.post_aggregates_comment_count() RETURNS trigger
-    LANGUAGE plpgsql
-    AS 
-BEGIN
-    -- Check for post existence - it may not exist anymore
-    IF TG_OP = 'INSERT' OR EXISTS (
-        SELECT
-            1
-        FROM
-            post p
-        WHERE
-            p.id = OLD.post_id) THEN
-        IF (was_restored_or_created (TG_OP, OLD, NEW)) THEN
-            UPDATE
-                post_aggregates pa
-            SET
-                comments = comments + 1
-            WHERE
-                pa.post_id = NEW.post_id;
-        ELSIF (was_removed_or_deleted (TG_OP, OLD, NEW)) THEN
-            UPDATE
-                post_aggregates pa
-            SET
-                comments = comments - 1
-            WHERE
-                pa.post_id = OLD.post_id;
-        END IF;
-    END IF;
-    IF TG_OP = 'INSERT' THEN
-        UPDATE
-            post_aggregates pa
-        SET
-            newest_comment_time = NEW.published
-        WHERE
-            pa.post_id = NEW.post_id;
-        -- A 2 day necro-bump limit
-        UPDATE
-            post_aggregates pa
-        SET
-            newest_comment_time_necro = NEW.published
-        FROM
-            post p
-        WHERE
-            pa.post_id = p.id
-            AND pa.post_id = NEW.post_id
-            -- Fix issue with being able to necro-bump your own post
-            AND NEW.creator_id != p.creator_id
-            AND pa.published > ('now'::timestamp - '2 days'::interval);
-    END IF;
-    RETURN NULL;
-END
-
-*/

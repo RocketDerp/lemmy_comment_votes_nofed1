@@ -469,7 +469,7 @@ BEGIN
                 NOW()
             FROM comment_temp0
             -- prior testing targeted some specific post id
-            WHERE post_id IN (SELECT post_temp0 WHERE community_id = 19)
+            WHERE post_id IN (SELECT id FROM post_temp0 WHERE community_id = 19)
             LIMIT how_many
             ;
 
@@ -515,6 +515,36 @@ END
 $$
 LANGUAGE plpgsql;
 
+
+
+CREATE OR REPLACE FUNCTION child_count_for_all_comments()
+RETURNS VOID AS
+$$
+BEGIN
+
+            -- Update the child counts
+            UPDATE
+                comment_aggregates ca
+            SET
+                child_count = c2.child_count
+            FROM (
+                SELECT
+                    c.id,
+                    c.path,
+                    count(c2.id) AS child_count
+                FROM
+                    comment c
+                LEFT JOIN comment c2 ON c2.path <@ c.path
+                    AND c2.path != c.path
+            GROUP BY
+                c.id) AS c2
+            WHERE
+                ca.comment_id = c2.id
+            ;
+
+END
+$$
+LANGUAGE plpgsql;
 
 
 
@@ -755,6 +785,12 @@ SELECT 'copy post temp table into main post table, kicking off' AS status_messag
 SELECT * FROM bench('INSERT INTO post SELECT * FROM post_temp0', 1, 0);
 SELECT 'copy comment temp table into main post table, kicking off' AS status_message;
 SELECT * FROM bench('INSERT INTO comment SELECT * FROM comment_temp0', 1, 0);
+
+-- count comment replies (children) for comment_aggregates
+
+SELECT 'child_count_for_all_comments' AS status_message;
+SELECT * FROM bench('SELECT child_count_for_all_comments();', 1, 0);
+
 
 -- review results interactively with lemmy-ui
 

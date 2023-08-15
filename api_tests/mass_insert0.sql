@@ -92,9 +92,7 @@ $$
 LANGUAGE plpgsql;
 
 
--- lemmy_helper benchmark_fill_post2
-
-CREATE OR REPLACE FUNCTION benchmark_fill_post2(how_many BigInt)
+CREATE OR REPLACE FUNCTION benchmark_fill_post2(how_many BigInt, target_community TEXT)
 RETURNS VOID AS
 $$
 BEGIN
@@ -102,11 +100,12 @@ BEGIN
             INSERT INTO post_temp0
             ( name, body, community_id, creator_id, local, published )
             SELECT 'ZipGen Stress-Test Community post AAAA0000 p' || i,
-                'post body ' || i,
+                'post body run index ' || i || ' created by benchmark_fill_post2'
+                   ,
                 (SELECT id FROM community
                         WHERE source=source
                         AND local=true
-                        AND name LIKE 'zy_%'
+                        AND name LIKE target_community
                         ORDER BY random() LIMIT 1
                         ),
                 (SELECT id FROM person
@@ -122,6 +121,7 @@ BEGIN
 END
 $$
 LANGUAGE plpgsql;
+
 
 
 -- lemmy_helper benchmark_fill_post3
@@ -587,6 +587,28 @@ $$
 LANGUAGE plpgsql;
 
 
+/*
+used to build a list of posts to target for comment activity
+*/
+CREATE OR REPLACE FUNCTION populate_temp_post_id_table(how_many BigInt, target_community TEXT)
+RETURNS VOID AS
+$$
+BEGIN
+
+    CREATE TEMP TABLE IF NOT EXISTS post_temp_id0 AS (
+        SELECT id FROM post_temp0
+        WHERE community_id IN (
+            SELECT id FROM community
+                WHERE name LIKE target_community
+            )
+        ORDER BY random()
+        LIMIT how_many
+        );
+
+END
+$$
+LANGUAGE plpgsql;
+
 
 -- *************************************************************************************
 -- ** Revised Lemmy TRIGGER logic
@@ -700,18 +722,14 @@ ALTER TABLE comment_temp0 ALTER id SET DEFAULT nextval('comment_temp0_seq');
 
 -- posts then go into Community
 SELECT 'benchmark_fill_post2 kicking off' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_post2(30000);', 1, 0);
+SELECT * FROM bench('SELECT benchmark_fill_post2(30000, ''zy_%'');', 1, 0);
 SELECT 'benchmark_fill_post3 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_post3(30000);', 1, 0);
 
 -- create a list of id numbers for posts to have rapid pull-from list.
-SELECT 'post targets post_temp_id0 kicking off' AS status_message;
+SELECT 'post targets post_temp_id0 populate_temp_post_id_table kicking off' AS status_message;
 DROP TABLE IF EXISTS post_temp_id0;
-SELECT * FROM bench('
-CREATE TEMP TABLE IF NOT EXISTS post_temp_id0 AS (
-   SELECT id FROM post_temp0
-   ORDER BY random() LIMIT 25000
-);', 1, 0);
+SELECT * FROM bench('SELECT populate_temp_post_id_table(25000, ''zy_%'');', 1, 0);
 -- spit out 10 to see what it looks like.
 SELECT * FROM post_temp_id0 LIMIT 10;
 

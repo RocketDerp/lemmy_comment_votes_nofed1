@@ -23,15 +23,10 @@ ALTER TABLE comment_temp0 ALTER id SET DEFAULT nextval('comment_temp0_seq');
 */
 
 
--- communities come first in Lemmy, lemmy.world has over 10,000 locally
-SELECT 'mass_create_communities kicking off' AS status_message;
-SELECT * FROM bench('SELECT mass_create_communities(12000);', 1, 0);
-
-
 -- specifically targeting the zzy_com_ communities that were mass-generated
 --  this creates a scattering of posts, simulating many relatively inactive communities
 SELECT 'benchmark_fill_post2 kicking off' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_post2(30000, ''zzy_com_%'');', 1, 0);
+SELECT * FROM bench('SELECT benchmark_fill_post2(80000, ''zzy_com_%'');', 1, 0);
 
 
 SELECT COUNT(*) AS post_temp0_count FROM post_temp0;
@@ -48,18 +43,3 @@ SELECT 'copy post temp table into main post table, kicking off' AS status_messag
 SELECT * FROM bench('INSERT INTO post SELECT * FROM post_temp0', 1, 0);
 SELECT 'copy comment temp table into main post table, kicking off' AS status_message;
 SELECT * FROM bench('INSERT INTO comment SELECT * FROM comment_temp0', 1, 0);
-
--- count comment replies (children) for comment_aggregates
-
-SELECT 'child_count_for_all_comments' AS status_message;
-SELECT * FROM bench('SELECT child_count_for_all_comments();', 1, 0);
-
-
--- review results interactively with lemmy-ui
-
-
-SELECT count(*) AS comments_with_child_count_rows
-    FROM comment_aggregates
-    WHERE child_count > 0
-    ;
-

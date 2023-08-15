@@ -406,6 +406,80 @@ $$
 LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION benchmark_fill_comment_reply_using_temp0_hugecommunity0(how_many BigInt)
+RETURNS VOID AS
+$$
+BEGIN
+
+-- this isn't really huge community 19, but just two posts.
+
+            INSERT INTO comment_temp0
+            ( id, path, ap_id, content, post_id, creator_id, local, published )
+            SELECT
+                nextval(pg_get_serial_sequence('comment', 'id')),
+                text2ltree( path::text || '.' || currval(pg_get_serial_sequence('comment', 'id')) ),
+                'http://lemmy-slpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
+                E'ZipGen Stress-Test message comment_reply_using_temp0_hugecommunity0 (wrong, just 2 posts)\n\n comment AAAA0000 c' || '?' || E'\n\n all from the same random user.'
+                    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') )
+                    || ' path ' || path::text
+                    || E'\n\n> ' || REPLACE(content, E'\n', ' CRLF '),
+                comment_temp0.post_id,
+                (SELECT id FROM person
+                    WHERE comment_temp0.id=comment_temp0.id
+                    AND local=true
+                    ORDER BY random() LIMIT 1
+                    ),
+                true,
+                NOW()
+            FROM comment_temp0
+            -- prior testing targeted some specific post id
+            WHERE post_id IN (100, 101)
+            LIMIT how_many
+            ;
+
+END
+$$
+LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION benchmark_fill_comment_reply_using_temp0_hugecommunity1(how_many BigInt)
+RETURNS VOID AS
+$$
+BEGIN
+
+-- this isn't really huge community 19, but just two posts.
+
+            INSERT INTO comment_temp0
+            ( id, path, ap_id, content, post_id, creator_id, local, published )
+            SELECT
+                nextval(pg_get_serial_sequence('comment', 'id')),
+                text2ltree( path::text || '.' || currval(pg_get_serial_sequence('comment', 'id')) ),
+                'http://lemmy-slpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
+                E'ZipGen Stress-Test message comment_reply_using_temp0_hugecommunity1\n\n comment AAAA0000 c' || '?' || E'\n\n all from the same random user.'
+                    || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') )
+                    || ' path ' || path::text
+                    || E'\n\n> ' || REPLACE(content, E'\n', ' CRLF '),
+                comment_temp0.post_id,
+                (SELECT id FROM person
+                    WHERE comment_temp0.id=comment_temp0.id
+                    AND local=true
+                    ORDER BY random() LIMIT 1
+                    ),
+                true,
+                NOW()
+            FROM comment_temp0
+            -- prior testing targeted some specific post id
+            WHERE post_id IN (SELECT post_temp0 WHERE community_id = 19)
+            LIMIT how_many
+            ;
+
+END
+$$
+LANGUAGE plpgsql;
+
+
+
+
 CREATE OR REPLACE FUNCTION benchmark_fill_comment_reply_using_temp0_extendbranch(how_many BigInt, targetbranch BigInt)
 RETURNS VOID AS
 $$
@@ -648,6 +722,12 @@ without child count on comment_aggregates, lemmy-ui may not show replies!
 */
 SELECT 'benchmark_fill_comment_reply_using_temp0 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(2711);', 1, 0);
+
+SELECT 'benchmark_fill_comment_reply_using_temp0_hugecommunity0 kicking off, 12 runs' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_hugecommunity0(2711);', 12, 0);
+SELECT 'benchmark_fill_comment_reply_using_temp0_hugecommunity1 kicking off, 12 runs' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_hugecommunity1(2711);', 12, 0);
+
 SELECT 'benchmark_fill_comment_reply_using_temp0 ROUND 2 kicking off 20 runs' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0(3200);', 20, 0);
 SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 1 kicking off 5 runs level 3' AS status_message;
@@ -658,6 +738,8 @@ SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 3 kicking of
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200, 5);', 5, 0);
 SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 4 kicking off 3 runs level 6' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200, 6);', 3, 0);
+SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 5 kicking off 3 runs level 7' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200, 7);', 3, 0);
 
 SELECT COUNT(*) FROM comment_temp0 AS comment_temp0_cuunt;
 

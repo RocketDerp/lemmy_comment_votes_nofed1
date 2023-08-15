@@ -79,12 +79,12 @@ test(
 Another approach is to load a list of posts in /c/welcome
   and reply by each user to those.
 */
-test.skip(
+test(
   "replies and upvotes to welcome posts by members",
   async () => {
     await sim_create_reply_comments_to_posts();
   },
-  10 * 60 * 1000,
+  15 * 60 * 1000,
 );
 
 test(

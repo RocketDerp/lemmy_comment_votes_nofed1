@@ -770,6 +770,14 @@ SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 4 kicking of
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200, 6);', 3, 0);
 SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 5 kicking off 3 runs level 7' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200, 7);', 3, 0);
+SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 5 kicking off 20 runs level 8' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200, 8);', 20, 0);
+SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 5 kicking off 5 runs level 9' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200, 9);', 5, 0);
+SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 5 kicking off 5 runs level 10' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200, 10);', 5, 0);
+SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 5 kicking off 5 runs level 11' AS status_message;
+SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200, 11);', 5, 0);
 
 SELECT COUNT(*) FROM comment_temp0 AS comment_temp0_cuunt;
 

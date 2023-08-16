@@ -4,6 +4,7 @@ run before this:
 active_work_run0001.sql
 active_work_run0002.sql
 adds more posts and comments to hand-made test communities form simulation
+   big as in 500,000 new posts
 
 ok, let's seee how the SELECT performs without the INSERT overhead.
 use temporary tables for post and comment building.
@@ -72,7 +73,7 @@ copy in the temp post table to main post table
 */
 SELECT 'copy post temp table into main post table, kicking off' AS status_message;
 SELECT * FROM bench('INSERT INTO post SELECT * FROM post_temp0', 1, 0);
-SELECT 'copy comment temp table into main post table, kicking off' AS status_message;
+SELECT 'copy comment temp table into main comment table, kicking off' AS status_message;
 SELECT * FROM bench('INSERT INTO comment SELECT * FROM comment_temp0', 1, 0);
 
 

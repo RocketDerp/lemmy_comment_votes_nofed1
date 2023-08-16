@@ -14,6 +14,11 @@ Some accomplishments of these INSERT statements:
       sorting behavior and performance against.
    3. A spread of users create post and comments, simulating more how PostgreSQL has to join
       tables.
+
+Mass INSERT from even a temp table... with the trigger logic of Lemmy, it is still pretty slow.
+   Good reading:
+       https://www.cybertec-postgresql.com/en/why-are-my-postgresql-updates-getting-slower/
+
 */
 
 SET TIME ZONE 'UTC';
@@ -791,7 +796,7 @@ copy in the temp post table to main post table
 */
 SELECT 'copy post temp table into main post table, kicking off' AS status_message;
 SELECT * FROM bench('INSERT INTO post SELECT * FROM post_temp0', 1, 0);
-SELECT 'copy comment temp table into main post table, kicking off' AS status_message;
+SELECT 'copy comment temp table into main comment table, kicking off' AS status_message;
 SELECT * FROM bench('INSERT INTO comment SELECT * FROM comment_temp0', 1, 0);
 
 -- count comment replies (children) for comment_aggregates

@@ -94,6 +94,31 @@ END
 $$;
 
 
+CREATE OR REPLACE FUNCTION public.person_aggregates_post_count() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF (was_restored_or_created (TG_OP, OLD, NEW)) THEN
+        UPDATE
+            person_aggregates
+        SET
+            post_count = post_count + 1
+        WHERE
+            person_id = NEW.creator_id;
+    ELSIF (was_removed_or_deleted (TG_OP, OLD, NEW)) THEN
+        UPDATE
+            person_aggregates
+        SET
+            post_count = post_count - 1
+        WHERE
+            person_id = OLD.creator_id;
+    END IF;
+    RETURN NULL;
+END
+$$;
+
+
+
 DROP TRIGGER site_aggregates_post_insert ON public.post;
 
 
@@ -110,3 +135,12 @@ CREATE TRIGGER community_aggregates_post_count
   AFTER INSERT OR DELETE OR UPDATE OF removed, deleted
    ON public.post FOR EACH ROW
    EXECUTE FUNCTION public.community_aggregates_post_count();
+
+
+DROP TRIGGER person_aggregates_post_count ON public.post;
+
+
+CREATE TRIGGER person_aggregates_post_count
+  AFTER INSERT OR DELETE OR UPDATE OF removed, deleted
+   ON public.post FOR EACH ROW
+   EXECUTE FUNCTION public.person_aggregates_post_count();

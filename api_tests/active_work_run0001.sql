@@ -31,7 +31,8 @@ SELECT * FROM bench('SELECT mass_create_communities(12000);', 1, 0);
 -- specifically targeting the zzy_com_ communities that were mass-generated
 --  this creates a scattering of posts, simulating many relatively inactive communities
 SELECT 'benchmark_fill_post2 kicking off' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_post2(30000, ''zzy_com_%'');', 1, 0);
+-- PERFORMANCE WARNING: this next line can be slow, despite temp table, the SELECT source?
+SELECT * FROM bench('SELECT benchmark_fill_post2(120000, ''zzy_com_%'');', 1, 0);
 
 
 SELECT COUNT(*) AS post_temp0_count FROM post_temp0;

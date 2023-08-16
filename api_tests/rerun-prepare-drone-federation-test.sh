@@ -69,6 +69,7 @@ LEMMY_DATABASE_READ_URL="${BASE_LEMMY_DATABASE_READ_URL}/lemmy_$1" \
 target/lemmy_server >/tmp/lemmy_$1.out 2>&1 &
 }
 
+
 for i in "${allinstances[@]}"
 do
   launch_lemmy_server_for "$i"

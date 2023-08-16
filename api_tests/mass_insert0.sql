@@ -19,6 +19,8 @@ Mass INSERT from even a temp table... with the trigger logic of Lemmy, it is sti
    Good reading:
        https://www.cybertec-postgresql.com/en/why-are-my-postgresql-updates-getting-slower/
 
+Source of benchmark PostgreSQL techniques and functions:
+   https://www.tangramvision.com/blog/how-to-benchmark-postgresql-queries-well
 */
 
 SET TIME ZONE 'UTC';
@@ -27,7 +29,7 @@ CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 SELECT pg_stat_statements_reset();
 
 
--- scripts/clock_timestamp_function.sql
+-- https://www.tangramvision.com/blog/how-to-benchmark-postgresql-queries-well
 CREATE OR REPLACE FUNCTION bench(query TEXT, iterations INTEGER = 100, warmup_iterations INTEGER = 5)
 RETURNS TABLE(avg FLOAT, min FLOAT, q1 FLOAT, median FLOAT, q3 FLOAT, p95 FLOAT, max FLOAT, repeats INTEGER) AS $$
 DECLARE

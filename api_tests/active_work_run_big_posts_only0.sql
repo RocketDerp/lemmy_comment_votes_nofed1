@@ -23,7 +23,7 @@ ALTER TABLE post_temp0 ALTER id SET DEFAULT nextval('post_temp0_seq');
 
 -- specifically targeting the simulation created test communities that were had-generated
 SELECT 'benchmark_fill_post2 kicking off' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_post2(150000, ''zy_%'');', 1, 0);
+SELECT * FROM bench('SELECT benchmark_fill_post2(128000, ''zy_%'');', 1, 0);
 
 
 

@@ -144,3 +144,71 @@ CREATE TRIGGER person_aggregates_post_count
   AFTER INSERT OR DELETE OR UPDATE OF removed, deleted
    ON public.post FOR EACH ROW
    EXECUTE FUNCTION public.person_aggregates_post_count();
+
+
+/*
+comment table
+*/
+
+-- IMPORTANT NOTE: this is the stcok 0.18.4 function, an optimized single UPDATE variation is in other .sql files
+-- IMPORTANT NOTE: this logic for INSERT TRIGGER always assumes that the published datestamp is now(), which was a logical assumption with general use of Lemmy prior to federation being added.
+CREATE OR REPLACE FUNCTION public.post_aggregates_comment_count() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Check for post existence - it may not exist anymore
+    IF TG_OP = 'INSERT' OR EXISTS (
+        SELECT
+            1
+        FROM
+            post p
+        WHERE
+            p.id = OLD.post_id) THEN
+        IF (was_restored_or_created (TG_OP, OLD, NEW)) THEN
+            UPDATE
+                post_aggregates pa
+            SET
+                comments = comments + 1
+            WHERE
+                pa.post_id = NEW.post_id;
+        ELSIF (was_removed_or_deleted (TG_OP, OLD, NEW)) THEN
+            UPDATE
+                post_aggregates pa
+            SET
+                comments = comments - 1
+            WHERE
+                pa.post_id = OLD.post_id;
+        END IF;
+    END IF;
+    IF TG_OP = 'INSERT' THEN
+        UPDATE
+            post_aggregates pa
+        SET
+            newest_comment_time = NEW.published
+        WHERE
+            pa.post_id = NEW.post_id;
+        -- A 2 day necro-bump limit
+        UPDATE
+            post_aggregates pa
+        SET
+            newest_comment_time_necro = NEW.published
+        FROM
+            post p
+        WHERE
+            pa.post_id = p.id
+            AND pa.post_id = NEW.post_id
+            -- Fix issue with being able to necro-bump your own post
+            AND NEW.creator_id != p.creator_id
+            AND pa.published > ('now'::timestamp - '2 days'::interval);
+    END IF;
+    RETURN NULL;
+END
+$$;
+
+
+DROP TRIGGER post_aggregates_comment_count ON public.comment;
+
+CREATE TRIGGER post_aggregates_comment_count
+  AFTER INSERT OR DELETE OR UPDATE OF removed, deleted
+  ON public.comment FOR EACH ROW
+  EXECUTE FUNCTION public.post_aggregates_comment_count();

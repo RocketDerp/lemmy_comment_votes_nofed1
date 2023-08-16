@@ -66,6 +66,13 @@ else
       fi
   }
 
+
+  database_tune_before_testing() {
+    time psql "$BASE_LEMMY_DATABASE_URL/$INSTANCE" --file mass_insert_before0.sql
+    # 2023-08-16 lemmy developer says this is default on Lemmy installs, I assume wit Docker/Ansible config.
+    # psql "$BASE_LEMMY_DATABASE_URL/lemmy" -c "ALTER USER lemmy SET synchronous_commit=OFF;"
+  }
+
   database_mass_insert() {
     INSTANCE=lemmy_alpha
     echo "************"
@@ -78,6 +85,7 @@ else
   }
 
 
+  database_tune_before_testing
   runjest simulate_content.spec.ts
   database_mass_insert
   #runjest follow.spec.ts
@@ -114,7 +122,7 @@ killall -s1 lemmy_server
 
 for INSTANCENAME in "${allinstances[@]}"; do
   INSTANCE=lemmy_$INSTANCENAME
-  psql "$BASE_LEMMY_DATABASE_URL/lemmy" -c "DROP DATABASE $INSTANCE"
+  psql "$BASE_LEMMY_DATABASE_URL/lemmy" -c "DROP DATABASE $INSTANCE;"
 done
 
 fi

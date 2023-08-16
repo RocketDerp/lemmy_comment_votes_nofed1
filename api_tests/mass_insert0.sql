@@ -1,9 +1,25 @@
--- hard-coded values
---   19 is targeted testing community from run of jest Lemmy activity simulation
---   'zy_' is a community name prefix from run of jest Lemmy activity simulation
---  post 100 and 101 are picked as hard-coded to nail down eprformance of queries
---   Linux sed command could be used to replace these values.
---
+/*
+ hard-coded values
+   19 is targeted testing community from run of jest Lemmy activity simulation
+   'zy_' is a community name prefix from run of jest Lemmy activity simulation
+   post 100 and 101 are picked as hard-coded to nail down eprformance of queries
+   Linux sed command could be used to replace these values.
+   lemmy-alpha testing server hard coded in ap_id URL.
+
+Some accomplishments of these INSERT statements:
+   1. ap_id and path of a comment require self-reference to the primary key id field
+      which is tied to a sequence. Lemmy's Rust code routinely does an UPDATE after INSERT.
+      These INSERT statements demonstrate it is possible to do it in a single statement.
+   2. A spread of dates for comment and post INSERT. This gives older content to test Lemmy
+      sorting behavior and performance against.
+   3. A spread of users create post and comments, simulating more how PostgreSQL has to join
+      tables.
+
+Mass INSERT from even a temp table... with the trigger logic of Lemmy, it is still pretty slow.
+   Good reading:
+       https://www.cybertec-postgresql.com/en/why-are-my-postgresql-updates-getting-slower/
+
+*/
 
 SET TIME ZONE 'UTC';
 
@@ -57,9 +73,31 @@ LANGUAGE plpgsql;
 SELECT * FROM bench('SELECT 1', 50, 0);
 
 
--- lemmy_helper benchmark_fill_post2
+-- create Lemmy communities in bulk
 
-CREATE OR REPLACE FUNCTION benchmark_fill_post2(how_many BigInt)
+CREATE OR REPLACE FUNCTION mass_create_communities(how_many BigInt)
+RETURNS VOID AS
+$$
+BEGIN
+
+			INSERT INTO community
+			( name, title, description, instance_id, local, public_key, actor_id )
+			SELECT 'zzy_com_' || i,
+			   'ZipGen Community ' || i,
+			   'description goes here, run AAAA0000 c' || i,
+			   1,
+			   true,
+			   'NEED_PUBLIC_KEY',
+			   'http://lemmy-alpha:8541/c/zzy_com_' || i
+			FROM generate_series(1, how_many) AS source(i)
+            ;
+
+END
+$$
+LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION benchmark_fill_post2(how_many BigInt, target_community TEXT)
 RETURNS VOID AS
 $$
 BEGIN
@@ -67,11 +105,12 @@ BEGIN
             INSERT INTO post_temp0
             ( name, body, community_id, creator_id, local, published )
             SELECT 'ZipGen Stress-Test Community post AAAA0000 p' || i,
-                'post body ' || i,
+                'post body run index ' || i || ' created by benchmark_fill_post2'
+                   ,
                 (SELECT id FROM community
                         WHERE source=source
                         AND local=true
-                        AND name LIKE 'zy_%'
+                        AND name LIKE target_community
                         ORDER BY random() LIMIT 1
                         ),
                 (SELECT id FROM person
@@ -87,6 +126,7 @@ BEGIN
 END
 $$
 LANGUAGE plpgsql;
+
 
 
 -- lemmy_helper benchmark_fill_post3
@@ -496,10 +536,10 @@ BEGIN
                 nextval(pg_get_serial_sequence('comment', 'id')),
                 text2ltree( path::text || '.' || currval(pg_get_serial_sequence('comment', 'id')) ),
                 'http://lemmy-slpha:8541/comment/' || currval( pg_get_serial_sequence('comment', 'id') ),
-                E'ZipGen Stress-Test message comment_reply_using_temp0_extendbranch path nlevel '
+                E'ZipGen Stress-Test message comment_reply_using_temp0_extendbranch path nlevel param:'
                     || targetbranch || E'\n\n comment AAAA0000 c' || '?' || E'\n\n all from the same random user.'
                     || ' PostgreSQL comment id ' || currval( pg_get_serial_sequence('comment', 'id') )
-                    || ' path ' || path::text
+                    || ' path ' || path::text || ' nlevel actual: ' || nlevel(path)
                     || E'\n\n> ' || REPLACE(content, E'\n', ' CRLF '),
                 comment_temp0.post_id,
                 (SELECT id FROM person
@@ -551,6 +591,28 @@ END
 $$
 LANGUAGE plpgsql;
 
+
+/*
+used to build a list of posts to target for comment activity
+*/
+CREATE OR REPLACE FUNCTION populate_temp_post_id_table(how_many BigInt, target_community TEXT)
+RETURNS VOID AS
+$$
+BEGIN
+
+    CREATE TEMP TABLE IF NOT EXISTS post_temp_id0 AS (
+        SELECT id FROM post_temp0
+        WHERE community_id IN (
+            SELECT id FROM community
+                WHERE name LIKE target_community
+            )
+        ORDER BY random()
+        LIMIT how_many
+        );
+
+END
+$$
+LANGUAGE plpgsql;
 
 
 -- *************************************************************************************
@@ -665,18 +727,14 @@ ALTER TABLE comment_temp0 ALTER id SET DEFAULT nextval('comment_temp0_seq');
 
 -- posts then go into Community
 SELECT 'benchmark_fill_post2 kicking off' AS status_message;
-SELECT * FROM bench('SELECT benchmark_fill_post2(30000);', 1, 0);
+SELECT * FROM bench('SELECT benchmark_fill_post2(30000, ''zy_%'');', 1, 0);
 SELECT 'benchmark_fill_post3 kicking off' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_post3(30000);', 1, 0);
 
 -- create a list of id numbers for posts to have rapid pull-from list.
-SELECT 'post targets post_temp_id0 kicking off' AS status_message;
+SELECT 'post targets post_temp_id0 populate_temp_post_id_table kicking off' AS status_message;
 DROP TABLE IF EXISTS post_temp_id0;
-SELECT * FROM bench('
-CREATE TEMP TABLE IF NOT EXISTS post_temp_id0 AS (
-   SELECT id FROM post_temp0
-   ORDER BY random() LIMIT 25000
-);', 1, 0);
+SELECT * FROM bench('SELECT populate_temp_post_id_table(25000, ''zy_%'');', 1, 0);
 -- spit out 10 to see what it looks like.
 SELECT * FROM post_temp_id0 LIMIT 10;
 
@@ -725,8 +783,9 @@ SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranc
 SELECT 'benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 5 kicking off 5 runs level 11' AS status_message;
 SELECT * FROM bench('SELECT benchmark_fill_comment_reply_using_temp0_extendbranch(3200, 11);', 5, 0);
 
-SELECT COUNT(*) FROM comment_temp0 AS comment_temp0_cuunt;
 
+SELECT COUNT(*) AS post_temp0_count FROM post_temp0;
+SELECT COUNT(*) AS comment_temp0_count FROM comment_temp0;
 SELECT MAX(nlevel(path)) AS comment_temp0_path_max_level FROM comment_temp0;
 
 
@@ -737,7 +796,7 @@ copy in the temp post table to main post table
 */
 SELECT 'copy post temp table into main post table, kicking off' AS status_message;
 SELECT * FROM bench('INSERT INTO post SELECT * FROM post_temp0', 1, 0);
-SELECT 'copy comment temp table into main post table, kicking off' AS status_message;
+SELECT 'copy comment temp table into main comment table, kicking off' AS status_message;
 SELECT * FROM bench('INSERT INTO comment SELECT * FROM comment_temp0', 1, 0);
 
 -- count comment replies (children) for comment_aggregates

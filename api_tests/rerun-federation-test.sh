@@ -68,6 +68,7 @@ else
 
 
   database_tune_before_testing() {
+    INSTANCE=lemmy_alpha
     time psql "$BASE_LEMMY_DATABASE_URL/$INSTANCE" --file mass_insert_before0.sql
     # 2023-08-16 lemmy developer says this is default on Lemmy installs, I assume wit Docker/Ansible config.
     # psql "$BASE_LEMMY_DATABASE_URL/lemmy" -c "ALTER USER lemmy SET synchronous_commit=OFF;"

@@ -301,3 +301,103 @@ BEGIN
     RETURN NULL;
 END
 $$;
+
+
+DROP TRIGGER community_aggregates_comment_count ON public.comment;
+
+CREATE TRIGGER community_aggregates_comment_count
+  AFTER INSERT OR DELETE OR UPDATE OF removed, deleted
+  ON public.comment FOR EACH ROW
+  EXECUTE FUNCTION public.community_aggregates_comment_count();
+
+
+CREATE OR REPLACE FUNCTION public.community_aggregates_comment_count() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF (was_restored_or_created (TG_OP, OLD, NEW)) THEN
+        UPDATE
+            community_aggregates ca
+        SET
+            comments = comments + 1
+        FROM
+            post p
+        WHERE
+            p.id = NEW.post_id
+            AND ca.community_id = p.community_id;
+    ELSIF (was_removed_or_deleted (TG_OP, OLD, NEW)) THEN
+        UPDATE
+            community_aggregates ca
+        SET
+            comments = comments - 1
+        FROM
+            post p
+        WHERE
+            p.id = OLD.post_id
+            AND ca.community_id = p.community_id;
+    END IF;
+    RETURN NULL;
+END
+$$;
+
+
+DROP TRIGGER person_aggregates_comment_count ON public.comment;
+
+CREATE TRIGGER person_aggregates_comment_count
+  AFTER INSERT OR DELETE OR UPDATE OF removed, deleted
+  ON public.comment FOR EACH ROW
+  EXECUTE FUNCTION public.person_aggregates_comment_count();
+
+
+CREATE OR REPLACE FUNCTION public.person_aggregates_comment_count() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF (was_restored_or_created (TG_OP, OLD, NEW)) THEN
+        UPDATE
+            person_aggregates
+        SET
+            comment_count = comment_count + 1
+        WHERE
+            person_id = NEW.creator_id;
+    ELSIF (was_removed_or_deleted (TG_OP, OLD, NEW)) THEN
+        UPDATE
+            person_aggregates
+        SET
+            comment_count = comment_count - 1
+        WHERE
+            person_id = OLD.creator_id;
+    END IF;
+    RETURN NULL;
+END
+$$;
+
+
+DROP TRIGGER site_aggregates_comment_insert ON public.comment;
+
+CREATE TRIGGER site_aggregates_comment_insert
+  AFTER INSERT OR UPDATE OF removed, deleted
+  ON public.comment
+  FOR EACH ROW WHEN ((new.local = true))
+  EXECUTE FUNCTION public.site_aggregates_comment_insert();
+
+
+
+CREATE OR REPLACE FUNCTION public.site_aggregates_comment_insert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF (was_restored_or_created (TG_OP, OLD, NEW)) THEN
+        UPDATE
+            site_aggregates sa
+        SET
+            comments = comments + 1
+        FROM
+            site s
+        WHERE
+            sa.site_id = s.id;
+    END IF;
+    RETURN NULL;
+END
+$$;
+

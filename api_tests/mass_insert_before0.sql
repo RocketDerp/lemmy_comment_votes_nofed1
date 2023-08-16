@@ -92,6 +92,7 @@ CREATE OR REPLACE FUNCTION public.site_aggregates_post_insert() RETURNS trigger
 BEGIN
    UPDATE site_aggregates SET posts = posts +
       (SELECT count(*) FROM new_rows WHERE local = true)
+      WHERE site_id = 1
       ;
 
    RETURN NULL;
@@ -171,9 +172,10 @@ CREATE OR REPLACE FUNCTION public.post_aggregates_comment_count() RETURNS trigge
 BEGIN
 
         UPDATE
+            -- per statement update 1
             post_aggregates postagg
         SET
-            comment = comment + c.new_comment_count
+            comments = comments + c.new_comment_count
         FROM (
             SELECT count(*) AS new_comment_count, post_id
             FROM new_rows
@@ -184,6 +186,7 @@ BEGIN
 
 
         UPDATE
+            -- per statement update 2
             post_aggregates postagg
         SET
             newest_comment_time = max_published
@@ -196,6 +199,7 @@ BEGIN
             postagg.post_id = c.post_id;
 
         UPDATE
+            -- per statement update 3
             post_aggregates postagg
         SET
             newest_comment_time_necro = max_published
@@ -203,7 +207,7 @@ BEGIN
             SELECT MAX(published) AS max_published, post_id, creator_id
             FROM new_rows
             WHERE published > ('now'::timestamp - '2 days'::interval)
-            GROUP BY post_id
+            GROUP BY post_id, creator_id
              ) AS c
         WHERE
             postagg.post_id = c.post_id
@@ -214,3 +218,94 @@ BEGIN
 END
 $$;
 
+
+DROP TRIGGER community_aggregates_comment_count ON public.comment;
+
+CREATE TRIGGER community_aggregates_comment_count
+   AFTER INSERT ON public.comment
+   REFERENCING NEW TABLE AS new_rows
+   FOR EACH STATEMENT
+   EXECUTE FUNCTION public.community_aggregates_comment_count();
+
+
+CREATE OR REPLACE FUNCTION public.community_aggregates_comment_count() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+
+        UPDATE
+            community_aggregates ca
+        SET
+            comments = comments + p.new_comment_count
+        FROM (
+            SELECT count(*) AS new_comment_count, community_id
+            FROM new_rows AS nr
+            JOIN post AS pp ON nr.post_id = pp.id
+            GROUP BY pp.community_id
+             ) AS p
+        WHERE
+            ca.community_id = p.community_id
+            ;
+
+    RETURN NULL;
+
+END
+$$;
+
+
+DROP TRIGGER person_aggregates_comment_count ON public.comment;
+
+CREATE TRIGGER person_aggregates_comment_count
+   AFTER INSERT ON public.comment
+   REFERENCING NEW TABLE AS new_rows
+   FOR EACH STATEMENT
+   EXECUTE FUNCTION public.person_aggregates_comment_count();
+
+
+CREATE OR REPLACE FUNCTION public.person_aggregates_comment_count() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+
+        UPDATE
+            person_aggregates personagg
+        SET
+            comment_count = comment_count + p.new_comment_count
+        FROM (
+            SELECT count(*) AS new_comment_count, creator_id
+            FROM new_rows
+            GROUP BY creator_id
+             ) AS p
+        WHERE
+            personagg.person_id = p.creator_id;
+
+    RETURN NULL;
+END
+$$;
+
+
+DROP TRIGGER site_aggregates_comment_insert ON public.comment;
+
+CREATE TRIGGER site_aggregates_comment_insert
+   AFTER INSERT ON public.comment
+   REFERENCING NEW TABLE AS new_rows
+   FOR EACH STATEMENT
+   EXECUTE FUNCTION public.site_aggregates_comment_insert();
+
+
+CREATE OR REPLACE FUNCTION public.site_aggregates_comment_insert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+
+   UPDATE site_aggregates
+      SET comments = comments +
+         (
+            SELECT count(*) FROM new_rows WHERE local = true
+         )
+      WHERE site_id = 1
+      ;
+
+    RETURN NULL;
+END
+$$;

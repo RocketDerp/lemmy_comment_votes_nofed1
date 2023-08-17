@@ -105,9 +105,14 @@ $$
 BEGIN
 
             INSERT INTO post_temp0
-            ( name, body, community_id, creator_id, local, published )
-            SELECT 'ZipGen Stress-Test Community post AAAA0000 p' || i,
-                'post body run index ' || i || ' created by benchmark_fill_post2'
+            ( id, ap_id, name, body, community_id, creator_id, local, published )
+            SELECT
+                nextval(pg_get_serial_sequence('post', 'id')),
+                'http://lemmy-alpha:8541/post/' || currval( pg_get_serial_sequence('post', 'id') ),
+                'ZipGen Stress-Test Community post AAAA0000 p' || i,
+                'post body run index ' || i ||
+                    ' post_id ' || currval( pg_get_serial_sequence('post', 'id') ) ||
+                    E'\n\n created by benchmark_fill_post2'
                    ,
                 (SELECT id FROM community
                         WHERE source=source
@@ -138,9 +143,15 @@ RETURNS VOID AS
 $$
 BEGIN
             INSERT INTO post_temp0
-            ( name, body, community_id, creator_id, local, published )
-            SELECT 'ZipGen Stress-Test Huge Community post AAAA0000 p' || i,
-                'post body ' || i,
+            ( id, ap_id, name, body, community_id, creator_id, local, published )
+            SELECT
+                nextval(pg_get_serial_sequence('post', 'id')),
+                'http://lemmy-alpha:8541/post/' || currval( pg_get_serial_sequence('post', 'id') ),
+                'ZipGen Stress-Test Huge Community post AAAA0000 p' || i,
+                'post body run index ' || i ||
+                    ' post_id ' || currval( pg_get_serial_sequence('post', 'id') ) ||
+                    E'\n\n created by benchmark_fill_post3'
+                    ,
                 19, -- targeted testing community from simulation
                 (SELECT id FROM person
                     WHERE source=source

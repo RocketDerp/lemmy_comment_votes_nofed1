@@ -104,7 +104,7 @@ else
   # runjest live_servers_stress.spec.ts
   # runjest benchmark_stresstest_concurrent.spec.ts
   # runjest benchmark_jest_study_concurrent.spec.ts
-  runjest admin_instance.spec.ts
+  #runjest admin_instance.spec.ts
 
 fi
 

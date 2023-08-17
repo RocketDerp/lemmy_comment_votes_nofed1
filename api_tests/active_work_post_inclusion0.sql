@@ -175,22 +175,30 @@ https://medium.com/@amulya349/how-to-select-top-n-rows-from-each-category-in-pos
 
 SELECT ranked_recency.*
 FROM
-(SELECT id, community_id, published,
-  rank() OVER (PARTITION BY community_id ORDER BY published DESC, id DESC)
-  FROM post_aggregates) ranked_recency
-where rank <= 3
-  ORDER BY community_id
-  -- limit only for interactive testing output
-  LIMIT 18
-  ;
+   (
+      SELECT id, community_id, published,
+          rank() OVER (
+             PARTITION BY community_id
+             ORDER BY published DESC, id DESC
+           )
+      FROM post_aggregates) ranked_recency
+WHERE rank <= 3
+ORDER BY community_id
+-- limit only for interactive testing output
+LIMIT 12
+;
  
 SELECT COUNT(ranked_recency.*) AS post_row_count
 FROM
-(SELECT id, community_id, published,
-  rank() OVER (PARTITION BY community_id ORDER BY published DESC, id DESC)
-  FROM post_aggregates) ranked_recency
-where rank <= 1000
-  ;
+  (
+     SELECT id, community_id, published,
+        rank() OVER (
+           PARTITION BY community_id
+           ORDER BY published DESC, id DESC
+           )
+     FROM post_aggregates) ranked_recency
+WHERE rank <= 1000
+;
 
 
 SELECT COUNT(*) AS community_id_in_post_count

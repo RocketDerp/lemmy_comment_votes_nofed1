@@ -19,6 +19,8 @@ Mass INSERT from even a temp table... with the trigger logic of Lemmy, it is sti
    Good reading:
        https://www.cybertec-postgresql.com/en/why-are-my-postgresql-updates-getting-slower/
 
+Source of benchmark PostgreSQL techniques and functions:
+   https://www.tangramvision.com/blog/how-to-benchmark-postgresql-queries-well
 */
 
 SET TIME ZONE 'UTC';
@@ -27,7 +29,7 @@ CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 SELECT pg_stat_statements_reset();
 
 
--- scripts/clock_timestamp_function.sql
+-- https://www.tangramvision.com/blog/how-to-benchmark-postgresql-queries-well
 CREATE OR REPLACE FUNCTION bench(query TEXT, iterations INTEGER = 100, warmup_iterations INTEGER = 5)
 RETURNS TABLE(avg FLOAT, min FLOAT, q1 FLOAT, median FLOAT, q3 FLOAT, p95 FLOAT, max FLOAT, repeats INTEGER) AS $$
 DECLARE
@@ -103,9 +105,14 @@ $$
 BEGIN
 
             INSERT INTO post_temp0
-            ( name, body, community_id, creator_id, local, published )
-            SELECT 'ZipGen Stress-Test Community post AAAA0000 p' || i,
-                'post body run index ' || i || ' created by benchmark_fill_post2'
+            ( id, ap_id, name, body, community_id, creator_id, local, published )
+            SELECT
+                nextval(pg_get_serial_sequence('post', 'id')),
+                'http://lemmy-alpha:8541/post/' || currval( pg_get_serial_sequence('post', 'id') ),
+                'ZipGen Stress-Test Community post AAAA0000 p' || i,
+                'post body run index ' || i ||
+                    ' post_id ' || currval( pg_get_serial_sequence('post', 'id') ) ||
+                    E'\n\n created by benchmark_fill_post2'
                    ,
                 (SELECT id FROM community
                         WHERE source=source
@@ -136,9 +143,15 @@ RETURNS VOID AS
 $$
 BEGIN
             INSERT INTO post_temp0
-            ( name, body, community_id, creator_id, local, published )
-            SELECT 'ZipGen Stress-Test Huge Community post AAAA0000 p' || i,
-                'post body ' || i,
+            ( id, ap_id, name, body, community_id, creator_id, local, published )
+            SELECT
+                nextval(pg_get_serial_sequence('post', 'id')),
+                'http://lemmy-alpha:8541/post/' || currval( pg_get_serial_sequence('post', 'id') ),
+                'ZipGen Stress-Test Huge Community post AAAA0000 p' || i,
+                'post body run index ' || i ||
+                    ' post_id ' || currval( pg_get_serial_sequence('post', 'id') ) ||
+                    E'\n\n created by benchmark_fill_post3'
+                    ,
                 19, -- targeted testing community from simulation
                 (SELECT id FROM person
                     WHERE source=source

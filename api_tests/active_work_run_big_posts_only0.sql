@@ -28,7 +28,7 @@ SELECT * FROM bench('SELECT benchmark_fill_post2(128000, ''zy_%'');', 1, 0);
 
 
 SELECT COUNT(*) AS post_temp0_count FROM post_temp0;
-
+SELECT posts, comments from site_aggregates;
 
 /*
 copy in the temp post table to main post table
@@ -37,3 +37,7 @@ copy in the temp post table to main post table
 */
 SELECT 'copy post temp table into main post table, kicking off' AS status_message;
 SELECT * FROM bench('INSERT INTO post SELECT * FROM post_temp0', 1, 0);
+
+
+SELECT posts, comments from site_aggregates;
+

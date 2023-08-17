@@ -43,3 +43,51 @@ WHERE rank <= 1000
 ;'
 , 1, 0);
 
+
+-- SELECT * FROM bench('ALTER TABLE post_aggregates ADD inclusion smallint DEFAULT 0;', 1, 0);
+
+
+SELECT * FROM bench('
+UPDATE post_aggregates
+  SET inclusion=1
+FROM
+  (
+     SELECT id, post_id, community_id, published,
+        rank() OVER (
+           PARTITION BY community_id
+           ORDER BY published DESC, id DESC
+           )
+     FROM post_aggregates
+  ) AS ranked_recency
+WHERE rank <= 1000
+AND post_aggregates.id = ranked_recency.id
+;'
+, 1, 0);
+
+
+/*
+count took
+ 3536.506ms
+update took
+ 67826.611ms
+*/
+
+/*
+UPDATE table1
+SET
+    col1 = subquery.min_value,
+    col2 = subquery.max_value
+FROM
+(
+
+    SELECT
+        1001 AS col4,
+        MIN (ship_charge) AS min_value,
+        MAX (ship_charge) AS max_value
+    FROM orders
+) AS subquery
+WHERE table1.col4 = subquery.col4
+*/
+
+SELECT COUNT(*) AS inclusion_1 FROM post_aggregates WHERE inclusion = 1;
+SELECT COUNT(*) AS inclusion_0 FROM post_aggregates WHERE inclusion = 0;

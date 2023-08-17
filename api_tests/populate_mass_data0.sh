@@ -21,9 +21,9 @@ export BASE_LEMMY_DATABASE_READ_URL=postgres://lemmy_read0:ginger77145@localhost
     
     # beef here
     #    active_work_runb0001.sql creates 12,000 communities and puts a few posts in them
-    time psql "$BASE_LEMMY_DATABASE_URL/$INSTANCE" --file active_work_run0001.sql
+    # time psql "$BASE_LEMMY_DATABASE_URL/$INSTANCE" --file active_work_run0001.sql
     #    target the specific hand-made test communities from simulation
-    time psql "$BASE_LEMMY_DATABASE_URL/$INSTANCE" --file active_work_run_big1.sql
+    time psql "$BASE_LEMMY_DATABASE_URL/$INSTANCE" --file active_work_run_big2.sql
     
     # after
     time psql "$BASE_LEMMY_DATABASE_URL/$INSTANCE" --file mass_insert_after0.sql

@@ -105,14 +105,19 @@ SELECT EXTRACT(EPOCH FROM (timezone('utc', now()) - timezone('utc', now())::time
 
 SET TIME ZONE 'UTC';
 
+-- it seems hot_rank function returns 0 if the time is exactly the current time.
 SELECT hot_rank(1::numeric, timezone('utc', now())::timestamp) AS hot_rank_now_score_1, timezone('utc', now())::timestamp AS current_now;
 
 SELECT hot_rank(3::numeric, timezone('utc', now())) AS hot_rank_now_score_3, timezone('utc', now()) AS current_now;
 
 SELECT hot_rank(-1::numeric, timezone('utc', now())) AS hot_rank_now_score_neg1, timezone('utc', now()) AS current_now;
 
+-- tweak time and it works fine
 SELECT hot_rank(3::numeric, timezone('utc', now() - interval '1 hour')) AS hot_rank_now_minus1hour_score_3, timezone('utc', now() - interval '1 hour') AS current_now;
 
 SELECT hot_rank(3::numeric, timezone('utc', now() - interval '1 second')) AS hot_rank_now_minus1second_score_3, timezone('utc', now() - interval '1 second') AS current_now;
 
 SELECT hot_rank(3::numeric, timezone('utc', now() - interval '1 minute')) AS hot_rank_now_minus1minute_score_3, timezone('utc', now() - interval '1 minute') AS current_now;
+
+-- one minute in future, also returns 0
+SELECT hot_rank(3::numeric, timezone('utc', now() + interval '1 minute')) AS hot_rank_now_plus1minute_score_3, timezone('utc', now() + interval '1 minute') AS current_now;

@@ -519,17 +519,6 @@ fn queries_anonymous<'a>() -> Queries<
         query = query
           .filter(community::removed.eq(false))
           .filter(post::removed.eq(false))
-          // users can see their own deleted posts
-          .filter(
-            community::deleted
-              .eq(false)
-              .or(post::creator_id.eq(person_id_join)),
-          )
-          .filter(
-            post::deleted
-              .eq(false)
-              .or(post::creator_id.eq(person_id_join)),
-          );
       }
 
       query.first::<PostViewTuple>(&mut conn).await
@@ -537,7 +526,6 @@ fn queries_anonymous<'a>() -> Queries<
 
   let list = move |mut conn: DbConn<'a>, options: PostQuery<'a>| async move {
     let person_id = options.local_user.map(|l| l.person.id);
-
 
     let mut query = all_joins(post_aggregates::table.into_boxed(), person_id);
 

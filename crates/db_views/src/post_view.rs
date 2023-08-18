@@ -463,28 +463,24 @@ fn queries_anonymous<'a>() -> Queries<
         community_follower::table.on(
           post_aggregates::community_id
             .eq(community_follower::community_id)
-            .and(community_follower::person_id.eq(person_id_join)),
         ),
       )
       .left_join(
         community_moderator::table.on(
           post::community_id
             .eq(community_moderator::community_id)
-            .and(community_moderator::person_id.eq(person_id_join)),
         ),
       )
       .left_join(
         post_like::table.on(
           post_aggregates::post_id
             .eq(post_like::post_id)
-            .and(post_like::person_id.eq(person_id_join)),
         ),
       )
       .left_join(
         person_post_aggregates::table.on(
           post_aggregates::post_id
             .eq(person_post_aggregates::post_id)
-            .and(person_post_aggregates::person_id.eq(person_id_join)),
         ),
       )
       .select((

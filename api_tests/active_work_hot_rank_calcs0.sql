@@ -114,3 +114,5 @@ SELECT hot_rank(-1::numeric, timezone('utc', now())) AS hot_rank_now_score_neg1,
 SELECT hot_rank(3::numeric, timezone('utc', now() - interval '1 hour')) AS hot_rank_now_minus1hour_score_3, timezone('utc', now() - interval '1 hour') AS current_now;
 
 SELECT hot_rank(3::numeric, timezone('utc', now() - interval '1 second')) AS hot_rank_now_minus1second_score_3, timezone('utc', now() - interval '1 second') AS current_now;
+
+SELECT hot_rank(3::numeric, timezone('utc', now() - interval '1 minute')) AS hot_rank_now_minus1minute_score_3, timezone('utc', now() - interval '1 minute') AS current_now;

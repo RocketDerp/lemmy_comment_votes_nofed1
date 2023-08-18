@@ -60,6 +60,7 @@ type PostViewTuple = (
   i64,
 );
 
+
 sql_function!(fn coalesce(x: sql_types::Nullable<sql_types::BigInt>, y: sql_types::BigInt) -> sql_types::BigInt);
 
 
@@ -421,6 +422,8 @@ fn queries_anonymous<'a>() -> Queries<
     ),
   );
 
+// how do we eliminate these next 3 assignments, this is anonymous user, not needed
+
   let is_saved = |person_id_join| {
     exists(
       post_saved::table.filter(
@@ -459,6 +462,7 @@ fn queries_anonymous<'a>() -> Queries<
       .inner_join(person::table)
       .inner_join(community::table)
       .inner_join(post::table)
+// how do we eliminate these next 3 joins that are user/person references?
       .left_join(
         community_follower::table.on(
           post_aggregates::community_id
@@ -490,8 +494,9 @@ fn queries_anonymous<'a>() -> Queries<
         is_creator_banned_from_community,
         post_aggregates::all_columns,
         CommunityFollower::select_subscribed_type(),
+// how do we eliminate these next 3 for anonymous?
         is_saved(person_id_join),
-        //is_read(person_id_join),
+        is_read(person_id_join),
         is_creator_blocked(person_id_join),
         post_like::score.nullable(),
         coalesce(
@@ -512,12 +517,10 @@ fn queries_anonymous<'a>() -> Queries<
         my_person_id,
       );
 
-      // Hide deleted and removed for non-admins or mods
-      if !is_mod_or_admin {
         query = query
           .filter(community::removed.eq(false))
           .filter(post::removed.eq(false))
-      }
+          ;
 
       query.first::<PostViewTuple>(&mut conn).await
     };

@@ -491,7 +491,7 @@ fn queries_anonymous<'a>() -> Queries<
         post_aggregates::all_columns,
         CommunityFollower::select_subscribed_type(),
         is_saved(person_id_join),
-        is_read(person_id_join),
+        //is_read(person_id_join),
         is_creator_blocked(person_id_join),
         post_like::score.nullable(),
         coalesce(

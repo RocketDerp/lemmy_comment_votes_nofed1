@@ -1,3 +1,6 @@
+-- SET TIME ZONE 'UTC';
+SET TIME ZONE 'US/Arizona';
+
 SELECT hot_rank(1::numeric, CURRENT_TIMESTAMP::timestamp) AS hot_rank_now_score_1, CURRENT_TIMESTAMP;
 
 SELECT hot_rank(3::numeric, CURRENT_TIMESTAMP::timestamp) AS hot_rank_now_score_3, CURRENT_TIMESTAMP;
@@ -100,6 +103,7 @@ SELECT EXTRACT(EPOCH FROM (timezone('utc', now()) - CURRENT_TIMESTAMP)), CURRENT
 
 SELECT EXTRACT(EPOCH FROM (timezone('utc', now()) - timezone('utc', now())::timestamp)), timezone('utc', now())::timestamp AS current_now;
 
+SET TIME ZONE 'UTC';
 
 SELECT hot_rank(1::numeric, timezone('utc', now())::timestamp) AS hot_rank_now_score_1, timezone('utc', now())::timestamp AS current_now;
 
@@ -107,3 +111,6 @@ SELECT hot_rank(3::numeric, timezone('utc', now())) AS hot_rank_now_score_3, tim
 
 SELECT hot_rank(-1::numeric, timezone('utc', now())) AS hot_rank_now_score_neg1, timezone('utc', now()) AS current_now;
 
+SELECT hot_rank(3::numeric, timezone('utc', now() - interval '1 hour')) AS hot_rank_now_minus1hour_score_3, timezone('utc', now() - interval '1 hour') AS current_now;
+
+SELECT hot_rank(3::numeric, timezone('utc', now() - interval '1 second')) AS hot_rank_now_minus1second_score_3, timezone('utc', now() - interval '1 second') AS current_now;

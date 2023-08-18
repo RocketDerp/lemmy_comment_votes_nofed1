@@ -320,10 +320,12 @@ fn queries<'a>() -> Queries<
         ),
       ));
 
+      /*
       query = query.filter(
         diesel::dsl::sql::<sql_types::Bool>("inclusion = ")
         .bind::<sql_types::Integer,_>(1)
       );
+      */
 
       // Don't show blocked communities or persons
       query = query.filter(not(exists(

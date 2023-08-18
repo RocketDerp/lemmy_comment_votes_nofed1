@@ -504,8 +504,6 @@ fn queries_anonymous<'a>() -> Queries<
   let read =
     move |mut conn: DbConn<'a>,
           (post_id, my_person_id, is_mod_or_admin): (PostId, Option<PersonId>, bool)| async move {
-      // The left join below will return None in this case
-      let person_id_join = my_person_id.unwrap_or(PersonId(-1));
 
       let mut query = all_joins(
         post_aggregates::table
@@ -529,21 +527,16 @@ fn queries_anonymous<'a>() -> Queries<
 
     let mut query = all_joins(post_aggregates::table.into_boxed(), person_id);
 
-    let is_creator = options.creator_id == options.local_user.map(|l| l.person.id);
-    // only show deleted posts to creator
-    if is_creator {
+
       query = query
         .filter(community::deleted.eq(false))
         .filter(post::deleted.eq(false));
-    }
 
-    let is_admin = options.local_user.map(|l| l.person.admin).unwrap_or(false);
-    // only show removed posts to admin when viewing user profile
-    if !(options.is_profile_view && is_admin) {
+
+    // every SELECT has to labor away on removed filtering
       query = query
         .filter(community::removed.eq(false))
         .filter(post::removed.eq(false));
-    }
 
     if options.community_id.is_none() {
       query = query.then_order_by(post_aggregates::featured_local.desc());
@@ -571,15 +564,9 @@ fn queries_anonymous<'a>() -> Queries<
       );
     }
 
-    if !options
-      .local_user
-      .map(|l| l.local_user.show_nsfw)
-      .unwrap_or(false)
-    {
       query = query
         .filter(post::nsfw.eq(false))
         .filter(community::nsfw.eq(false));
-    };
 
 
     query = match options.sort.unwrap_or(SortType::Hot) {

@@ -50,10 +50,6 @@ type PostAnonymousViewTuple = (
   Community,
   bool,
   PostAggregates,
-  SubscribedType,
-  bool,
-  Option<i16>,
-  i64,
 );
 
 sql_function!(fn coalesce(x: sql_types::Nullable<sql_types::BigInt>, y: sql_types::BigInt) -> sql_types::BigInt);
@@ -91,27 +87,6 @@ fn queries<'a>() -> Queries<
             .and(community_moderator::person_id.eq(person_id_join)),
         ),
       )
-      .left_join(
-        person_block::table.on(
-          post_aggregates::creator_id
-            .eq(person_block::target_id)
-            .and(person_block::person_id.eq(person_id_join)),
-        ),
-      )
-      .left_join(
-        post_like::table.on(
-          post_aggregates::post_id
-            .eq(post_like::post_id)
-            .and(post_like::person_id.eq(person_id_join)),
-        ),
-      )
-      .left_join(
-        person_post_aggregates::table.on(
-          post_aggregates::post_id
-            .eq(person_post_aggregates::post_id)
-            .and(person_post_aggregates::person_id.eq(person_id_join)),
-        ),
-      )
   };
 
   let selection = (
@@ -120,13 +95,6 @@ fn queries<'a>() -> Queries<
     community::all_columns,
     community_person_ban::id.nullable().is_not_null(),
     post_aggregates::all_columns,
-    CommunityFollower::select_subscribed_type(),
-    person_block::id.nullable().is_not_null(),
-    post_like::score.nullable(),
-    coalesce(
-      post_aggregates::comments.nullable() - person_post_aggregates::read_comments.nullable(),
-      post_aggregates::comments,
-    ),
   );
 
   let read =
@@ -273,21 +241,10 @@ fn queries<'a>() -> Queries<
       query = query.filter(community_moderator::person_id.is_not_null());
     }
 
-    if options.liked_only {
-      query = query.filter(post_like::score.eq(1));
-    } else if options.disliked_only {
-      query = query.filter(post_like::score.eq(-1));
-    }
 
     if options.local_user.is_some() {
       // Filter out the rows with missing languages
       query = query.filter(local_user_language::language_id.is_not_null());
-
-      // Don't show blocked communities or persons
-      query = query.filter(community_block::person_id.is_null());
-      if !options.moderator_view {
-        query = query.filter(person_block::person_id.is_null());
-      }
     }
 
     query = match options.sort.unwrap_or(SortType::Hot) {
@@ -372,12 +329,6 @@ impl PostAnonymousView {
       .read(pool, (post_id, my_person_id, is_mod_or_admin))
       .await?;
 
-    // If a person is given, then my_vote, if None, should be 0, not null
-    // Necessary to differentiate between other person's votes
-    if my_person_id.is_some() && res.my_vote.is_none() {
-      res.my_vote = Some(0)
-    };
-
     Ok(res)
   }
 }
@@ -397,10 +348,6 @@ impl JoinView for PostAnonymousView {
       community: a.2,
       creator_banned_from_community: a.3,
       counts: a.4,
-      subscribed: a.5,
-      creator_blocked: a.6,
-      my_vote: a.7,
-      unread_comments: a.8,
     }
   }
 }

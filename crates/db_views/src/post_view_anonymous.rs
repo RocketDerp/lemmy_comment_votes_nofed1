@@ -63,7 +63,7 @@ fn queries<'a>() -> Queries<
     post_aggregates::all_columns,
   );
 
-  /*
+  // the read function is not used, only the list, so this is damaged.
   let read =
     move |mut conn: DbConn<'a>,
           (post_id, my_person_id, is_mod_or_admin): (PostId, Option<PersonId>, bool)| async move {
@@ -75,14 +75,8 @@ fn queries<'a>() -> Queries<
       )
       .select(selection);
 
-      // Hide deleted and removed for non-admins or mods
-        query = query
-          .filter(community::removed.eq(false))
-          .filter(post::removed.eq(false));
-
       query.first::<PostAnonymousViewTuple>(&mut conn).await
     };
-  */
 
   let list = move |mut conn: DbConn<'a>, options: PostQuery<'a>| async move {
     let person_id = options.local_user.map(|l| l.person.id);
@@ -211,7 +205,7 @@ fn queries<'a>() -> Queries<
 impl<'a> PostQuery<'a> {
   pub async fn list_anonymous(self, pool: &mut DbPool<'_>) -> Result<Vec<PostAnonymousView>, Error> {
     queries().list(pool, self).await
-  }
+    }
 }
 
 impl JoinView for PostAnonymousView {

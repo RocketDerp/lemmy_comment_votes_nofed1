@@ -118,8 +118,6 @@ pub struct PostAnonymousView {
   pub creator_banned_from_community: bool,
   pub counts: PostAggregates,
   pub subscribed: SubscribedType,
-  pub saved: bool,
-  pub read: bool,
   pub creator_blocked: bool,
   pub my_vote: Option<i16>,
   pub unread_comments: i64,

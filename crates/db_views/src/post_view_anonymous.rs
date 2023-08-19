@@ -30,8 +30,6 @@ use lemmy_db_schema::{
     post,
     post_aggregates,
     post_like,
-    post_read,
-    post_saved,
   },
   source::{
     community::{Community, CommunityFollower},
@@ -53,8 +51,6 @@ type PostAnonymousViewTuple = (
   bool,
   PostAggregates,
   SubscribedType,
-  bool,
-  bool,
   bool,
   Option<i16>,
   i64,
@@ -96,20 +92,6 @@ fn queries<'a>() -> Queries<
         ),
       )
       .left_join(
-        post_saved::table.on(
-          post_aggregates::post_id
-            .eq(post_saved::post_id)
-            .and(post_saved::person_id.eq(person_id_join)),
-        ),
-      )
-      .left_join(
-        post_read::table.on(
-          post_aggregates::post_id
-            .eq(post_read::post_id)
-            .and(post_read::person_id.eq(person_id_join)),
-        ),
-      )
-      .left_join(
         person_block::table.on(
           post_aggregates::creator_id
             .eq(person_block::target_id)
@@ -139,8 +121,6 @@ fn queries<'a>() -> Queries<
     community_person_ban::id.nullable().is_not_null(),
     post_aggregates::all_columns,
     CommunityFollower::select_subscribed_type(),
-    post_saved::id.nullable().is_not_null(),
-    post_read::id.nullable().is_not_null(),
     person_block::id.nullable().is_not_null(),
     post_like::score.nullable(),
     coalesce(
@@ -288,24 +268,9 @@ fn queries<'a>() -> Queries<
       query = query.filter(person::bot_account.eq(false));
     };
 
-    if options.saved_only {
-      query = query.filter(post_saved::id.is_not_null());
-    }
 
     if options.moderator_view {
       query = query.filter(community_moderator::person_id.is_not_null());
-    }
-    // Only hide the read posts, if the saved_only is false. Otherwise ppl with the hide_read
-    // setting wont be able to see saved posts.
-    else if !options
-      .local_user
-      .map(|l| l.local_user.show_read_posts)
-      .unwrap_or(true)
-    {
-      // Do not hide read posts when it is a user profile view
-      if !options.is_profile_view {
-        query = query.filter(post_read::post_id.is_null());
-      }
     }
 
     if options.liked_only {
@@ -433,11 +398,9 @@ impl JoinView for PostAnonymousView {
       creator_banned_from_community: a.3,
       counts: a.4,
       subscribed: a.5,
-      saved: a.6,
-      read: a.7,
-      creator_blocked: a.8,
-      my_vote: a.9,
-      unread_comments: a.10,
+      creator_blocked: a.6,
+      my_vote: a.7,
+      unread_comments: a.8,
     }
   }
 }

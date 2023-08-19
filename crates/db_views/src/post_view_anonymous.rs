@@ -35,11 +35,8 @@ use lemmy_db_schema::{
   },
   traits::JoinView,
   utils::{fuzzy_search, limit_and_offset, DbConn, DbPool, ListFn, Queries, ReadFn},
-  ListingType,
   SortType,
-  SubscribedType,
 };
-use tracing::debug;
 
 type PostAnonymousViewTuple = (
   Post,
@@ -56,8 +53,6 @@ fn queries<'a>() -> Queries<
   impl ListFn<'a, PostAnonymousView, PostQuery<'a>>,
 > {
   let all_joins = |query: post_aggregates::BoxedQuery<'a, Pg>, my_person_id: Option<PersonId>| {
-    // The left join below will return None in this case
-    let person_id_join = my_person_id.unwrap_or(PersonId(-1));
 
     query
       .inner_join(person::table)
@@ -70,20 +65,6 @@ fn queries<'a>() -> Queries<
         ),
       )
       .inner_join(post::table)
-      .left_join(
-        community_follower::table.on(
-          post_aggregates::community_id
-            .eq(community_follower::community_id)
-            .and(community_follower::person_id.eq(person_id_join)),
-        ),
-      )
-      .left_join(
-        community_moderator::table.on(
-          post::community_id
-            .eq(community_moderator::community_id)
-            .and(community_moderator::person_id.eq(person_id_join)),
-        ),
-      )
   };
 
   let selection = (
@@ -109,22 +90,9 @@ fn queries<'a>() -> Queries<
       .select(selection);
 
       // Hide deleted and removed for non-admins or mods
-      if !is_mod_or_admin {
         query = query
           .filter(community::removed.eq(false))
-          .filter(post::removed.eq(false))
-          // users can see their own deleted posts
-          .filter(
-            community::deleted
-              .eq(false)
-              .or(post::creator_id.eq(person_id_join)),
-          )
-          .filter(
-            post::deleted
-              .eq(false)
-              .or(post::creator_id.eq(person_id_join)),
-          );
-      }
+          .filter(post::removed.eq(false));
 
       query.first::<PostAnonymousViewTuple>(&mut conn).await
     };

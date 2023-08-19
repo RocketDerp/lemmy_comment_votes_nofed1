@@ -63,6 +63,7 @@ fn queries<'a>() -> Queries<
     post_aggregates::all_columns,
   );
 
+  /*
   let read =
     move |mut conn: DbConn<'a>,
           (post_id, my_person_id, is_mod_or_admin): (PostId, Option<PersonId>, bool)| async move {
@@ -81,6 +82,7 @@ fn queries<'a>() -> Queries<
 
       query.first::<PostAnonymousViewTuple>(&mut conn).await
     };
+  */
 
   let list = move |mut conn: DbConn<'a>, options: PostQuery<'a>| async move {
     let person_id = options.local_user.map(|l| l.person.id);

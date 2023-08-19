@@ -1,4 +1,4 @@
-use crate::{structs::{LocalUserView, PostAnonymousView}, post_view::PostQuery};
+use crate::{structs::{PostAnonymousView}, post_view::PostQuery};
 use diesel::{
   debug_query,
   dsl::{now, IntervalDsl},
@@ -16,14 +16,10 @@ use diesel::{
 use diesel_async::RunQueryDsl;
 use lemmy_db_schema::{
   aggregates::structs::PostAggregates,
-  newtypes::{LocalUserId, PersonId, PostId},
+  newtypes::{PersonId, PostId},
   schema::{
     community,
-    community_block,
-    community_follower,
-    community_moderator,
     community_person_ban,
-    local_user_language,
     person,
     post,
     post_aggregates,
@@ -78,9 +74,6 @@ fn queries<'a>() -> Queries<
   let read =
     move |mut conn: DbConn<'a>,
           (post_id, my_person_id, is_mod_or_admin): (PostId, Option<PersonId>, bool)| async move {
-      // The left join below will return None in this case
-      let person_id_join = my_person_id.unwrap_or(PersonId(-1));
-
       let mut query = all_joins(
         post_aggregates::table
           .filter(post_aggregates::post_id.eq(post_id))
@@ -99,27 +92,8 @@ fn queries<'a>() -> Queries<
 
   let list = move |mut conn: DbConn<'a>, options: PostQuery<'a>| async move {
     let person_id = options.local_user.map(|l| l.person.id);
-    let local_user_id = options.local_user.map(|l| l.local_user.id);
-
-    // The left join below will return None in this case
-    let person_id_join = person_id.unwrap_or(PersonId(-1));
-    let local_user_id_join = local_user_id.unwrap_or(LocalUserId(-1));
 
     let mut query = all_joins(post_aggregates::table.into_boxed(), person_id)
-      .left_join(
-        community_block::table.on(
-          post_aggregates::community_id
-            .eq(community_block::community_id)
-            .and(community_block::person_id.eq(person_id_join)),
-        ),
-      )
-      .left_join(
-        local_user_language::table.on(
-          post::language_id
-            .eq(local_user_language::language_id)
-            .and(local_user_language::local_user_id.eq(local_user_id_join)),
-        ),
-      )
       .select(selection);
 
     // This logic is confusing to me. creator of what? Each individual post?

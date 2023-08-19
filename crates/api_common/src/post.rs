@@ -5,7 +5,7 @@ use lemmy_db_schema::{
   PostFeatureType,
   SortType,
 };
-use lemmy_db_views::structs::{PostReportView, PostView};
+use lemmy_db_views::structs::{PostReportView, PostView, PostAnonymousView};
 use lemmy_db_views_actor::structs::{CommunityModeratorView, CommunityView};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -87,6 +87,14 @@ pub struct GetPosts {
 /// The post list response.
 pub struct GetPostsResponse {
   pub posts: Vec<PostView>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(feature = "full", derive(TS))]
+#[cfg_attr(feature = "full", ts(export))]
+/// The post list response.
+pub struct GetPostsAnonymousResponse {
+  pub posts: Vec<PostAnonymousView>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

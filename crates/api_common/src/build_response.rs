@@ -18,7 +18,7 @@ use lemmy_db_schema::{
   },
   traits::Crud,
 };
-use lemmy_db_views::structs::{CommentView, LocalUserView, PostView};
+use lemmy_db_views::structs::{CommentView, LocalUserView, PostView, PostAnonymousView};
 use lemmy_db_views_actor::structs::CommunityView;
 use lemmy_utils::{error::LemmyError, utils::mention::MentionData};
 

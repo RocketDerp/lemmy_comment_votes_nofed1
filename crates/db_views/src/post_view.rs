@@ -1,7 +1,7 @@
 use crate::structs::{LocalUserView, PostView};
 use diesel::{
   debug_query,
-  dsl::{exists, not, now, IntervalDsl},
+  dsl::{now, IntervalDsl},
   pg::Pg,
   result::Error,
   sql_function,
@@ -60,60 +60,26 @@ type PostViewTuple = (
   i64,
 );
 
-
 sql_function!(fn coalesce(x: sql_types::Nullable<sql_types::BigInt>, y: sql_types::BigInt) -> sql_types::BigInt);
-
-
 
 fn queries<'a>() -> Queries<
   impl ReadFn<'a, PostView, (PostId, Option<PersonId>, bool)>,
   impl ListFn<'a, PostView, PostQuery<'a>>,
 > {
-  let is_creator_banned_from_community = exists(
-    community_person_ban::table.filter(
-      post_aggregates::community_id
-        .eq(community_person_ban::community_id)
-        .and(community_person_ban::person_id.eq(post_aggregates::creator_id)),
-    ),
-  );
-
-  let is_saved = |person_id_join| {
-    exists(
-      post_saved::table.filter(
-        post_aggregates::post_id
-          .eq(post_saved::post_id)
-          .and(post_saved::person_id.eq(person_id_join)),
-      ),
-    )
-  };
-
-  let is_read = |person_id_join| {
-    exists(
-      post_read::table.filter(
-        post_aggregates::post_id
-          .eq(post_read::post_id)
-          .and(post_read::person_id.eq(person_id_join)),
-      ),
-    )
-  };
-
-  let is_creator_blocked = |person_id_join| {
-    exists(
-      person_block::table.filter(
-        post_aggregates::creator_id
-          .eq(person_block::target_id)
-          .and(person_block::person_id.eq(person_id_join)),
-      ),
-    )
-  };
-
-  let all_joins = move |query: post_aggregates::BoxedQuery<'a, Pg>, my_person_id: Option<PersonId>| {
+  let all_joins = |query: post_aggregates::BoxedQuery<'a, Pg>, my_person_id: Option<PersonId>| {
     // The left join below will return None in this case
     let person_id_join = my_person_id.unwrap_or(PersonId(-1));
 
     query
       .inner_join(person::table)
       .inner_join(community::table)
+      .left_join(
+        community_person_ban::table.on(
+          post_aggregates::community_id
+            .eq(community_person_ban::community_id)
+            .and(community_person_ban::person_id.eq(post_aggregates::creator_id)),
+        ),
+      )
       .inner_join(post::table)
       .left_join(
         community_follower::table.on(
@@ -130,6 +96,27 @@ fn queries<'a>() -> Queries<
         ),
       )
       .left_join(
+        post_saved::table.on(
+          post_aggregates::post_id
+            .eq(post_saved::post_id)
+            .and(post_saved::person_id.eq(person_id_join)),
+        ),
+      )
+      .left_join(
+        post_read::table.on(
+          post_aggregates::post_id
+            .eq(post_read::post_id)
+            .and(post_read::person_id.eq(person_id_join)),
+        ),
+      )
+      .left_join(
+        person_block::table.on(
+          post_aggregates::creator_id
+            .eq(person_block::target_id)
+            .and(person_block::person_id.eq(person_id_join)),
+        ),
+      )
+      .left_join(
         post_like::table.on(
           post_aggregates::post_id
             .eq(post_like::post_id)
@@ -143,23 +130,24 @@ fn queries<'a>() -> Queries<
             .and(person_post_aggregates::person_id.eq(person_id_join)),
         ),
       )
-      .select((
-        post::all_columns,
-        person::all_columns,
-        community::all_columns,
-        is_creator_banned_from_community,
-        post_aggregates::all_columns,
-        CommunityFollower::select_subscribed_type(),
-        is_saved(person_id_join),
-        is_read(person_id_join),
-        is_creator_blocked(person_id_join),
-        post_like::score.nullable(),
-        coalesce(
-          post_aggregates::comments.nullable() - person_post_aggregates::read_comments.nullable(),
-          post_aggregates::comments,
-        ),
-      ))
   };
+
+  let selection = (
+    post::all_columns,
+    person::all_columns,
+    community::all_columns,
+    community_person_ban::id.nullable().is_not_null(),
+    post_aggregates::all_columns,
+    CommunityFollower::select_subscribed_type(),
+    post_saved::id.nullable().is_not_null(),
+    post_read::id.nullable().is_not_null(),
+    person_block::id.nullable().is_not_null(),
+    post_like::score.nullable(),
+    coalesce(
+      post_aggregates::comments.nullable() - person_post_aggregates::read_comments.nullable(),
+      post_aggregates::comments,
+    ),
+  );
 
   let read =
     move |mut conn: DbConn<'a>,
@@ -172,7 +160,8 @@ fn queries<'a>() -> Queries<
           .filter(post_aggregates::post_id.eq(post_id))
           .into_boxed(),
         my_person_id,
-      );
+      )
+      .select(selection);
 
       // Hide deleted and removed for non-admins or mods
       if !is_mod_or_admin {
@@ -203,7 +192,22 @@ fn queries<'a>() -> Queries<
     let person_id_join = person_id.unwrap_or(PersonId(-1));
     let local_user_id_join = local_user_id.unwrap_or(LocalUserId(-1));
 
-    let mut query = all_joins(post_aggregates::table.into_boxed(), person_id);
+    let mut query = all_joins(post_aggregates::table.into_boxed(), person_id)
+      .left_join(
+        community_block::table.on(
+          post_aggregates::community_id
+            .eq(community_block::community_id)
+            .and(community_block::person_id.eq(person_id_join)),
+        ),
+      )
+      .left_join(
+        local_user_language::table.on(
+          post::language_id
+            .eq(local_user_language::language_id)
+            .and(local_user_language::local_user_id.eq(local_user_id_join)),
+        ),
+      )
+      .select(selection);
 
     let is_creator = options.creator_id == options.local_user.map(|l| l.person.id);
     // only show deleted posts to creator
@@ -285,7 +289,7 @@ fn queries<'a>() -> Queries<
     };
 
     if options.saved_only {
-      query = query.filter(is_saved(person_id_join));
+      query = query.filter(post_saved::id.is_not_null());
     }
 
     if options.moderator_view {
@@ -300,7 +304,7 @@ fn queries<'a>() -> Queries<
     {
       // Do not hide read posts when it is a user profile view
       if !options.is_profile_view {
-        query = query.filter(not(is_read(person_id_join)));
+        query = query.filter(post_read::post_id.is_null());
       }
     }
 
@@ -312,31 +316,12 @@ fn queries<'a>() -> Queries<
 
     if options.local_user.is_some() {
       // Filter out the rows with missing languages
-      query = query.filter(exists(
-        local_user_language::table.filter(
-          post::language_id
-            .eq(local_user_language::language_id)
-            .and(local_user_language::local_user_id.eq(local_user_id_join)),
-        ),
-      ));
-
-      /*
-      query = query.filter(
-        diesel::dsl::sql::<sql_types::Bool>("inclusion = ")
-        .bind::<sql_types::Integer,_>(1)
-      );
-      */
+      query = query.filter(local_user_language::language_id.is_not_null());
 
       // Don't show blocked communities or persons
-      query = query.filter(not(exists(
-        community_block::table.filter(
-          post_aggregates::community_id
-            .eq(community_block::community_id)
-            .and(community_block::person_id.eq(person_id_join)),
-        ),
-      )));
+      query = query.filter(community_block::person_id.is_null());
       if !options.moderator_view {
-        query = query.filter(not(is_creator_blocked(person_id_join)));
+        query = query.filter(person_block::person_id.is_null());
       }
     }
 
@@ -410,242 +395,6 @@ fn queries<'a>() -> Queries<
 
   Queries::new(read, list)
 }
-
-
-fn queries_anonymous<'a>() -> Queries<
-  impl ReadFn<'a, PostView, (PostId, Option<PersonId>, bool)>,
-  impl ListFn<'a, PostView, PostQuery<'a>>,
-> {
-  let is_creator_banned_from_community = exists(
-    community_person_ban::table.filter(
-      post_aggregates::community_id
-        .eq(community_person_ban::community_id)
-        .and(community_person_ban::person_id.eq(post_aggregates::creator_id)),
-    ),
-  );
-
-// how do we eliminate these next 3 assignments, this is anonymous user, not needed
-
-  let is_saved = |person_id_join| {
-    exists(
-      post_saved::table.filter(
-        post_aggregates::post_id
-          .eq(post_saved::post_id)
-          .and(post_saved::person_id.eq(person_id_join)),
-      ),
-    )
-  };
-
-  let is_read = |person_id_join| {
-    exists(
-      post_read::table.filter(
-        post_aggregates::post_id
-          .eq(post_read::post_id)
-          .and(post_read::person_id.eq(person_id_join)),
-      ),
-    )
-  };
-
-  let is_creator_blocked = |person_id_join| {
-    exists(
-      person_block::table.filter(
-        post_aggregates::creator_id
-          .eq(person_block::target_id)
-          .and(person_block::person_id.eq(person_id_join)),
-      ),
-    )
-  };
-
-  let all_joins = move |query: post_aggregates::BoxedQuery<'a, Pg>, my_person_id: Option<PersonId>| {
-    // The left join below will return None in this case
-    let person_id_join = my_person_id.unwrap_or(PersonId(-1));
-
-    query
-      .inner_join(person::table)
-      .inner_join(community::table)
-      .inner_join(post::table)
-// how do we eliminate these next 3 joins that are user/person references?
-      .left_join(
-        community_follower::table.on(
-          post_aggregates::community_id
-            .eq(community_follower::community_id)
-        ),
-      )
-      .left_join(
-        community_moderator::table.on(
-          post::community_id
-            .eq(community_moderator::community_id)
-        ),
-      )
-      .left_join(
-        post_like::table.on(
-          post_aggregates::post_id
-            .eq(post_like::post_id)
-        ),
-      )
-      .left_join(
-        person_post_aggregates::table.on(
-          post_aggregates::post_id
-            .eq(person_post_aggregates::post_id)
-        ),
-      )
-      .select((
-        post::all_columns,
-        person::all_columns,
-        community::all_columns,
-        is_creator_banned_from_community,
-        post_aggregates::all_columns,
-        CommunityFollower::select_subscribed_type(),
-// how do we eliminate these next 3 for anonymous?
-        is_saved(person_id_join),
-        is_read(person_id_join),
-        is_creator_blocked(person_id_join),
-        post_like::score.nullable(),
-        coalesce(
-          post_aggregates::comments.nullable() - person_post_aggregates::read_comments.nullable(),
-          post_aggregates::comments,
-        ),
-      ))
-  };
-
-  let read =
-    move |mut conn: DbConn<'a>,
-          (post_id, my_person_id, is_mod_or_admin): (PostId, Option<PersonId>, bool)| async move {
-
-      let mut query = all_joins(
-        post_aggregates::table
-          .filter(post_aggregates::post_id.eq(post_id))
-          .into_boxed(),
-        my_person_id,
-      );
-
-        query = query
-          .filter(community::removed.eq(false))
-          .filter(post::removed.eq(false))
-          ;
-
-      query.first::<PostViewTuple>(&mut conn).await
-    };
-
-  let list = move |mut conn: DbConn<'a>, options: PostQuery<'a>| async move {
-    let person_id = options.local_user.map(|l| l.person.id);
-
-    let mut query = all_joins(post_aggregates::table.into_boxed(), person_id);
-
-
-      query = query
-        .filter(community::deleted.eq(false))
-        .filter(post::deleted.eq(false));
-
-
-    // every SELECT has to labor away on removed filtering
-      query = query
-        .filter(community::removed.eq(false))
-        .filter(post::removed.eq(false));
-
-    if options.community_id.is_none() {
-      query = query.then_order_by(post_aggregates::featured_local.desc());
-    } else if let Some(community_id) = options.community_id {
-      query = query
-        .filter(post_aggregates::community_id.eq(community_id))
-        .then_order_by(post_aggregates::featured_community.desc());
-    }
-
-    if let Some(creator_id) = options.creator_id {
-      query = query.filter(post_aggregates::creator_id.eq(creator_id));
-    }
-
-
-    if let Some(url_search) = options.url_search {
-      query = query.filter(post::url.eq(url_search));
-    }
-
-    if let Some(search_term) = options.search_term {
-      let searcher = fuzzy_search(&search_term);
-      query = query.filter(
-        post::name
-          .ilike(searcher.clone())
-          .or(post::body.ilike(searcher)),
-      );
-    }
-
-      query = query
-        .filter(post::nsfw.eq(false))
-        .filter(community::nsfw.eq(false));
-
-
-    query = match options.sort.unwrap_or(SortType::Hot) {
-      SortType::Active => query
-        .then_order_by(post_aggregates::hot_rank_active.desc())
-        .then_order_by(post_aggregates::published.desc()),
-      SortType::Hot => query
-        .then_order_by(post_aggregates::hot_rank.desc())
-        .then_order_by(post_aggregates::published.desc()),
-      SortType::Controversial => query.then_order_by(post_aggregates::controversy_rank.desc()),
-      SortType::New => query.then_order_by(post_aggregates::published.desc()),
-      SortType::Old => query.then_order_by(post_aggregates::published.asc()),
-      SortType::NewComments => query.then_order_by(post_aggregates::newest_comment_time.desc()),
-      SortType::MostComments => query
-        .then_order_by(post_aggregates::comments.desc())
-        .then_order_by(post_aggregates::published.desc()),
-      SortType::TopAll => query
-        .then_order_by(post_aggregates::score.desc())
-        .then_order_by(post_aggregates::published.desc()),
-      SortType::TopYear => query
-        .filter(post_aggregates::published.gt(now - 1.years()))
-        .then_order_by(post_aggregates::score.desc())
-        .then_order_by(post_aggregates::published.desc()),
-      SortType::TopMonth => query
-        .filter(post_aggregates::published.gt(now - 1.months()))
-        .then_order_by(post_aggregates::score.desc())
-        .then_order_by(post_aggregates::published.desc()),
-      SortType::TopWeek => query
-        .filter(post_aggregates::published.gt(now - 1.weeks()))
-        .then_order_by(post_aggregates::score.desc())
-        .then_order_by(post_aggregates::published.desc()),
-      SortType::TopDay => query
-        .filter(post_aggregates::published.gt(now - 1.days()))
-        .then_order_by(post_aggregates::score.desc())
-        .then_order_by(post_aggregates::published.desc()),
-      SortType::TopHour => query
-        .filter(post_aggregates::published.gt(now - 1.hours()))
-        .then_order_by(post_aggregates::score.desc())
-        .then_order_by(post_aggregates::published.desc()),
-      SortType::TopSixHour => query
-        .filter(post_aggregates::published.gt(now - 6.hours()))
-        .then_order_by(post_aggregates::score.desc())
-        .then_order_by(post_aggregates::published.desc()),
-      SortType::TopTwelveHour => query
-        .filter(post_aggregates::published.gt(now - 12.hours()))
-        .then_order_by(post_aggregates::score.desc())
-        .then_order_by(post_aggregates::published.desc()),
-      SortType::TopThreeMonths => query
-        .filter(post_aggregates::published.gt(now - 3.months()))
-        .then_order_by(post_aggregates::score.desc())
-        .then_order_by(post_aggregates::published.desc()),
-      SortType::TopSixMonths => query
-        .filter(post_aggregates::published.gt(now - 6.months()))
-        .then_order_by(post_aggregates::score.desc())
-        .then_order_by(post_aggregates::published.desc()),
-      SortType::TopNineMonths => query
-        .filter(post_aggregates::published.gt(now - 9.months()))
-        .then_order_by(post_aggregates::score.desc())
-        .then_order_by(post_aggregates::published.desc()),
-    };
-
-    let (limit, offset) = limit_and_offset(options.page, options.limit)?;
-
-    query = query.limit(limit).offset(offset);
-
-    debug!("Post View Query: {:?}", debug_query::<Pg, _>(&query));
-
-    query.load::<PostViewTuple>(&mut conn).await
-  };
-
-  Queries::new(read, list)
-}
-
-
 
 impl PostView {
   pub async fn read(

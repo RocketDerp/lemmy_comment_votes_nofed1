@@ -106,6 +106,25 @@ pub struct PostView {
   pub unread_comments: i64,
 }
 
+#[skip_serializing_none]
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+#[cfg_attr(feature = "full", derive(TS))]
+#[cfg_attr(feature = "full", ts(export))]
+/// A post view.
+pub struct PostAnonymousView {
+  pub post: Post,
+  pub creator: Person,
+  pub community: Community,
+  pub creator_banned_from_community: bool,
+  pub counts: PostAggregates,
+  pub subscribed: SubscribedType,
+  pub saved: bool,
+  pub read: bool,
+  pub creator_blocked: bool,
+  pub my_vote: Option<i16>,
+  pub unread_comments: i64,
+}
+
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone)]
 #[cfg_attr(feature = "full", derive(TS))]
 #[cfg_attr(feature = "full", ts(export))]

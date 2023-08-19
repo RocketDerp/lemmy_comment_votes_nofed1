@@ -115,7 +115,6 @@ pub struct PostAnonymousView {
   pub post: Post,
   pub creator: Person,
   pub community: Community,
-  pub creator_banned_from_community: bool,
   pub counts: PostAggregates,
 }
 

@@ -19,7 +19,6 @@ use lemmy_db_schema::{
   newtypes::{PersonId, PostId},
   schema::{
     community,
-    community_person_ban,
     person,
     post,
     post_aggregates,
@@ -34,11 +33,14 @@ use lemmy_db_schema::{
   SortType,
 };
 
+/*
+I propose a Extras object that holds all those fields
+  about creator banned from community, etc.
+ */
 type PostAnonymousViewTuple = (
   Post,
   Person,
   Community,
-  bool,
   PostAggregates,
 );
 
@@ -53,6 +55,7 @@ fn queries<'a>() -> Queries<
     query
       .inner_join(person::table)
       .inner_join(community::table)
+      /*
       .left_join(
         community_person_ban::table.on(
           post_aggregates::community_id
@@ -60,6 +63,7 @@ fn queries<'a>() -> Queries<
             .and(community_person_ban::person_id.eq(post_aggregates::creator_id)),
         ),
       )
+      */
       .inner_join(post::table)
   };
 
@@ -67,7 +71,7 @@ fn queries<'a>() -> Queries<
     post::all_columns,
     person::all_columns,
     community::all_columns,
-    community_person_ban::id.nullable().is_not_null(),
+    // community_person_ban::id.nullable().is_not_null(),
     post_aggregates::all_columns,
   );
 
@@ -241,8 +245,7 @@ impl JoinView for PostAnonymousView {
       post: a.0,
       creator: a.1,
       community: a.2,
-      creator_banned_from_community: a.3,
-      counts: a.4,
+      counts: a.3,
     }
   }
 }

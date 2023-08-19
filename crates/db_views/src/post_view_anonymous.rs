@@ -55,15 +55,6 @@ fn queries<'a>() -> Queries<
     query
       .inner_join(person::table)
       .inner_join(community::table)
-      /*
-      .left_join(
-        community_person_ban::table.on(
-          post_aggregates::community_id
-            .eq(community_person_ban::community_id)
-            .and(community_person_ban::person_id.eq(post_aggregates::creator_id)),
-        ),
-      )
-      */
       .inner_join(post::table)
   };
 
@@ -71,7 +62,6 @@ fn queries<'a>() -> Queries<
     post::all_columns,
     person::all_columns,
     community::all_columns,
-    // community_person_ban::id.nullable().is_not_null(),
     post_aggregates::all_columns,
   );
 

@@ -16,7 +16,7 @@ use diesel::{
 use diesel_async::RunQueryDsl;
 use lemmy_db_schema::{
   aggregates::structs::PostAggregates,
-  newtypes::{CommunityId, LocalUserId, PersonId, PostId},
+  newtypes::{LocalUserId, PersonId, PostId},
   schema::{
     community,
     community_block,
@@ -25,14 +25,11 @@ use lemmy_db_schema::{
     community_person_ban,
     local_user_language,
     person,
-    person_block,
-    person_post_aggregates,
     post,
     post_aggregates,
-    post_like,
   },
   source::{
-    community::{Community, CommunityFollower},
+    community::Community,
     person::Person,
     post::Post,
   },
@@ -175,7 +172,8 @@ fn queries<'a>() -> Queries<
     if options.community_id.is_none() {
       query = query.then_order_by(post_aggregates::featured_local.desc());
     } else if let Some(community_id) = options.community_id {
-      query = query
+    // targeting a specific community
+    query = query
         .filter(post_aggregates::community_id.eq(community_id))
         .then_order_by(post_aggregates::featured_community.desc());
     }
@@ -265,7 +263,7 @@ fn queries<'a>() -> Queries<
 
     query = query.limit(limit).offset(offset);
 
-    debug!("Post View Query: {:?}", debug_query::<Pg, _>(&query));
+    tracing::warn!("Post View Anon Query: {:?}", debug_query::<Pg, _>(&query));
 
     query.load::<PostAnonymousViewTuple>(&mut conn).await
   };

@@ -44,8 +44,6 @@ type PostAnonymousViewTuple = (
   PostAggregates,
 );
 
-sql_function!(fn coalesce(x: sql_types::Nullable<sql_types::BigInt>, y: sql_types::BigInt) -> sql_types::BigInt);
-
 fn queries<'a>() -> Queries<
   impl ReadFn<'a, PostAnonymousView, (PostId, Option<PersonId>, bool)>,
   impl ListFn<'a, PostAnonymousView, PostQuery<'a>>,
@@ -207,20 +205,6 @@ fn queries<'a>() -> Queries<
   Queries::new(read, list)
 }
 
-impl PostAnonymousView {
-  pub async fn read(
-    pool: &mut DbPool<'_>,
-    post_id: PostId,
-    my_person_id: Option<PersonId>,
-    is_mod_or_admin: bool,
-  ) -> Result<Self, Error> {
-    let mut res = queries()
-      .read(pool, (post_id, my_person_id, is_mod_or_admin))
-      .await?;
-
-    Ok(res)
-  }
-}
 
 impl<'a> PostQuery<'a> {
   pub async fn list_anonymous(self, pool: &mut DbPool<'_>) -> Result<Vec<PostAnonymousView>, Error> {

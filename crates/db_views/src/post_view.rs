@@ -428,6 +428,8 @@ fn queries<'a>() -> Queries<
   Queries::new(read, list)
 }
 
+
+
 fn queries_extended<'a>() -> Queries<
   impl ReadFn<'a, PostView, (PostId, Option<PersonId>, bool)>,
   impl ListFn<'a, PostView, PostQuery<'a>>,
@@ -472,10 +474,11 @@ fn queries_extended<'a>() -> Queries<
 
   let all_joins = move |query: post_aggregates::BoxedQuery<'a, Pg>,
                         my_person_id: Option<PersonId>,
-                        saved_only: bool| {
+                        saved_only: bool,
+                        community_follower_id: PersonId| {
     // The left join below will return None in this case
     let person_id_join = my_person_id.unwrap_or(PersonId(-1));
-    let mut person_community_follows_id = person_id_join;
+    // let mut person_community_follows_id = person_id_join;
 
     let is_saved_selection: Box<dyn BoxableExpression<_, Pg, SqlType = sql_types::Bool>> =
       if saved_only {
@@ -494,7 +497,7 @@ fn queries_extended<'a>() -> Queries<
         community_follower::table.on(
           post_aggregates::community_id
             .eq(community_follower::community_id)
-            .and(community_follower::person_id.eq(person_id_join)),
+            .and(community_follower::person_id.eq(community_follower_id)),
         ),
       )
       .left_join(
@@ -542,12 +545,14 @@ fn queries_extended<'a>() -> Queries<
       // The left join below will return None in this case
       let person_id_join = my_person_id.unwrap_or(PersonId(-1));
 
+// ok, is this how you modify the previous joins?
       let mut query = all_joins(
         post_aggregates::table
           .filter(post_aggregates::post_id.eq(post_id))
           .into_boxed(),
         my_person_id,
         false,
+        person_id_join
       );
 
       // Hide deleted and removed for non-admins or mods
@@ -579,10 +584,16 @@ fn queries_extended<'a>() -> Queries<
     let person_id_join = person_id.unwrap_or(PersonId(-1));
     let local_user_id_join = local_user_id.unwrap_or(LocalUserId(-1));
 
+    let mut community_follower_person_id_join = person_id_join;
+    if let Some(follower_creator_id) = options.multipass_creator_id {
+      community_follower_person_id_join = follower_creator_id;
+    }
+
     let mut query = all_joins(
       post_aggregates::table.into_boxed(),
       person_id,
       options.saved_only,
+      community_follower_person_id_join,
     );
 
     let is_creator = options.creator_id == options.local_user.map(|l| l.person.id);

@@ -2,7 +2,7 @@
 pub mod build_response;
 pub mod comment;
 pub mod community;
-pub mod multipass;
+// pub mod multipass;
 #[cfg(feature = "full")]
 pub mod context;
 pub mod custom_emoji;

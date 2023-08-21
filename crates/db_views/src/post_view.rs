@@ -111,6 +111,7 @@ fn queries<'a>() -> Queries<
                         saved_only: bool| {
     // The left join below will return None in this case
     let person_id_join = my_person_id.unwrap_or(PersonId(-1));
+    let mut person_community_follows_id = person_id_join;
 
     let is_saved_selection: Box<dyn BoxableExpression<_, Pg, SqlType = sql_types::Bool>> =
       if saved_only {
@@ -407,6 +408,14 @@ fn queries<'a>() -> Queries<
         .then_order_by(post_aggregates::published.desc()),
     };
 
+    // override some date filtering that sort choice set
+    if let Some(when_after) = options.when_after {
+      let ndt = chrono::NaiveDateTime::from_timestamp_millis(when_after);
+      if let Some(when_after_ndt) = ndt {
+        query = query.filter(post_aggregates::published.gt(when_after_ndt));
+      }
+    }
+
     let (limit, offset) = limit_and_offset(options.page, options.limit)?;
 
     query = query.limit(limit).offset(offset);
@@ -456,6 +465,9 @@ pub struct PostQuery<'a> {
   pub is_profile_view: bool,
   pub page: Option<i64>,
   pub limit: Option<i64>,
+  pub multipass_creator_id: Option<PersonId>,
+  // unix epch timne, UTC, where published or modified >=
+  pub when_after: Option<i64>,
 }
 
 impl<'a> PostQuery<'a> {

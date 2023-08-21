@@ -78,6 +78,8 @@ pub struct GetPosts {
   pub liked_only: Option<bool>,
   pub disliked_only: Option<bool>,
   pub moderator_view: Option<bool>,
+  pub multipass_creator_id: Option<lemmy_db_schema::newtypes::PersonId>,
+  pub when_after: Option<i64>,
   pub auth: Option<Sensitive<String>>,
 }
 

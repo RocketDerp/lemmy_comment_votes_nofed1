@@ -36,6 +36,10 @@ pub async fn list_posts(
   };
   let saved_only = data.saved_only.unwrap_or_default();
 
+  let multipass_creator_id = data.multipass_creator_id;
+  // ToDo: validate when_after is in a sensible range
+  let when_after = data.when_after;
+
   let liked_only = data.liked_only.unwrap_or_default();
   let disliked_only = data.disliked_only.unwrap_or_default();
   if liked_only && disliked_only {
@@ -61,6 +65,8 @@ pub async fn list_posts(
     moderator_view,
     page,
     limit,
+    multipass_creator_id,
+    when_after,
     ..Default::default()
   }
   .list(&mut context.pool())

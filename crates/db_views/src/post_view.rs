@@ -64,7 +64,7 @@ type PostViewTuple = (
 
 sql_function!(fn coalesce(x: sql_types::Nullable<sql_types::BigInt>, y: sql_types::BigInt) -> sql_types::BigInt);
 
-fn queries<'a>() -> Queries<
+fn queries_old_logic<'a>() -> Queries<
   impl ReadFn<'a, PostView, (PostId, Option<PersonId>, bool)>,
   impl ListFn<'a, PostView, PostQuery<'a>>,
 > {
@@ -430,7 +430,7 @@ fn queries<'a>() -> Queries<
 
 
 
-fn queries_extended<'a>() -> Queries<
+fn queries<'a>() -> Queries<
   impl ReadFn<'a, PostView, (PostId, Option<PersonId>, bool)>,
   impl ListFn<'a, PostView, PostQuery<'a>>,
 > {
@@ -576,6 +576,8 @@ fn queries_extended<'a>() -> Queries<
       query.first::<PostViewTuple>(&mut conn).await
     };
 
+  tracing::debug!("hello there");
+
   let list = move |mut conn: DbConn<'a>, options: PostQuery<'a>| async move {
     let person_id = options.local_user.map(|l| l.person.id);
     let local_user_id = options.local_user.map(|l| l.local_user.id);
@@ -586,6 +588,7 @@ fn queries_extended<'a>() -> Queries<
 
     let mut community_follower_person_id_join = person_id_join;
     if let Some(follower_creator_id) = options.multipass_creator_id {
+      tracing::debug!("hello there, just changed out community_follower_person_id");
       community_follower_person_id_join = follower_creator_id;
     }
 
@@ -786,7 +789,9 @@ fn queries_extended<'a>() -> Queries<
     // override some date filtering that sort choice set
     if let Some(when_after) = options.when_after {
       let ndt = chrono::NaiveDateTime::from_timestamp_millis(when_after);
+      tracing::warn!(target: "ListPost", "when_after ndt {:?}", ndt);
       if let Some(when_after_ndt) = ndt {
+        tracing::warn!(target: "ListPost", "when_after ndt found Some... {:?}", ndt);
         query = query.filter(post_aggregates::published.gt(when_after_ndt));
       }
     }
@@ -854,7 +859,7 @@ impl<'a> PostQuery<'a> {
 
 impl<'a> PostQuery<'a> {
   pub async fn list_posts_extended(self, pool: &mut DbPool<'_>) -> Result<Vec<PostView>, Error> {
-    queries_extended().list(pool, self).await
+    queries_old_logic().list(pool, self).await
   }
 }
 

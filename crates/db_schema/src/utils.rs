@@ -457,6 +457,10 @@ pub struct Queries<RF, LF> {
   pub list_fn: LF,
 }
 
+pub struct OnlyOneQuery<LF> {
+  pub list_fn: LF,
+}
+
 // `()` is used to prevent type inference error
 impl Queries<(), ()> {
   pub fn new<'a, RFut, LFut, RT, LT, RA, LA, RF2, LF2>(

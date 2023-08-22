@@ -563,7 +563,14 @@ impl<'a> PostQuery<'a>
         community_follower_person_id_join = follower_creator_id;
       }
   
-  
+/*
+ok, some learning here:
+All about boxed and how to break apart query.
+  https://stackoverflow.com/questions/65039754/rust-diesel-conditionally-filter-a-query
+  https://stackoverflow.com/questions/73146073/how-can-a-filter-expression-be-built-up-with-into-boxed-to-operate-against-a
+*/
+
+
     let all_joins = move |query: post_aggregates::BoxedQuery<'a, Pg>,
                           my_person_id: Option<PersonId>,
                           saved_only: bool,
@@ -638,6 +645,12 @@ impl<'a> PostQuery<'a>
       options.saved_only,
       community_follower_person_id_join,
     );
+
+
+    // Calling `eq_any` with a subquery is the same as using
+    // `WHERE {column} IN {subquery}`.
+
+    let mut subquery = post_aggregates::table.filter(post_aggregates::post_id.gt(3)).select(post_aggregates::id).into_boxed();
 
     let is_creator = options.creator_id == options.local_user.map(|l| l.person.id);
     // only show deleted posts to creator
@@ -767,60 +780,60 @@ impl<'a> PostQuery<'a>
       }
     }
 
-    query = match options.sort.unwrap_or(SortType::Hot) {
-      SortType::Active => query
+    subquery = match options.sort.unwrap_or(SortType::Hot) {
+      SortType::Active => subquery
         .then_order_by(post_aggregates::hot_rank_active.desc())
         .then_order_by(post_aggregates::published.desc()),
-      SortType::Hot => query
+      SortType::Hot => subquery
         .then_order_by(post_aggregates::hot_rank.desc())
         .then_order_by(post_aggregates::published.desc()),
-      SortType::Controversial => query.then_order_by(post_aggregates::controversy_rank.desc()),
-      SortType::New => query.then_order_by(post_aggregates::published.desc()),
-      SortType::Old => query.then_order_by(post_aggregates::published.asc()),
-      SortType::NewComments => query.then_order_by(post_aggregates::newest_comment_time.desc()),
-      SortType::MostComments => query
+      SortType::Controversial => subquery.then_order_by(post_aggregates::controversy_rank.desc()),
+      SortType::New => subquery.then_order_by(post_aggregates::published.desc()),
+      SortType::Old => subquery.then_order_by(post_aggregates::published.asc()),
+      SortType::NewComments => subquery.then_order_by(post_aggregates::newest_comment_time.desc()),
+      SortType::MostComments => subquery
         .then_order_by(post_aggregates::comments.desc())
         .then_order_by(post_aggregates::published.desc()),
-      SortType::TopAll => query
+      SortType::TopAll => subquery
         .then_order_by(post_aggregates::score.desc())
         .then_order_by(post_aggregates::published.desc()),
-      SortType::TopYear => query
+      SortType::TopYear => subquery
         .filter(post_aggregates::published.gt(now - 1.years()))
         .then_order_by(post_aggregates::score.desc())
         .then_order_by(post_aggregates::published.desc()),
-      SortType::TopMonth => query
+      SortType::TopMonth => subquery
         .filter(post_aggregates::published.gt(now - 1.months()))
         .then_order_by(post_aggregates::score.desc())
         .then_order_by(post_aggregates::published.desc()),
-      SortType::TopWeek => query
+      SortType::TopWeek => subquery
         .filter(post_aggregates::published.gt(now - 1.weeks()))
         .then_order_by(post_aggregates::score.desc())
         .then_order_by(post_aggregates::published.desc()),
-      SortType::TopDay => query
+      SortType::TopDay => subquery
         .filter(post_aggregates::published.gt(now - 1.days()))
         .then_order_by(post_aggregates::score.desc())
         .then_order_by(post_aggregates::published.desc()),
-      SortType::TopHour => query
+      SortType::TopHour => subquery
         .filter(post_aggregates::published.gt(now - 1.hours()))
         .then_order_by(post_aggregates::score.desc())
         .then_order_by(post_aggregates::published.desc()),
-      SortType::TopSixHour => query
+      SortType::TopSixHour => subquery
         .filter(post_aggregates::published.gt(now - 6.hours()))
         .then_order_by(post_aggregates::score.desc())
         .then_order_by(post_aggregates::published.desc()),
-      SortType::TopTwelveHour => query
+      SortType::TopTwelveHour => subquery
         .filter(post_aggregates::published.gt(now - 12.hours()))
         .then_order_by(post_aggregates::score.desc())
         .then_order_by(post_aggregates::published.desc()),
-      SortType::TopThreeMonths => query
+      SortType::TopThreeMonths => subquery
         .filter(post_aggregates::published.gt(now - 3.months()))
         .then_order_by(post_aggregates::score.desc())
         .then_order_by(post_aggregates::published.desc()),
-      SortType::TopSixMonths => query
+      SortType::TopSixMonths => subquery
         .filter(post_aggregates::published.gt(now - 6.months()))
         .then_order_by(post_aggregates::score.desc())
         .then_order_by(post_aggregates::published.desc()),
-      SortType::TopNineMonths => query
+      SortType::TopNineMonths => subquery
         .filter(post_aggregates::published.gt(now - 9.months()))
         .then_order_by(post_aggregates::score.desc())
         .then_order_by(post_aggregates::published.desc()),
@@ -838,7 +851,8 @@ impl<'a> PostQuery<'a>
 
     let (limit, offset) = limit_and_offset(options.page, options.limit)?;
 
-    query = query.limit(limit).offset(offset);
+    subquery = subquery.limit(limit).offset(offset);
+    query = query.filter(post_aggregates::id.eq_any(subquery));
 
     debug!("Post View Query: {:?}", debug_query::<Pg, _>(&query));
 

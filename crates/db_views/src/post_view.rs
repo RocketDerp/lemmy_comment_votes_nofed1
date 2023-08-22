@@ -650,7 +650,7 @@ All about boxed and how to break apart query.
     // Calling `eq_any` with a subquery is the same as using
     // `WHERE {column} IN {subquery}`.
 
-    let mut subquery = post_aggregates::table.filter(post_aggregates::post_id.gt(13)).select(post_aggregates::id).into_boxed();
+    let mut subquery = post_aggregates::table.filter(post_aggregates::id.gt(0)).select(post_aggregates::id).into_boxed();
 
     let is_creator = options.creator_id == options.local_user.map(|l| l.person.id);
     // only show deleted posts to creator

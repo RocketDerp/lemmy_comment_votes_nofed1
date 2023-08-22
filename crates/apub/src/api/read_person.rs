@@ -71,7 +71,7 @@ pub async fn read_person(
     creator_id,
     ..Default::default()
   }
-  .list(&mut context.pool())
+  .list_posts_another_try(&mut context.pool())
   .await?;
 
   let comments = CommentQuery {

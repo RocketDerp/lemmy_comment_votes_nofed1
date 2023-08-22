@@ -780,6 +780,8 @@ All about boxed and how to break apart query.
       }
     }
 
+    let (mut limit, offset) = limit_and_offset(options.page, options.limit)?;
+
     subquery = match options.sort.unwrap_or(SortType::Hot) {
       SortType::Active => subquery
         .then_order_by(post_aggregates::hot_rank_active.desc())
@@ -787,10 +789,14 @@ All about boxed and how to break apart query.
       SortType::Hot => subquery
         .then_order_by(post_aggregates::hot_rank.desc())
         .then_order_by(post_aggregates::published.desc()),
-      SortType::Controversial => subquery.then_order_by(post_aggregates::controversy_rank.desc()),
+      SortType::Controversial => subquery
+        .then_order_by(post_aggregates::controversy_rank.desc())
+        .then_order_by(post_aggregates::published.desc()),
       SortType::New => subquery.then_order_by(post_aggregates::published.desc()),
       SortType::Old => subquery.then_order_by(post_aggregates::published.asc()),
-      SortType::NewComments => subquery.then_order_by(post_aggregates::newest_comment_time.desc()),
+      SortType::NewComments => subquery
+         .then_order_by(post_aggregates::newest_comment_time.desc())
+         .then_order_by(post_aggregates::published.desc()),
       SortType::MostComments => subquery
         .then_order_by(post_aggregates::comments.desc())
         .then_order_by(post_aggregates::published.desc()),
@@ -799,6 +805,7 @@ All about boxed and how to break apart query.
         .then_order_by(post_aggregates::published.desc()),
       SortType::TopYear => subquery
         .filter(post_aggregates::published.gt(now - 1.years()))
+        .filter(post_aggregates::score.gt(30))
         .then_order_by(post_aggregates::score.desc())
         .then_order_by(post_aggregates::published.desc()),
       SortType::TopMonth => subquery
@@ -839,6 +846,83 @@ All about boxed and how to break apart query.
         .then_order_by(post_aggregates::published.desc()),
     };
 
+    match options.sort.unwrap_or(SortType::Hot) {
+      SortType::MostComments => {
+        limit = 99;
+        subquery = subquery.filter(post_aggregates::comments.gt(1109));
+      },
+      SortType::TopYear |
+      SortType::TopNineMonths => {
+        limit = 99;
+      },
+      _ => {}
+        ,
+    };
+
+    query = match options.sort.unwrap_or(SortType::Hot) {
+      SortType::Active => query
+        .then_order_by(post_aggregates::hot_rank_active.desc())
+        .then_order_by(post_aggregates::published.desc()),
+      SortType::Hot => query
+        .then_order_by(post_aggregates::hot_rank.desc())
+        .then_order_by(post_aggregates::published.desc()),
+      SortType::Controversial => query
+        .then_order_by(post_aggregates::controversy_rank.desc())
+        .then_order_by(post_aggregates::published.desc()),
+      SortType::New => query.then_order_by(post_aggregates::published.desc()),
+      SortType::Old => query.then_order_by(post_aggregates::published.asc()),
+      SortType::NewComments => query
+        .then_order_by(post_aggregates::newest_comment_time.desc())
+        .then_order_by(post_aggregates::published.desc()),
+      SortType::MostComments => query
+        .then_order_by(post_aggregates::comments.desc())
+        .then_order_by(post_aggregates::published.desc()),
+      SortType::TopAll => query
+        .then_order_by(post_aggregates::score.desc())
+        .then_order_by(post_aggregates::published.desc()),
+      SortType::TopYear => query
+        .filter(post_aggregates::published.gt(now - 1.years()))
+        .then_order_by(post_aggregates::score.desc())
+        .then_order_by(post_aggregates::published.desc()),
+      SortType::TopMonth => query
+        .filter(post_aggregates::published.gt(now - 1.months()))
+        .then_order_by(post_aggregates::score.desc())
+        .then_order_by(post_aggregates::published.desc()),
+      SortType::TopWeek => query
+        .filter(post_aggregates::published.gt(now - 1.weeks()))
+        .then_order_by(post_aggregates::score.desc())
+        .then_order_by(post_aggregates::published.desc()),
+      SortType::TopDay => query
+        .filter(post_aggregates::published.gt(now - 1.days()))
+        .then_order_by(post_aggregates::score.desc())
+        .then_order_by(post_aggregates::published.desc()),
+      SortType::TopHour => query
+        .filter(post_aggregates::published.gt(now - 1.hours()))
+        .then_order_by(post_aggregates::score.desc())
+        .then_order_by(post_aggregates::published.desc()),
+      SortType::TopSixHour => query
+        .filter(post_aggregates::published.gt(now - 6.hours()))
+        .then_order_by(post_aggregates::score.desc())
+        .then_order_by(post_aggregates::published.desc()),
+      SortType::TopTwelveHour => query
+        .filter(post_aggregates::published.gt(now - 12.hours()))
+        .then_order_by(post_aggregates::score.desc())
+        .then_order_by(post_aggregates::published.desc()),
+      SortType::TopThreeMonths => query
+        .filter(post_aggregates::published.gt(now - 3.months()))
+        .then_order_by(post_aggregates::score.desc())
+        .then_order_by(post_aggregates::published.desc()),
+      SortType::TopSixMonths => query
+        .filter(post_aggregates::published.gt(now - 6.months()))
+        .then_order_by(post_aggregates::score.desc())
+        .then_order_by(post_aggregates::published.desc()),
+      SortType::TopNineMonths => query
+        .filter(post_aggregates::published.gt(now - 9.months()))
+        .then_order_by(post_aggregates::score.desc())
+        .then_order_by(post_aggregates::published.desc()),
+    };
+
+
     // override some date filtering that sort choice set
     if let Some(when_after) = options.when_after {
       let ndt = chrono::NaiveDateTime::from_timestamp_millis(when_after);
@@ -849,7 +933,6 @@ All about boxed and how to break apart query.
       }
     }
 
-    let (limit, offset) = limit_and_offset(options.page, options.limit)?;
 
     subquery = subquery.limit(limit).offset(offset);
     query = query.filter(post_aggregates::id.eq_any(subquery));

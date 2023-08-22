@@ -69,7 +69,7 @@ pub async fn list_posts(
     when_after,
     ..Default::default()
   }
-  .list(&mut context.pool())
+  .list_posts_another_try(&mut context.pool())
   .await
   .with_lemmy_type(LemmyErrorType::CouldntGetPosts)?;
 

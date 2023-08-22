@@ -650,7 +650,7 @@ All about boxed and how to break apart query.
     // Calling `eq_any` with a subquery is the same as using
     // `WHERE {column} IN {subquery}`.
 
-    let mut subquery = post_aggregates::table.filter(post_aggregates::post_id.gt(3)).select(post_aggregates::id).into_boxed();
+    let mut subquery = post_aggregates::table.filter(post_aggregates::post_id.gt(13)).select(post_aggregates::id).into_boxed();
 
     let is_creator = options.creator_id == options.local_user.map(|l| l.person.id);
     // only show deleted posts to creator
@@ -669,15 +669,15 @@ All about boxed and how to break apart query.
     }
 
     if options.community_id.is_none() {
-      query = query.then_order_by(post_aggregates::featured_local.desc());
+      subquery = subquery.then_order_by(post_aggregates::featured_local.desc());
     } else if let Some(community_id) = options.community_id {
-      query = query
+      subquery = subquery
         .filter(post_aggregates::community_id.eq(community_id))
         .then_order_by(post_aggregates::featured_community.desc());
     }
 
     if let Some(creator_id) = options.creator_id {
-      query = query.filter(post_aggregates::creator_id.eq(creator_id));
+      subquery = subquery.filter(post_aggregates::creator_id.eq(creator_id));
     }
 
     if let Some(listing_type) = options.listing_type {

@@ -70,7 +70,7 @@ pub async fn list_posts(
   Ok(Json(GetPostsResponse { posts }))
 }
 
-
+/*
 #[tracing::instrument(skip(context))]
 pub async fn list_posts_anonymous(
   data: Query<GetPosts>,
@@ -120,10 +120,10 @@ pub async fn list_posts_anonymous(
     limit,
     ..Default::default()
   }
-  .list_anonymous(&mut context.pool())
+  .list(&mut context.pool())
   .await
   .with_lemmy_type(LemmyErrorType::CouldntGetPosts)?;
 
   Ok(Json(GetPostsAnonymousResponse { posts }))
 }
-
+*/

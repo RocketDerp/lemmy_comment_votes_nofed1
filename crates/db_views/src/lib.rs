@@ -13,8 +13,8 @@ pub mod local_user_view;
 pub mod post_report_view;
 #[cfg(feature = "full")]
 pub mod post_view;
-#[cfg(feature = "full")]
-pub mod post_view_anonymous;
+// #[cfg(feature = "full")]
+//pub mod post_view_anonymous;
 #[cfg(feature = "full")]
 pub mod private_message_report_view;
 #[cfg(feature = "full")]

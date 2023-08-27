@@ -100,7 +100,7 @@ use lemmy_api_crud::{
 use lemmy_apub::{
   api::{
     list_comments::list_comments,
-    list_posts::{list_posts, list_posts_anonymous},
+    list_posts::{list_posts /* , list_posts_anonymous */},
     read_community::get_community,
     read_person::read_person,
     resolve_object::resolve_object,
@@ -188,7 +188,7 @@ pub fn config(cfg: &mut web::ServiceConfig, rate_limit: &RateLimitCell) {
           .route("/lock", web::post().to(lock_post))
           .route("/feature", web::post().to(feature_post))
           .route("/list", web::get().to(list_posts))
-          .route("/listanon", web::get().to(list_posts_anonymous))
+          //.route("/listanon", web::get().to(list_posts_anonymous))
           .route("/like", web::post().to(like_post))
           .route("/save", web::put().to(route_post::<SavePost>))
           .route("/report", web::post().to(create_post_report))

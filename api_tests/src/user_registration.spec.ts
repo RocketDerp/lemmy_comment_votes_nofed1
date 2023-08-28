@@ -61,6 +61,7 @@ test("Create user, attempting without application answer", async () => {
 
 export let default_password = "rustcargo1970";
 export let alpha_temp0: API;
+export let alpha_temp0_username = "Snoopy";
 
 export async function registerUserExtra(
   api: API,
@@ -86,7 +87,7 @@ test("Create user, with application answer", async () => {
   // ACTIVE development: this will crash
   let userRes;
   try {
-    userRes = await registerUserExtra(alpha_temp0, "Snoopy", "I'm Charlie's dog");
+    userRes = await registerUserExtra(alpha_temp0, alpha_temp0_username, "I'm Charlie's dog");
   } catch(e0) {
     // possible exception: user_already_exists
     console.error("exception during Account Registration with application answer");
@@ -100,9 +101,9 @@ test("Create user, with application answer", async () => {
 
     // This switches to the alpha user account to look at profile, not the user just created.
     let personDetailsRes = await alpha.client.getPersonDetails({
-      username: "Snoopy"
+      username: alpha_temp0_username
     });
-    expect(personDetailsRes.person_view.person.name).toBe("Snoopy");
+    expect(personDetailsRes.person_view.person.name).toBe(alpha_temp0_username);
   } else {
     expect("userRes defined").toBe("not defined");
   }
@@ -118,7 +119,7 @@ test("Try to login with newly created user while registration application not ye
   let loginRes;
   try {
     loginRes = await alpha_temp0.client.login( {
-       username_or_email: "Snoopy",
+       username_or_email: alpha_temp0_username,
        password: default_password,
     } );
   } catch(e0) {

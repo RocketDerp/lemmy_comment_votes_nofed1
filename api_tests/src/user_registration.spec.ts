@@ -3,19 +3,8 @@ jest.setTimeout(120000);
 import { PersonView } from "lemmy-js-client/dist/types/PersonView";
 import {
   alpha,
-  beta,
   registerUser,
-  resolvePerson,
-  getSite,
-  createPost,
-  resolveCommunity,
-  createComment,
-  resolveBetaCommunity,
-  deleteUser,
-  resolvePost,
   API,
-  resolveComment,
-  saveUserSettingsFederated,
   setupLogins,
 } from "./shared";
 import { EditSite, LemmyHttp, LoginResponse, Register } from "lemmy-js-client";
@@ -110,7 +99,7 @@ test("Create user, with application answer", async () => {
 });
 
 
-test("Try to login with newly created user while registration application not yet approved", async () => {
+test.skip("Try to login with newly created user while registration application not yet approved", async () => {
   if (! alpha_temp0?.client) {
     throw "Missing alpha_temp0 API client"
   }
@@ -123,6 +112,7 @@ test("Try to login with newly created user while registration application not ye
        password: default_password,
     } );
   } catch(e0) {
+    // expected exception: registration_application_is_pending
     console.error("exception during Account Login while registration application not yet responded to");
     console.log(e0);
     process.exit(10);
@@ -134,4 +124,17 @@ test("Try to login with newly created user while registration application not ye
   } else {
     expect("loginRes defined").toBe("not defined");
   }
+});
+
+test("Try to login with newly created user while registration application not yet approved - login fail", async () => {
+  if (! alpha_temp0?.client) {
+    throw "Missing alpha_temp0 API client"
+  }
+
+  await expect(
+    alpha_temp0.client.login( {
+      username_or_email: alpha_temp0_username,
+      password: default_password,
+      } )
+     ).rejects.toBe("registration_application_is_pending");
 });

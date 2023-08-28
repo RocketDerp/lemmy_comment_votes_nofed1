@@ -319,7 +319,7 @@ test("Phase IV: Create user, with registration application answer", async () => 
   // ACTIVE development: this will crash
   let userRes;
   try {
-    userRes = await registerUserExtra(alpha_temp0, alpha_temp0_username, "I'm Charlie's dog's broother from Needles California");
+    userRes = await registerUserExtra(alpha_temp0, alpha_temp0_username, "I'm a dog, Snoopy's brother from Needles California");
   } catch(e0) {
     // possible exception: user_already_exists
     console.error("exception during Account Registration with application answer");

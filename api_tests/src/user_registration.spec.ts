@@ -9,6 +9,7 @@ import {
 } from "./shared";
 import { EditSite, LemmyHttp, LoginResponse, Register } from "lemmy-js-client";
 import { GetPosts } from "lemmy-js-client/dist/types/GetPosts";
+import exp = require("constants");
 
 beforeAll(async () => {
   await setupLogins();
@@ -28,12 +29,20 @@ function assertUserFederation(userOne?: PersonView, userTwo?: PersonView) {
 
 
 test("change lemmy-alpha server setting to require registration application", async () => {
-  // Registration applications are now enabled by default, need to disable them
-  let editSiteForm: EditSite = {
-    registration_mode: "RequireApplication",
-    auth: alpha.auth,
-  };
-  await alpha.client.editSite(editSiteForm);
+  // check current registration state
+  let siteRes = await alpha.client.getSite({
+    auth: alpha.auth
+  });
+  if (siteRes.site_view.local_site.registration_mode == "RequireApplication") {
+    console.log("Site already set to RegistratonMode wit application");
+  } else {
+    let editSiteForm: EditSite = {
+      registration_mode: "RequireApplication",
+      auth: alpha.auth,
+    };
+    let changeSiteRes = await alpha.client.editSite(editSiteForm);
+    expect(changeSiteRes.site_view.local_site.registration_mode).toBe("RequireApplication");
+  }
 });
 
 test("Create user, attempting without application answer", async () => {

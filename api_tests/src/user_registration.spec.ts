@@ -60,6 +60,7 @@ test("Create user, attempting without application answer", async () => {
 
 
 export let default_password = "rustcargo1970";
+export let alpha_temp0: API;
 
 export async function registerUserExtra(
   api: API,
@@ -77,7 +78,7 @@ export async function registerUserExtra(
 }
 
 test("Create user, with application answer", async () => {
-  let alpha_temp0: API = {
+  alpha_temp0 = {
     client: new LemmyHttp("http://127.0.0.1:8541"),
     auth: "",
   };
@@ -85,28 +86,51 @@ test("Create user, with application answer", async () => {
   // ACTIVE development: this will crash
   let userRes;
   try {
-    // userRes = await registerUserExtra(alpha_temp0, "Snoopy", "I'm Charlie's dog");
-    // better exception with direct call in try?
-    let form: Register = {
-      username: "Snoopy",
-      password: default_password,
-      password_verify: default_password,
-      answer: "I'm Charlie's dog",
-      show_nsfw: true,
-    };
-    userRes = await alpha_temp0.client.register(form);
+    userRes = await registerUserExtra(alpha_temp0, "Snoopy", "I'm Charlie's dog");
   } catch(e0) {
-    console.error("exception during Account Registration");
+    // possible exception: user_already_exists
+    console.error("exception during Account Registration with application answer");
+    console.log(e0);
+    // process.exit(10);
+  }
+
+  if (userRes) {
+    // NOTE: do not expect to have jwt, login, after registration with registration pre-processing
+    expect(userRes.jwt).toBeUndefined();
+
+    // This switches to the alpha user account to look at profile, not the user just created.
+    let personDetailsRes = await alpha.client.getPersonDetails({
+      username: "Snoopy"
+    });
+    expect(personDetailsRes.person_view.person.name).toBe("Snoopy");
+  } else {
+    expect("userRes defined").toBe("not defined");
+  }
+});
+
+
+test("Try to login with newly created user while registration application not yet approved", async () => {
+  if (! alpha_temp0?.client) {
+    throw "Missing alpha_temp0 API client"
+  }
+
+  // ACTIVE development: this will crash
+  let loginRes;
+  try {
+    loginRes = await alpha_temp0.client.login( {
+       username_or_email: "Snoopy",
+       password: default_password,
+    } );
+  } catch(e0) {
+    console.error("exception during Account Login while registration application not yet responded to");
     console.log(e0);
     process.exit(10);
   }
-  expect(userRes.jwt).toBeDefined();
-  alpha_temp0.auth = userRes.jwt ?? "";
 
-  let site = await getSite(alpha_temp0);
-  expect(site.my_user).toBeDefined();
-  if (!site.my_user) {
-    throw "Missing site user";
+  if (loginRes) {
+    // NOTE: do not expect to have jwt, login, after registration with registration pre-processing
+    expect(loginRes.jwt).toBeUndefined();
+  } else {
+    expect("loginRes defined").toBe("not defined");
   }
-  apShortname = `@${site.my_user.local_user_view.person.name}@lemmy-alpha:8541`;
 });

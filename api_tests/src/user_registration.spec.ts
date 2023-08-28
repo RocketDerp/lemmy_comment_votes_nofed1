@@ -219,3 +219,75 @@ test("Try to login with NEVER-APPROVED user after open, RequireApplication trans
       } )
      ).rejects.toBe("registration_application_is_pending");
 });
+
+
+
+/*
+***********************************************************************************************************************************
+*** Phase III
+*** in the name of understanding how this behaves, try again to create new account under current
+***    circumstances - see if enforced.
+*/
+
+
+test("Phase III: Create user, attempting without application answer", async () => {
+  let alpha_temp0: API = {
+    client: new LemmyHttp("http://127.0.0.1:8541"),
+    auth: "",
+  };
+
+  // name is randomized by shared library, unlikely to crash.
+  await expect(
+    registerUser(alpha),
+  ).rejects.toBe("registration_application_answer_required");
+});
+
+
+
+test("Phase III: Create user, with registration application answer", async () => {
+  alpha_temp0 = {
+    client: new LemmyHttp("http://127.0.0.1:8541"),
+    auth: "",
+  };
+
+  // Change name from Snoopy to Woodstock to avoid clash.
+  alpha_temp0_username = "Woodstock";
+
+  // ACTIVE development: this will crash
+  let userRes;
+  try {
+    userRes = await registerUserExtra(alpha_temp0, alpha_temp0_username, "I'm Charlie's dog's friend, a bird");
+  } catch(e0) {
+    // possible exception: user_already_exists
+    console.error("exception during Account Registration with application answer");
+    console.log(e0);
+    // process.exit(10);
+  }
+
+  if (userRes) {
+    // NOTE: do not expect to have jwt, login, after registration with registration pre-processing
+    expect(userRes.jwt).toBeUndefined();
+
+    // This switches to the alpha user account to look at profile, not the user just created.
+    let personDetailsRes = await alpha.client.getPersonDetails({
+      username: alpha_temp0_username
+    });
+    expect(personDetailsRes.person_view.person.name).toBe(alpha_temp0_username);
+  } else {
+    expect("userRes defined").toBe("not defined");
+  }
+});
+
+
+test("Phase III: Try to login with newly created user while registration application not yet approved - login fail", async () => {
+  if (! alpha_temp0?.client) {
+    throw "Missing alpha_temp0 API client"
+  }
+
+  await expect(
+    alpha_temp0.client.login( {
+      username_or_email: alpha_temp0_username,
+      password: default_password,
+      } )
+     ).rejects.toBe("registration_application_is_pending");
+});

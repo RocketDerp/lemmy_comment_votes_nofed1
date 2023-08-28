@@ -243,7 +243,13 @@ test("Phase III: Create user, attempting without application answer", async () =
 });
 
 
-
+/*
+ToDo: previous call took 12ms, why does this call take nearly a fully second?
+  Phase III: Create user, with registration application answer (970 ms)
+  1. It has no federation, does it? (Sync federation is done for tests, but still? without posts or comments)
+  2. no HTTP outbound connect?
+  3. Database tables are empty when this is run after fresh api_tests reset of databases
+*/
 test("Phase III: Create user, with registration application answer", async () => {
   alpha_temp0 = {
     client: new LemmyHttp("http://127.0.0.1:8541"),

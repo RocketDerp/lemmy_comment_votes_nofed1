@@ -297,3 +297,82 @@ test("Phase III: Try to login with newly created user while registration applica
       } )
      ).rejects.toBe("registration_application_is_pending");
 });
+
+
+
+/*
+***********************************************************************************************************************************
+*** Phase IV
+*** Admin of instance approval behaviors
+*/
+
+
+test("Phase IV: Create user, with registration application answer", async () => {
+  alpha_temp0 = {
+    client: new LemmyHttp("http://127.0.0.1:8541"),
+    auth: "",
+  };
+
+  // Change name from Woodstock to Spike to avoid clash.
+  alpha_temp0_username = "Spike";
+
+  // ACTIVE development: this will crash
+  let userRes;
+  try {
+    userRes = await registerUserExtra(alpha_temp0, alpha_temp0_username, "I'm Charlie's dog's broother from Needles California");
+  } catch(e0) {
+    // possible exception: user_already_exists
+    console.error("exception during Account Registration with application answer");
+    console.log(e0);
+    // process.exit(10);
+  }
+
+  if (userRes) {
+    // NOTE: do not expect to have jwt, login, after registration with registration pre-processing
+    expect(userRes.jwt).toBeUndefined();
+
+    // This switches to the alpha user account to look at profile, not the user just created.
+    let personDetailsRes = await alpha.client.getPersonDetails({
+      username: alpha_temp0_username
+    });
+    expect(personDetailsRes.person_view.person.name).toBe(alpha_temp0_username);
+  } else {
+    expect("userRes defined").toBe("not defined");
+  }
+});
+
+
+test("Phase IV: admin approves registration application", async () => {
+    let pendingApplicationsRes = await alpha.client.listRegistrationApplications(
+      {
+        auth: alpha.auth
+      }
+    );
+
+    let app = pendingApplicationsRes.registration_applications[0];
+    expect(app.creator.name).toBe(alpha_temp0_username);
+    // confirm not already approved
+    expect(app.registration_application.admin_id).toBeUndefined();
+
+    let adminActionRes = await alpha.client.approveRegistrationApplication( {
+      id: app.registration_application.id,
+      auth: alpha.auth,
+      approve: true,
+      } );
+
+    expect (adminActionRes.registration_application.registration_application.admin_id).toBeGreaterThanOrEqual(1);
+});
+
+
+test("Phase IV: Try to login with newly created user while registration application APPROVED - login working", async () => {
+  if (! alpha_temp0?.client) {
+    throw "Missing alpha_temp0 API client"
+  }
+
+  let loginRes = await alpha_temp0.client.login( {
+      username_or_email: alpha_temp0_username,
+      password: default_password,
+      } );
+
+  expect(loginRes.jwt?.length).toBeGreaterThanOrEqual(8);
+});

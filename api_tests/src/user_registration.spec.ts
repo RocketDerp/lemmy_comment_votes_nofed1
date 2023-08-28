@@ -76,7 +76,7 @@ export async function registerUserExtra(
   return api.client.register(form);
 }
 
-test("Create user, with application answer", async () => {
+test("Create user, with registration application answer", async () => {
   alpha_temp0 = {
     client: new LemmyHttp("http://127.0.0.1:8541"),
     auth: "",
@@ -136,6 +136,78 @@ test.skip("Try to login with newly created user while registration application n
 });
 
 test("Try to login with newly created user while registration application not yet approved - login fail", async () => {
+  if (! alpha_temp0?.client) {
+    throw "Missing alpha_temp0 API client"
+  }
+
+  await expect(
+    alpha_temp0.client.login( {
+      username_or_email: alpha_temp0_username,
+      password: default_password,
+      } )
+     ).rejects.toBe("registration_application_is_pending");
+});
+
+/*
+***********************************************************************************************************************************
+*** 132 character width forever ;)
+***    "In 132 character per line mode, the screen is 132 characters wide by 14 lines high (24 lines if the VT100 is equipped with
+***     the Advanced Video Option)."
+***    "introduced in August 1978, replacing the VT50/VT52 family."
+*** Phase II
+*** Back in the broadband over-the-cable days, HBO would offer open weekends as promotion
+***   maybe a team of moderators is running a Lemmy signup social-media-athon?
+*/
+
+test("change lemmy-alpha server back to open registration", async () => {
+  // check current registration state
+  let siteRes = await alpha.client.getSite({
+    auth: alpha.auth
+  });
+  if (siteRes.site_view.local_site.registration_mode != "RequireApplication") {
+    throw "Why is lemmy-alpha not on RequireApplication registration?"
+  } else {
+    let editSiteForm: EditSite = {
+      registration_mode: "Open",
+      auth: alpha.auth,
+    };
+    let changeSiteRes = await alpha.client.editSite(editSiteForm);
+    expect(changeSiteRes.site_view.local_site.registration_mode).toBe("Open");
+  }
+});
+
+test("Try to login with NEVER-APPROVED user while registration application not yet approved - login fail", async () => {
+  if (! alpha_temp0?.client) {
+    throw "Missing alpha_temp0 API client"
+  }
+
+  await expect(
+    alpha_temp0.client.login( {
+      username_or_email: alpha_temp0_username,
+      password: default_password,
+      } )
+     ).rejects.toBe("registration_application_is_pending");
+});
+
+
+test("change lemmy-alpha server back to Application registration after being Open for signup-campaign", async () => {
+  // check current registration state
+  let siteRes = await alpha.client.getSite({
+    auth: alpha.auth
+  });
+  if (siteRes.site_view.local_site.registration_mode != "Open") {
+    throw "Why is lemmy-alpha not on Open registration?"
+  } else {
+    let editSiteForm: EditSite = {
+      registration_mode: "RequireApplication",
+      auth: alpha.auth,
+    };
+    let changeSiteRes = await alpha.client.editSite(editSiteForm);
+    expect(changeSiteRes.site_view.local_site.registration_mode).toBe("RequireApplication");
+  }
+});
+
+test("Try to login with NEVER-APPROVED user after open, RequireApplication transition - registration application not yet approved - login fail", async () => {
   if (! alpha_temp0?.client) {
     throw "Missing alpha_temp0 API client"
   }

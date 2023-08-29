@@ -107,6 +107,17 @@ test("Create user, with registration application answer", async () => {
   }
 });
 
+test("Create user, with registration application answer, repeat sanme username, validate denied response", async () => {
+  if (! alpha_temp0?.client) {
+    throw "Missing alpha_temp0 API client"
+  }
+
+  await expect(
+    registerUserExtra(alpha_temp0, alpha_temp0_username, "I'm Charlie's dog")
+    ).rejects.toBe("user_already_exists");
+});
+
+
 
 test.skip("Try to login with newly created user while registration application not yet approved", async () => {
   if (! alpha_temp0?.client) {
@@ -342,6 +353,20 @@ test("Phase IV: Create user, with registration application answer", async () => 
 });
 
 
+test("Phase IV: Try to login before registration application approved - login fail", async () => {
+  if (! alpha_temp0?.client) {
+    throw "Missing alpha_temp0 API client"
+  }
+
+  await expect(
+    alpha_temp0.client.login( {
+      username_or_email: alpha_temp0_username,
+      password: default_password,
+      } )
+     ).rejects.toBe("registration_application_is_pending");
+});
+
+
 test("Phase IV: admin approves registration application", async () => {
     let pendingApplicationsRes = await alpha.client.listRegistrationApplications(
       {
@@ -364,7 +389,7 @@ test("Phase IV: admin approves registration application", async () => {
 });
 
 
-test("Phase IV: Try to login with newly created user while registration application APPROVED - login working", async () => {
+test("Phase IV: Try to login after registration application APPROVED - login working", async () => {
   if (! alpha_temp0?.client) {
     throw "Missing alpha_temp0 API client"
   }
@@ -375,4 +400,31 @@ test("Phase IV: Try to login with newly created user while registration applicat
       } );
 
   expect(loginRes.jwt?.length).toBeGreaterThanOrEqual(8);
+});
+
+
+/*
+Intention here isn't just to test that it works, but document behavior changes in code regarding
+   outcomes based on interaction of different settings.
+*/
+test("Phase V: e-mail verification interaction with registration application" , async () => {
+  // ToDo: this test
+  expect(0).toBe(1);
+});
+
+
+test("Phase VI: account registration sanitize checks on username" , async () => {
+  let userRes = await registerUserExtra(alpha_temp0, "jim&amy", "should fail");
+  let userRes1 = await registerUserExtra(alpha_temp0, "jim<amy", "should fail");
+});
+
+test("Phase VI: account registration slur filter on username" , async () => {
+  // Is there a default slur default?
+  let userRes = await registerUserExtra(alpha_temp0, "fuck", "should fail");
+  let userRes1 = await registerUserExtra(alpha_temp0, "cunt", "should fail");
+});
+
+test("Phase VI: account registration slur filter on registraiton answer" , async () => {
+  // ToDo: this test
+  expect(0).toBe(1);
 });

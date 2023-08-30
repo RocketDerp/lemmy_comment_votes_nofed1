@@ -10,6 +10,7 @@ import {
 import { EditSite, LemmyHttp, LoginResponse, Register } from "lemmy-js-client";
 import { GetPosts } from "lemmy-js-client/dist/types/GetPosts";
 import exp = require("constants");
+import { alpha_user_casual0 } from "./shared_benchmark";
 
 beforeAll(async () => {
   await setupLogins();
@@ -159,6 +160,7 @@ test("login with newly created user while registration application not yet appro
      ).rejects.toBe("registration_application_is_pending");
 });
 
+
 /*
 ***********************************************************************************************************************************
 *** 132 character width forever ;)
@@ -170,7 +172,7 @@ test("login with newly created user while registration application not yet appro
 ***   maybe a team of moderators is running a Lemmy signup social-media-athon?
 */
 
-test("change lemmy-alpha server back to open registration", async () => {
+test("Phase II: change lemmy-alpha server back to open registration", async () => {
   // check current registration state
   let siteRes = await alpha.client.getSite({
     auth: alpha.auth
@@ -187,7 +189,7 @@ test("change lemmy-alpha server back to open registration", async () => {
   }
 });
 
-test("login with NEVER-APPROVED user while registration application not yet approved - login fail", async () => {
+test("Phase II: login with NEVER-APPROVED user while registration application not yet approved - login fail", async () => {
   if (! alpha_temp0?.client) {
     throw "Missing alpha_temp0 API client"
   }
@@ -201,7 +203,7 @@ test("login with NEVER-APPROVED user while registration application not yet appr
 });
 
 
-test("change lemmy-alpha server back to Application registration after being Open for signup-campaign", async () => {
+test("Phase II: change lemmy-alpha server back to Application registration after being Open for signup-campaign", async () => {
   // check current registration state
   let siteRes = await alpha.client.getSite({
     auth: alpha.auth
@@ -218,7 +220,7 @@ test("change lemmy-alpha server back to Application registration after being Ope
   }
 });
 
-test("login with NEVER-APPROVED user after open, RequireApplication transition - registration application not yet approved - login fail", async () => {
+test("Phase II: login with NEVER-APPROVED user after open, RequireApplication transition - registration application not yet approved - login fail", async () => {
   if (! alpha_temp0?.client) {
     throw "Missing alpha_temp0 API client"
   }
@@ -429,3 +431,109 @@ test("Phase VI: account registration slur filter on registraiton answer" , async
   // ToDo: this test
   expect(0).toBe(1);
 });
+
+
+
+
+
+
+
+
+/*
+***********************************************************************************************************************************
+*** Phase VII
+*** Phase II over again, this time closed
+*/
+
+
+test("Phase VII: confirm lemmy-alpha server setting is require registration application", async () => {
+  // check current registration state
+  let siteRes = await alpha.client.getSite({
+    auth: alpha.auth
+  });
+  if (siteRes.site_view.local_site.registration_mode == "RequireApplication") {
+    console.log("Site already set to RegistratonMode wit application");
+  } else {
+    let editSiteForm: EditSite = {
+      registration_mode: "RequireApplication",
+      auth: alpha.auth,
+    };
+    let changeSiteRes = await alpha.client.editSite(editSiteForm);
+    expect(changeSiteRes.site_view.local_site.registration_mode).toBe("RequireApplication");
+  }
+});
+
+test("Phase VII: Create user, with registration application answer", async () => {
+  if (! alpha_temp0?.client) {
+    throw "Missing alpha_temp0 API client"
+  }
+
+  alpha_temp0_username = "Lucy";
+
+  let registrationRes = await registerUserExtra(alpha_temp0, alpha_temp0_username, "Psychological help, 5 cents");
+  expect (registrationRes.registration_created).toBe(true);
+});
+
+
+
+test("Phase VII: change lemmy-alpha server back to open registration", async () => {
+  // check current registration state
+  let siteRes = await alpha.client.getSite({
+    auth: alpha.auth
+  });
+  if (siteRes.site_view.local_site.registration_mode != "RequireApplication") {
+    throw "Why is lemmy-alpha not on RequireApplication registration?"
+  } else {
+    let editSiteForm: EditSite = {
+      registration_mode: "Open",
+      auth: alpha.auth,
+    };
+    let changeSiteRes = await alpha.client.editSite(editSiteForm);
+    expect(changeSiteRes.site_view.local_site.registration_mode).toBe("Open");
+  }
+});
+
+test("Phase VII: login with NEVER-APPROVED user while registration application not yet approved - login fail", async () => {
+  if (! alpha_temp0?.client) {
+    throw "Missing alpha_temp0 API client"
+  }
+
+  await expect(
+    alpha_temp0.client.login( {
+      username_or_email: alpha_temp0_username,
+      password: default_password,
+      } )
+     ).rejects.toBe("registration_application_is_pending");
+});
+
+
+test("Phase VII: change lemmy-alpha server back to Application registration after being Open for signup-campaign", async () => {
+  // check current registration state
+  let siteRes = await alpha.client.getSite({
+    auth: alpha.auth
+  });
+  if (siteRes.site_view.local_site.registration_mode != "Open") {
+    throw "Why is lemmy-alpha not on Open registration?"
+  } else {
+    let editSiteForm: EditSite = {
+      registration_mode: "RequireApplication",
+      auth: alpha.auth,
+    };
+    let changeSiteRes = await alpha.client.editSite(editSiteForm);
+    expect(changeSiteRes.site_view.local_site.registration_mode).toBe("RequireApplication");
+  }
+});
+
+test("Phase VII: login with NEVER-APPROVED user after open, RequireApplication transition - registration application not yet approved - login fail", async () => {
+  if (! alpha_temp0?.client) {
+    throw "Missing alpha_temp0 API client"
+  }
+
+  await expect(
+    alpha_temp0.client.login( {
+      username_or_email: alpha_temp0_username,
+      password: default_password,
+      } )
+     ).rejects.toBe("registration_application_is_pending");
+});
+

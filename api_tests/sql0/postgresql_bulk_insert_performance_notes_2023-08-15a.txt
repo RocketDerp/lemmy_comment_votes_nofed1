@@ -1,0 +1,345 @@
+src/simulate_content.spec.ts (186.149 s)
+  ✓ create usernames (28837 ms)
+  ✓ create communities (2645 ms)
+  ✓ users update their profile (535 ms)
+  ✓ all follow 2 communities (1558 ms)
+  ✓ all follow personal communities (397 ms)
+  ✓ create welcome posts by members (3012 ms)
+  ✓ replies and upvotes to welcome posts by members (144132 ms)
+  ✓ create stress-test communities (2634 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       8 passed, 8 total
+Snapshots:   0 total
+Time:        186.185 s, estimated 192 s
+Ran all test suites matching /simulate_content.spec.ts/i.
+:::: jest exited with code 0
+good test run
+************
+************ major SQL script
+************ lemmy_alpha
+************
+SET
+CREATE EXTENSION
+ pg_stat_statements_reset 
+--------------------------
+ 
+(1 row)
+
+CREATE FUNCTION
+         avg          |  min  |  q1   | median |  q3   |  p95  |  max  | repeats 
+----------------------+-------+-------+--------+-------+-------+-------+---------
+ 0.007800000000000005 | 0.006 | 0.006 |  0.007 | 0.007 | 0.012 | 0.026 |      50
+(1 row)
+
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TABLE
+CREATE TABLE
+CREATE SEQUENCE
+ setval 
+--------
+     36
+(1 row)
+
+ALTER TABLE
+CREATE SEQUENCE
+ setval 
+--------
+   1296
+(1 row)
+
+ALTER TABLE
+          status_message          
+----------------------------------
+ benchmark_fill_post2 kicking off
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 457.275 | 457.275 | 457.275 | 457.275 | 457.275 | 457.275 | 457.275 |       1
+(1 row)
+
+          status_message          
+----------------------------------
+ benchmark_fill_post3 kicking off
+(1 row)
+
+   avg   |   min   |   q1    | median  |   q3    |   p95   |   max   | repeats 
+---------+---------+---------+---------+---------+---------+---------+---------
+ 287.637 | 287.637 | 287.637 | 287.637 | 287.637 | 287.637 | 287.637 |       1
+(1 row)
+
+                           status_message                           
+--------------------------------------------------------------------
+ post targets post_temp_id0 populate_temp_post_id_table kicking off
+(1 row)
+
+psql:mass_insert0.sql:731: NOTICE:  table "post_temp_id0" does not exist, skipping
+DROP TABLE
+  avg   |  min   |   q1   | median |   q3   |  p95   |  max   | repeats 
+--------+--------+--------+--------+--------+--------+--------+---------
+ 34.018 | 34.018 | 34.018 | 34.018 | 34.018 | 34.018 | 34.018 |       1
+(1 row)
+
+  id   
+-------
+ 51084
+   713
+ 32516
+ 27094
+  8071
+ 49250
+ 40135
+ 23983
+ 51150
+  2188
+(10 rows)
+
+ pg_stat_statements_reset 
+--------------------------
+ 
+(1 row)
+
+ status_message  
+-----------------
+ simple comment0
+(1 row)
+
+  avg   |  min   |   q1   | median |   q3   |  p95   |  max   | repeats 
+--------+--------+--------+--------+--------+--------+--------+---------
+ 11.472 | 11.472 | 11.472 | 11.472 | 11.472 | 11.472 | 11.472 |       1
+(1 row)
+
+ status_message  
+-----------------
+ simple comment1
+(1 row)
+
+  avg   |  min   |   q1   | median |   q3   |  p95   |  max   | repeats 
+--------+--------+--------+--------+--------+--------+--------+---------
+ 26.506 | 26.506 | 26.506 | 26.506 | 26.506 | 26.506 | 26.506 |       1
+(1 row)
+
+ status_message  
+-----------------
+ simple comment3
+(1 row)
+
+  avg   |  min   |   q1   | median |   q3   |  p95   |  max   | repeats 
+--------+--------+--------+--------+--------+--------+--------+---------
+ 10.965 | 10.965 | 10.965 | 10.965 | 10.965 | 10.965 | 10.965 |       1
+(1 row)
+
+ status_message  
+-----------------
+ simple comment4
+(1 row)
+
+  avg   |  min   |   q1   | median |   q3   |  p95   |  max   | repeats 
+--------+--------+--------+--------+--------+--------+--------+---------
+ 16.091 | 16.091 | 16.091 | 16.091 | 16.091 | 16.091 | 16.091 |       1
+(1 row)
+
+                    status_message                    
+------------------------------------------------------
+ benchmark_fill_comment_reply_using_temp0 kicking off
+(1 row)
+
+  avg   |  min   |   q1   | median |   q3   |  p95   |  max   | repeats 
+--------+--------+--------+--------+--------+--------+--------+---------
+ 34.807 | 34.807 | 34.807 | 34.807 | 34.807 | 34.807 | 34.807 |       1
+(1 row)
+
+                                status_message                                
+------------------------------------------------------------------------------
+ benchmark_fill_comment_reply_using_temp0_hugecommunity0 kicking off, 12 runs
+(1 row)
+
+   avg    |  min   |   q1    |       median       |   q3    |   p95   |  max   | repeats 
+----------+--------+---------+--------------------+---------+---------+--------+---------
+ 55.29475 | 48.733 | 54.4155 | 55.042500000000004 | 55.4445 | 60.0805 | 64.123 |      12
+(1 row)
+
+                                status_message                                
+------------------------------------------------------------------------------
+ benchmark_fill_comment_reply_using_temp0_hugecommunity1 kicking off, 12 runs
+(1 row)
+
+        avg        |  min  |   q1    | median  |   q3   |   p95   |  max   | repeats 
+-------------------+-------+---------+---------+--------+---------+--------+---------
+ 71.58624999999999 | 59.47 | 70.7405 | 71.8155 | 72.625 | 77.6258 | 81.709 |      12
+(1 row)
+
+                            status_message                            
+----------------------------------------------------------------------
+ benchmark_fill_comment_reply_using_temp0 ROUND 2 kicking off 20 runs
+(1 row)
+
+   avg    |  min   |    q1    | median  |    q3    |        p95        |  max  | repeats 
+----------+--------+----------+---------+----------+-------------------+-------+---------
+ 67.61345 | 63.892 | 65.07725 | 66.0975 | 67.34825 | 76.62500000000001 | 85.27 |      20
+(1 row)
+
+                                      status_message                                      
+------------------------------------------------------------------------------------------
+ benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 1 kicking off 5 runs level 3
+(1 row)
+
+   avg   |  min   |   q1   | median |   q3   |  p95   |  max   | repeats 
+---------+--------+--------+--------+--------+--------+--------+---------
+ 79.4654 | 77.099 | 78.315 | 79.782 | 80.343 | 81.499 | 81.788 |       5
+(1 row)
+
+                                      status_message                                      
+------------------------------------------------------------------------------------------
+ benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 2 kicking off 5 runs level 4
+(1 row)
+
+   avg    |   min   |   q1    | median  |   q3    |        p95         |   max   | repeats 
+----------+---------+---------+---------+---------+--------------------+---------+---------
+ 106.4932 | 100.997 | 101.663 | 102.925 | 104.143 | 119.01899999999999 | 122.738 |       5
+(1 row)
+
+                                      status_message                                      
+------------------------------------------------------------------------------------------
+ benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 3 kicking off 5 runs level 5
+(1 row)
+
+        avg         |   min   |   q1    | median |   q3    |   p95    |   max   | repeats 
+--------------------+---------+---------+--------+---------+----------+---------+---------
+ 108.91599999999998 | 106.565 | 107.274 | 107.94 | 109.902 | 112.2996 | 112.899 |       5
+(1 row)
+
+                                      status_message                                      
+------------------------------------------------------------------------------------------
+ benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 4 kicking off 3 runs level 6
+(1 row)
+
+   avg   |   min   |    q1    | median  |   q3    |   p95    |   max   | repeats 
+---------+---------+----------+---------+---------+----------+---------+---------
+ 120.293 | 117.249 | 118.2485 | 119.248 | 121.815 | 123.8686 | 124.382 |       3
+(1 row)
+
+                                      status_message                                      
+------------------------------------------------------------------------------------------
+ benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 5 kicking off 3 runs level 7
+(1 row)
+
+        avg         |  min   |   q1    | median  |   q3    |        p95         |  max   | repeats 
+--------------------+--------+---------+---------+---------+--------------------+--------+---------
+ 126.06533333333334 | 122.67 | 122.893 | 123.116 | 127.763 | 131.48059999999998 | 132.41 |       3
+(1 row)
+
+                                      status_message                                       
+-------------------------------------------------------------------------------------------
+ benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 5 kicking off 20 runs level 8
+(1 row)
+
+        avg         |   min   |         q1         |  median  |    q3     |        p95         |   max   | repeats 
+--------------------+---------+--------------------+----------+-----------+--------------------+---------+---------
+ 156.67739999999998 | 154.151 | 155.40449999999998 | 156.6445 | 157.98825 | 159.11305000000002 | 160.463 |      20
+(1 row)
+
+                                      status_message                                      
+------------------------------------------------------------------------------------------
+ benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 5 kicking off 5 runs level 9
+(1 row)
+
+   avg    |   min   |   q1    | median  |   q3    |        p95         |   max   | repeats 
+----------+---------+---------+---------+---------+--------------------+---------+---------
+ 161.6624 | 159.924 | 160.977 | 161.109 | 162.005 | 163.83859999999999 | 164.297 |       5
+(1 row)
+
+                                      status_message                                       
+-------------------------------------------------------------------------------------------
+ benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 5 kicking off 5 runs level 10
+(1 row)
+
+        avg         |   min   |   q1    | median  |   q3    |   p95    |   max   | repeats 
+--------------------+---------+---------+---------+---------+----------+---------+---------
+ 185.94080000000002 | 183.752 | 183.776 | 183.888 | 184.292 | 192.0552 | 193.996 |       5
+(1 row)
+
+                                      status_message                                       
+-------------------------------------------------------------------------------------------
+ benchmark_fill_comment_reply_using_temp0_extendbranch ROUND 5 kicking off 5 runs level 11
+(1 row)
+
+        avg         |   min   |   q1   | median  |   q3    |   p95    |   max   | repeats 
+--------------------+---------+--------+---------+---------+----------+---------+---------
+ 192.41140000000001 | 189.062 | 190.32 | 192.577 | 194.355 | 195.4654 | 195.743 |       5
+(1 row)
+
+ post_temp0_count 
+------------------
+            60000
+(1 row)
+
+ comment_temp0_count 
+---------------------
+              312772
+(1 row)
+
+ comment_temp0_path_max_level 
+------------------------------
+                           13
+(1 row)
+
+                     status_message                     
+--------------------------------------------------------
+ copy post temp table into main post table, kicking off
+(1 row)
+
+    avg    |    min    |    q1     |  median   |    q3     |    p95    |    max    | repeats 
+-----------+-----------+-----------+-----------+-----------+-----------+-----------+---------
+ 91794.735 | 91794.735 | 91794.735 | 91794.735 | 91794.735 | 91794.735 | 91794.735 |       1
+(1 row)
+
+                      status_message                       
+-----------------------------------------------------------
+ copy comment temp table into main post table, kicking off
+(1 row)
+
+     avg     |     min     |     q1      |   median    |     q3      |     p95     |     max     | repeats 
+-------------+-------------+-------------+-------------+-------------+-------------+-------------+---------
+ 3196291.822 | 3196291.822 | 3196291.822 | 3196291.822 | 3196291.822 | 3196291.822 | 3196291.822 |       1
+(1 row)
+
+        status_message        
+------------------------------
+ child_count_for_all_comments
+(1 row)
+
+    avg    |    min    |    q1     |  median   |    q3     |    p95    |    max    | repeats 
+-----------+-----------+-----------+-----------+-----------+-----------+-----------+---------
+ 16554.784 | 16554.784 | 16554.784 | 16554.784 | 16554.784 | 16554.784 | 16554.784 |       1
+(1 row)
+
+ comments_with_child_count_rows 
+--------------------------------
+                          35651
+(1 row)
+
+
+real	55m16.906s
+user	0m0.028s
+sys	0m0.014s
+
+

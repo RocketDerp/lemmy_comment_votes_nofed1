@@ -417,8 +417,17 @@ test("Phase V: e-mail verification interaction with registration application" , 
 
 
 test("Phase VI: account registration sanitize checks on username" , async () => {
-  let userRes = await registerUserExtra(alpha_temp0, "jim&amy", "should fail");
-  let userRes1 = await registerUserExtra(alpha_temp0, "jim<amy", "should fail");
+  let userRes = await registerUserExtra(alpha_temp0, "jim&amy", "should fail ampersand URL parameterish");
+  let userRes1 = await registerUserExtra(alpha_temp0, "jim<amy", "should fail less-than");
+  // there are at least two good reasons to not allow "@" in a username...
+  //   1. Lemmy login convention in 0.18.4 and earlier is to allow usernames or e-mail
+  //   2. Lemmy comment conveniton is to mention someone using "@" username and instance
+  let userRes2 = await registerUserExtra(alpha_temp0, "jim@amy", "should fail @");
+  // what about look alikes?
+  //   	U+FF20 ＠ FULLWIDTH COMMERCIAL AT
+  //    U+FE6B ﹫ SMALL COMMERCIAL AT
+  let userRes3 = await registerUserExtra(alpha_temp0, "jim＠amy", "should fail FULLWIDTH COMMERCIAL AT");
+  let userRes4 = await registerUserExtra(alpha_temp0, "jim﹫amy", "should fail SMALL COMMERCIAL AT");
 });
 
 test("Phase VI: account registration slur filter on username" , async () => {
@@ -427,7 +436,7 @@ test("Phase VI: account registration slur filter on username" , async () => {
   let userRes1 = await registerUserExtra(alpha_temp0, "cunt", "should fail");
 });
 
-test("Phase VI: account registration slur filter on registraiton answer" , async () => {
+test("Phase VI: account registration slur filter on answer" , async () => {
   // ToDo: this test
   expect(0).toBe(1);
 });

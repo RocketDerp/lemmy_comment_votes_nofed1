@@ -9,6 +9,7 @@ import {
   SortType,
   PostView,
   CommentResponse,
+  ListingType,
 } from "lemmy-js-client";
 import {
   API,
@@ -26,6 +27,7 @@ import {
   getSite,
   resolvePerson,
   saveUserSettings,
+  getPosts,
 } from "./shared";
 
 export let alpha_user_casual0: API;
@@ -86,31 +88,32 @@ export async function createNoLinkPost(
   return api.client.createPost(form);
 }
 
-export function getPostsMax(
+
+/*
+original getPosts in shared:
+
+export function getPosts(
   api: API,
-  moderator_view = false,
-  sort_by: SortType,
+  listingType?: ListingType,
 ): Promise<GetPostsResponse> {
   let form: GetPosts = {
-    moderator_view,
     auth: api.auth,
-    limit: 50,
-    sort: sort_by,
-    type_: "All",
+    type_: listingType,
   };
   return api.client.getPosts(form);
 }
-
-export function getPostsNewMax2(
+*/
+export function getPostsMax(
   api: API,
-  moderator_view = false,
+  listingType?: ListingType,
+  sort_by?: SortType,
+  limit?: number
 ): Promise<GetPostsResponse> {
   let form: GetPosts = {
-    moderator_view,
     auth: api.auth,
-    limit: 500,
-    sort: "New",
-    type_: "All",
+    limit: 50,
+    sort: sort_by,
+    type_: listingType,
   };
   return api.client.getPosts(form);
 }
@@ -551,7 +554,6 @@ export async function nestedCommentsOnMostRecentPostsSpecificCommunityA(
   //    only recognized test community
   expect(targetCommunityName).toBeDefined();
   let form: GetPosts = {
-    moderator_view: false,
     auth: account.auth,
     limit: 50,
     sort: "New",
@@ -689,7 +691,7 @@ export async function getCommentsMax(
 
 export async function getCommentsOnMostRecentPosts() {
   // sort by most comments, stress server
-  let posts = await getPostsMax(alpha, undefined, "MostComments");
+  let posts = await getPostsMax(alpha, "All", "MostComments");
   expect(posts.posts.length).toBeGreaterThanOrEqual(12);
 
   for (let i = 0; i < 12; i++) {
@@ -715,7 +717,6 @@ export async function getPostsForTargetCommunity(
 ) {
   expect(targetCommunityName).toBeDefined();
   let form: GetPosts = {
-    moderator_view: false,
     auth: account.auth,
     limit: limit,
     sort: sort,

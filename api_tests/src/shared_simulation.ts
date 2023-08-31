@@ -3,14 +3,16 @@ import {
   CommentResponse,
   CommunityResponse,
   PostView,
+  CreateCommunity,
 } from "lemmy-js-client";
 import {
   API,
   alpha,
   createComment,
-  createCommunity,
+  // bypassed for local: createCommunity,
   followCommunity,
   likePost,
+  randomString,
   resolveCommunity,
   saveUserSettings,
 } from "./shared";
@@ -356,4 +358,30 @@ export async function sim_create_stress_test_communities() {
   // 3 is testing community, in double level of meaning
   let c = community_list[3].test_community?.community_view;
   console.log("id of test community %s %d", c?.community.name, c?.community.id);
+}
+
+
+// the createCommunity in shared doesn't take description parameter
+export async function createCommunity(
+  api: API,
+  name_: string = randomString(8),
+  title = "",
+  description = "",
+): Promise<CommunityResponse> {
+  // some tests rely on auto-generated parameters
+  let description_out = "a sample description for " + name_;
+  if (description.length > 0) {
+    description_out = description;
+  }
+  let title_out = name_;
+  if (title.length > 0) {
+    title_out = title;
+  }
+  let form: CreateCommunity = {
+    name: name_,
+    title: title_out,
+    description: description_out,
+    auth: api.auth,
+  };
+  return api.client.createCommunity(form);
 }

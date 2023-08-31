@@ -12,7 +12,6 @@ import { alpha, setupLogins, getSite } from "./shared";
 import {
   getCommentsOnMostRecentPosts,
   getPostsMax,
-  getPostsNewMax2,
   loopActionSetA,
   manyCommunitiesManyPosts,
   nestedCommentsOnMostRecentPostsSpecificCommunityA,
@@ -46,7 +45,7 @@ test.skip("benchmark baseline, same as last test, without federation", async () 
 });
 
 test.skip("may as well study the content", async () => {
-  let posts = await getPostsMax(alpha, undefined, "New");
+  let posts = await getPostsMax(alpha, "All", "New");
   expect(posts.posts.length).toBeGreaterThanOrEqual(10);
 
   for (let i = 0; i < posts.posts.length; i++) {
@@ -98,7 +97,7 @@ test.skip("benchmark baseline, reading: list posts", async () => {
   const start = performance.now();
 
   for (let i = 0; i < 50; i++) {
-    let posts = await getPostsMax(alpha, undefined, "New");
+    let posts = await getPostsMax(alpha, "All", "New");
     expect(posts.posts.length).toBeGreaterThanOrEqual(12);
   }
 
@@ -110,7 +109,7 @@ test.skip("benchmark baseline, reading: list posts 3 times", async () => {
   const start = performance.now();
 
   for (let i = 0; i < 3; i++) {
-    let posts = await getPostsNewMax2(alpha);
+    let posts = await getPostsMax(alpha, "All", "New", 500);
     console.log("posts %d", posts.posts.length);
     expect(posts.posts.length).toBeGreaterThanOrEqual(12);
   }

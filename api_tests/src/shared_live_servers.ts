@@ -81,7 +81,7 @@ export async function getCommentsMaxLive(
 
 export async function getCommentsOnMostRecentPostsLive() {
   // sort by most comments, stress server
-  let posts = await getPostsMax(live_user0, undefined, "MostComments");
+  let posts = await getPostsMax(live_user0, "All", "MostComments");
   expect(posts.posts.length).toBeGreaterThanOrEqual(12);
 
   for (let i = 0; i < 12; i++) {

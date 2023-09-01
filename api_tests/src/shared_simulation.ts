@@ -371,12 +371,10 @@ export async function sim_create_posts_all_users_one_community(quantity_per_user
     if (!u.client) {
       throw "user client not found";
     }
-    let body;
-    if (u.biography) {
-      body = "Testing post\n\n"
+    let body = "Testing post\n\n"
          + "timestamp " + Date.now()
-         + "Hello Alpha users.\n\n *About* my self... " + u.biography;
-    }
+         + " Hello Alpha users.\n\n *About* my self... " + u.biography;
+
     for (let x = 0; x < quantity_per_user; x++) {
       await createNoLinkPost(
         u.client,

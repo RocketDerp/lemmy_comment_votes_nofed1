@@ -360,6 +360,34 @@ export async function sim_create_stress_test_communities() {
   console.log("id of test community %s %d", c?.community.name, c?.community.id);
 }
 
+export async function sim_create_posts_all_users_one_community(quantity_per_user: number) {
+  let c = community_list[3];   // lemmy testing community
+  if (!c.community) {
+    throw "community missing for creating posts";
+  }
+  let cid = c.community?.community_view.community.id;
+  for (let i = 0; i < username_list.length; i++) {
+    const u = username_list[i];
+    if (!u.client) {
+      throw "user client not found";
+    }
+    let body;
+    if (u.biography) {
+      body = "Testing post\n\n"
+         + "timestamp " + Date.now()
+         + "Hello Alpha users.\n\n *About* my self... " + u.biography;
+    }
+    for (let x = 0; x < quantity_per_user; x++) {
+      await createNoLinkPost(
+        u.client,
+        cid,
+        "Testing post in Lemmy Test Community. #" + x + " - I am " + u.name,
+        body,
+      );
+    }
+  }
+}
+
 
 // the createCommunity in shared doesn't take description parameter
 export async function createCommunity(

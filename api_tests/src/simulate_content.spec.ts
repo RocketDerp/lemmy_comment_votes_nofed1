@@ -13,6 +13,7 @@ import { alpha, setupLogins } from "./shared";
 import {
   sim_create_accounts,
   sim_create_communities,
+  sim_create_posts_all_users_one_community,
   sim_create_reply_comments_to_posts,
   sim_create_stress_test_communities,
   sim_create_welcome_posts,
@@ -93,4 +94,12 @@ test(
     await sim_create_stress_test_communities();
   },
   3 * 60 * 1000,
+);
+
+test(
+  "create posts by multiple users in single community",
+  async () => {
+    await sim_create_posts_all_users_one_community(3);
+  },
+  4 * 60 * 1000,
 );

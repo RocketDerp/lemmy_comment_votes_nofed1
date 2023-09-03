@@ -109,6 +109,7 @@ test("Delete user", async () => {
 test("Requests with invalid auth should be treated as unauthenticated", async () => {
   let invalid_auth: API = {
     client: new LemmyHttp("http://127.0.0.1:8541"),
+    // client: new LemmyHttp("http://127.0.0.1:6100"),
     auth: "invalid",
   };
   let site = await getSite(invalid_auth);

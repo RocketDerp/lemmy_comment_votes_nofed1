@@ -39,7 +39,7 @@ test(
 test(
   "create communities",
   async () => {
-    await sim_create_communities();
+    await sim_create_communities("");
   },
   3 * 60 * 1000,
 );

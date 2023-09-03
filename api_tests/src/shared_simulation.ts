@@ -11,6 +11,7 @@ import {
   createComment,
   // bypassed for local: createCommunity,
   followCommunity,
+  getCommunityByName,
   likePost,
   randomString,
   resolveCommunity,
@@ -226,16 +227,46 @@ export async function sim_users_update_profile() {
   }
 }
 
-export async function sim_create_communities() {
+/*
+To allow multiple executions on a database, will look for named communities first.
+*/
+export async function sim_create_communities(name_prefix: string) {
+  let alreadyExistsCount = 0;
   for (let i = 0; i < community_list.length; i++) {
     const c = community_list[i];
     let cc = username_list[c.creator_index].client;
     if (!cc) {
       throw "community creator client not found";
     }
-    c.community = await createCommunity(cc, c.name, c.display);
+    let communityView;
+    try {
+      communityView = await getCommunityByName(cc, name_prefix + c.name);
+      alreadyExistsCount++;
+    } catch (e0) {
+      expect(e0).toBe("couldnt_find_community");
+    }
+    if (!communityView) {
+      communityView = await createCommunity(cc, name_prefix + c.name, c.display);
+    }
+    // only keep object if it is the primary community creation, not prefix
+    if (name_prefix.length == 0) {
+      c.community = communityView
+    } else {
+      c.test_community = communityView;
+    }
+  }
+  if (alreadyExistsCount > 0) {
+    console.log("create_communities alreadyExistsCount %d", alreadyExistsCount);
   }
 }
+
+export async function sim_create_stress_test_communities() {
+  await sim_create_communities("zy_");
+  // 3 is testing community, in double level of meaning
+  let c = community_list[3].test_community?.community_view;
+  console.log("id of test community %s %d", c?.community.name, c?.community.id);
+}
+
 
 export async function sim_follow_two_communities() {
   for (let i = 0; i < username_list.length; i++) {
@@ -312,6 +343,7 @@ export async function sim_create_reply_comments_to_posts() {
     const u = username_list[i];
     const fp = u.first_post?.post_view;
     if (!fp) {
+      console.log("faiure to find proper response on first post", u.first_post)
       throw "where is the first post for user?";
     }
     if (!u.client) {
@@ -346,20 +378,6 @@ export async function sim_create_reply_comments_to_posts() {
   }
 }
 
-export async function sim_create_stress_test_communities() {
-  for (let i = 0; i < community_list.length; i++) {
-    const c = community_list[i];
-    let cc = username_list[c.creator_index].client;
-    if (!cc) {
-      throw "community creator client not found";
-    }
-    c.test_community = await createCommunity(cc, "zy_" + c.name);
-  }
-  // 3 is testing community, in double level of meaning
-  let c = community_list[3].test_community?.community_view;
-  console.log("id of test community %s %d", c?.community.name, c?.community.id);
-}
-
 export async function sim_create_posts_all_users_one_community(quantity_per_user: number) {
   let c = community_list[3];   // lemmy testing community
   if (!c.community) {
@@ -376,6 +394,7 @@ export async function sim_create_posts_all_users_one_community(quantity_per_user
          + " Hello Alpha users.\n\n *About* my self... " + u.biography;
 
     for (let x = 0; x < quantity_per_user; x++) {
+      // noLink post is faster and more predictable, server does not need to do outbound Internet connection
       await createNoLinkPost(
         u.client,
         cid,

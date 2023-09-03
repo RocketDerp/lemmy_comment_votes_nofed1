@@ -76,8 +76,8 @@ export interface API {
 }
 
 export let alpha: API = {
-  client: new LemmyHttp("http://127.0.0.1:8541"),
-  //client: new LemmyHttp("http://127.0.0.1:6100"),
+  //client: new LemmyHttp("http://127.0.0.1:8541"),
+  client: new LemmyHttp("http://127.0.0.1:6100"),
   auth: "",
 };
 

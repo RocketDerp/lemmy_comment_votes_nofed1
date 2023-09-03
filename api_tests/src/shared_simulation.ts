@@ -9,15 +9,17 @@ import {
   API,
   alpha,
   createComment,
+  createPost,
   // bypassed for local: createCommunity,
   followCommunity,
   getCommunityByName,
+  getPosts,
   likePost,
   randomString,
   resolveCommunity,
   saveUserSettings,
 } from "./shared";
-import { createNoLinkPost, registerUserClient } from "./shared_benchmark";
+import { createNoLinkPost, getPostsForTargetCommunity, getPostsMax, registerUserClient, setTargetCommunityName, targetCommunityName } from "./shared_benchmark";
 
 export interface UserAccount {
   name: string;
@@ -167,10 +169,16 @@ export interface CommunityHolder {
   NSFW?: boolean;
   first_post?: PostView;
   description?: string;
+  populate_posts?: number;
+  populate_post_title?: string;
 }
 
 export let community_list: CommunityHolder[] = [
-  { name: "pub", display: "Earwicker's Pub", creator_index: 0 },
+  { name: "pub",
+    display: "Earwicker's Pub", creator_index: 0,
+    populate_posts: 7,
+    populate_post_title: "Bartender I'd like",
+  },
   { name: "Dublin", display: "City of Dublin", creator_index: 0 },
   { name: "Ireland", display: "Nation of Ireland", creator_index: 0 },
   {
@@ -185,10 +193,17 @@ export let community_list: CommunityHolder[] = [
     display: "Welcome to Lemmy, Introductions",
     creator_index: 1,
   },
-  { name: "books", display: "Books and authors", creator_index: 17 },
+  { name: "books", display: "Books and authors", creator_index: 17,
+    populate_posts: 3,
+    populate_post_title: "Did anyone else read the book...",
+  },
   { name: "Mythology", display: "Comparative Mythology", creator_index: 17 },
   { name: "pub_Kiernan", display: "Barney Kiernan's pub", creator_index: 24 },
-  { name: "wakes", display: "funeral wakes", creator_index: 28 },
+  { name: "wakes", 
+     display: "funeral wakes", creator_index: 28,
+     populate_posts: 4,
+     populate_post_title: "I remember...",
+  },
   { name: "military", display: "military service", creator_index: 33 },
   {
     name: "celtic_legends",
@@ -232,6 +247,11 @@ To allow multiple executions on a database, will look for named communities firs
 */
 export async function sim_create_communities(name_prefix: string) {
   let alreadyExistsCount = 0;
+  let display_prefix = "";
+  if (name_prefix)
+  {
+    display_prefix = name_prefix + " ";
+  }
   for (let i = 0; i < community_list.length; i++) {
     const c = community_list[i];
     let cc = username_list[c.creator_index].client;
@@ -246,7 +266,7 @@ export async function sim_create_communities(name_prefix: string) {
       expect(e0).toBe("couldnt_find_community");
     }
     if (!communityView) {
-      communityView = await createCommunity(cc, name_prefix + c.name, c.display);
+      communityView = await createCommunity(cc, name_prefix + c.name, display_prefix + c.display);
     }
     // only keep object if it is the primary community creation, not prefix
     if (name_prefix.length == 0) {
@@ -401,6 +421,56 @@ export async function sim_create_posts_all_users_one_community(quantity_per_user
         "Testing post in Lemmy Test Community. #" + x + " - I am " + u.name,
         body,
       );
+    }
+  }
+}
+
+export async function sim_create_posts_for_specified_communities() {
+  for (let i = 0; i < community_list.length; i++) {
+    const c = community_list[i];
+    if (!c.community) {
+      throw "Community missing for creating posts"
+    }
+    if (c.populate_posts) {
+      let cid = c.community?.community_view.community.id;
+      for (let x = 0; x < c.populate_posts; x++) {
+        const randomUser = username_list[Math.floor(Math.random() * username_list.length)];
+        if (!randomUser.client) {
+          throw "need client for randomUser"
+        }
+        if (c.populate_post_title) {
+          await createNoLinkPost(randomUser.client, cid, c.populate_post_title + " " + randomUser.name + " " + Date.now());
+        } else {
+          await createNoLinkPost(randomUser.client, cid, "Content Post " + randomUser.name + " " + Date.now());
+        }
+      }
+    }
+  }
+}
+
+
+export async function sim_vote_posts_specified_communities() {
+  for (let i = 0; i < community_list.length; i++) {
+    const c = community_list[i];
+    if (!c.community) {
+      throw "Community missing for creating posts"
+    }
+    if (c.populate_posts) {
+      setTargetCommunityName(c.community.community_view.community.name);
+      let postsResponse = await getPostsForTargetCommunity(alpha, 50, "New", true);
+      expect (postsResponse.posts.length).toBeGreaterThanOrEqual(1);
+      for (let y = 0; y < c.populate_posts; y++) {
+        const howManyVotesForThisPost = Math.floor(Math.random() * username_list.length) + 1;
+        for (let x = 0; x < howManyVotesForThisPost; x++) {
+          const voteUser = username_list[x];
+          if (!voteUser.client) {
+            throw "need client for randomUser"
+          }
+          if (postsResponse.posts[y].post.creator_id != voteUser.first_post?.post_view.creator.id) {
+            await likePost(voteUser.client, 1, postsResponse.posts[y].post);
+          }
+      }
+      }
     }
   }
 }

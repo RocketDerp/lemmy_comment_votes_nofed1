@@ -14,12 +14,14 @@ import {
   sim_create_accounts,
   sim_create_communities,
   sim_create_posts_all_users_one_community,
+  sim_create_posts_for_specified_communities,
   sim_create_reply_comments_to_posts,
   sim_create_stress_test_communities,
   sim_create_welcome_posts,
   sim_follow_two_communities,
   sim_join_personal_communities,
   sim_users_update_profile,
+  sim_vote_posts_specified_communities,
 } from "./shared_simulation";
 
 beforeAll(async () => {
@@ -103,3 +105,20 @@ test(
   },
   4 * 60 * 1000,
 );
+
+test(
+  "create posts in some specified communities",
+  async () => {
+    await sim_create_posts_for_specified_communities();
+  },
+  4 * 60 * 1000,
+);
+
+test(
+  "upvote posts in some specified communities",
+  async () => {
+    await sim_vote_posts_specified_communities();
+  },
+  4 * 60 * 1000,
+);
+

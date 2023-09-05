@@ -10,6 +10,7 @@ import {
   PostView,
   CommentResponse,
   ListingType,
+  ListPrivateMessageReports,
 } from "lemmy-js-client";
 import {
   API,
@@ -74,6 +75,7 @@ export async function createNoLinkPost(
   community_id: number,
   name: string = "Post without link " + randomString(5),
   body: string = "Body of post without link " + randomString(10),
+  nsfw?: boolean | undefined
 ): Promise<PostResponse> {
   //let name = "Post without link " + randomString(5);
   // let body = "Body of post without link " + randomString(10);
@@ -84,6 +86,7 @@ export async function createNoLinkPost(
     body,
     auth: api.auth,
     community_id,
+    nsfw
   };
   return api.client.createPost(form);
 }
@@ -714,7 +717,8 @@ export async function getPostsForTargetCommunity(
   account: API,
   limit: number,
   sort: SortType,
-) {
+  bypass_expect_a?: boolean,
+) : Promise<GetPostsResponse> {
   expect(targetCommunityName).toBeDefined();
   let form: GetPosts = {
     auth: account.auth,
@@ -724,5 +728,8 @@ export async function getPostsForTargetCommunity(
     type_: "All",
   };
   let postsResult = await account.client.getPosts(form);
-  expect(postsResult.posts.length).toBeGreaterThanOrEqual(limit);
+  if (!bypass_expect_a) {
+    expect(postsResult.posts.length).toBeGreaterThanOrEqual(limit);
+  }
+  return postsResult;
 }

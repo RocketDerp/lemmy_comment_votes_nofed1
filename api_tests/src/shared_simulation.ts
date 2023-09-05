@@ -32,6 +32,7 @@ export interface UserAccount {
   // most recent comment
   recent_comment?: CommentResponse;
   join?: string[];
+  skip_vote_welcome?: boolean;
 }
 
 export let username_list: UserAccount[] = [
@@ -155,6 +156,14 @@ export let username_list: UserAccount[] = [
   },
   { name: "Eileen", display: "Eileen Vance" },
   { name: "Aubrey", display: "Aubrey Mills" },
+  {
+    name: "Porter",
+    display: "Porter",
+    NSFW: true,
+    biography: "maybe I'm someone's alt account, I am dreamy",
+    join: ["Dublin"],
+    skip_vote_welcome: true,
+  },
 ];
 
 export interface CommunityHolder {
@@ -211,6 +220,15 @@ export let community_list: CommunityHolder[] = [
     description: "Anyone heard the story of Tristan and Isole?",
     creator_index: 1,
   },
+  {
+    name: "red_light",
+    display: "Red Light District",
+    description: "NSFW community for Dublin, “Here in Moicane we flop on the seamy side“",
+    creator_index: 36 /* Porter */,
+    NSFW: true,
+    populate_posts: 6,
+    populate_post_title: "what is this place, should I be here? ...",
+  },
 ];
 
 export async function sim_create_accounts(admin_account: API) {
@@ -248,9 +266,11 @@ To allow multiple executions on a database, will look for named communities firs
 export async function sim_create_communities(name_prefix: string) {
   let alreadyExistsCount = 0;
   let display_prefix = "";
+  let description_prefix = "";
   if (name_prefix)
   {
     display_prefix = name_prefix + " ";
+    description_prefix = name_prefix + " testing duplicate ";
   }
   for (let i = 0; i < community_list.length; i++) {
     const c = community_list[i];
@@ -266,7 +286,10 @@ export async function sim_create_communities(name_prefix: string) {
       expect(e0).toBe("couldnt_find_community");
     }
     if (!communityView) {
-      communityView = await createCommunity(cc, name_prefix + c.name, display_prefix + c.display);
+      communityView = await createCommunity(cc, name_prefix + c.name, display_prefix + c.display, description_prefix + c.description, c.NSFW);
+      if (c.NSFW) {
+        console.log("Just created NSFW community %s index %d id %s", c.name, i, communityView.community_view.community);
+      }
     }
     // only keep object if it is the primary community creation, not prefix
     if (name_prefix.length == 0) {
@@ -392,7 +415,9 @@ export async function sim_create_reply_comments_to_posts() {
             "\n\n" +
             "*Welcome to Lemmy*, meet at /c/pub anytime!",
         );
+        if (! u.skip_vote_welcome) {
         await likePost(u.client, 1, reply_to_firstpost.post);
+        }
       }
     }
   }
@@ -449,6 +474,31 @@ export async function sim_create_posts_for_specified_communities() {
 }
 
 
+export async function set_show_nsfw_for_accout(account: API) {
+  try {
+    let a = await account.client.getSite({
+      auth: account.auth
+    });
+    if (a.my_user?.local_user_view.local_user.show_nsfw) {
+      console.log("user already has show_nsfw");
+    } else {
+      console.log(a.my_user?.local_user_view.local_user);
+      await account.client.saveUserSettings(
+        {
+          auth: account.auth,
+          show_nsfw: true,
+          // a bug? in lemmy is that it won't save settings without modifying more than 1 field.
+          bio: "updated bio to set show_nsfw " + Date.now(),
+        }
+      );
+    };
+  } catch (e0) {
+    // "user_already_exists" means setting is on.
+    console.log("exception updating show_nsfw", e0);
+  }
+}
+
+
 export async function sim_vote_posts_specified_communities() {
   for (let i = 0; i < community_list.length; i++) {
     const c = community_list[i];
@@ -457,6 +507,9 @@ export async function sim_vote_posts_specified_communities() {
     }
     if (c.populate_posts) {
       setTargetCommunityName(c.community.community_view.community.name);
+      if (c.community.community_view.community.nsfw) {
+        await set_show_nsfw_for_accout(alpha);
+      }
       let postsResponse = await getPostsForTargetCommunity(alpha, 50, "New", true);
       expect (postsResponse.posts.length).toBeGreaterThanOrEqual(1);
       for (let y = 0; y < c.populate_posts; y++) {
@@ -469,10 +522,21 @@ export async function sim_vote_posts_specified_communities() {
           if (postsResponse.posts[y].post.creator_id != voteUser.first_post?.post_view.creator.id) {
             await likePost(voteUser.client, 1, postsResponse.posts[y].post);
           }
-      }
+        }
       }
     }
   }
+}
+
+
+export async function sim_create_NSFW_community_and_posts() {
+  const user = username_list[36];
+  if (user.client) {
+    // create a NSFW posting in a community not marked for NSFW
+    setTargetCommunityName("books");
+    let postList = await getPostsForTargetCommunity(user.client, 1, "New", true);
+    let post0 = createNoLinkPost(user.client, postList.posts[0].community.id, "Are NSFW book quotes and passages allowed here?", "example passage: 'hello world'", true);
+  };
 }
 
 
@@ -482,6 +546,7 @@ export async function createCommunity(
   name_: string = randomString(8),
   title = "",
   description = "",
+  flag_NSFW?: boolean | undefined,
 ): Promise<CommunityResponse> {
   // some tests rely on auto-generated parameters
   let description_out = "a sample description for " + name_;
@@ -497,6 +562,7 @@ export async function createCommunity(
     title: title_out,
     description: description_out,
     auth: api.auth,
+    nsfw: flag_NSFW
   };
   return api.client.createCommunity(form);
 }

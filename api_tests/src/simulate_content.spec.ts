@@ -11,7 +11,7 @@ jest.setTimeout(20 * 60 * 1000);
 
 import { alpha, setupLogins } from "./shared";
 import {
-  sim_create_NSFW_community_and_posts,
+  sim_create_NSFW_posts_in_regular_community,
   sim_create_accounts,
   sim_create_communities,
   sim_create_multi_language_community_and_posts,
@@ -127,7 +127,7 @@ test(
 test(
   "create NSFW content",
   async () => {
-    await sim_create_NSFW_community_and_posts();
+    await sim_create_NSFW_posts_in_regular_community();
   },
   4 * 60 * 1000,
 );

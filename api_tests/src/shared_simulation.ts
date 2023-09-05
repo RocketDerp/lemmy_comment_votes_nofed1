@@ -180,6 +180,7 @@ export interface CommunityHolder {
   description?: string;
   populate_posts?: number;
   populate_post_title?: string;
+  languages?: number[];
 }
 
 export let community_list: CommunityHolder[] = [
@@ -229,6 +230,15 @@ export let community_list: CommunityHolder[] = [
     populate_posts: 6,
     populate_post_title: "what is this place, should I be here? ...",
   },
+  {
+    name: "snakke",
+    display: "skarp snakk",
+    description: "'for he could chew upon a skarp snakk of pure undefallen engelsk'",
+    creator_index: 36 /* Porder */,
+    populate_posts: 3,
+    populate_post_title: "skarp snakk - ",
+    languages: [31],
+  }
 ];
 
 export async function sim_create_accounts(admin_account: API) {
@@ -286,7 +296,7 @@ export async function sim_create_communities(name_prefix: string) {
       expect(e0).toBe("couldnt_find_community");
     }
     if (!communityView) {
-      communityView = await createCommunity(cc, name_prefix + c.name, display_prefix + c.display, description_prefix + c.description, c.NSFW);
+      communityView = await createCommunity(cc, name_prefix + c.name, display_prefix + c.display, description_prefix + c.description, c.NSFW, c.languages);
       if (c.NSFW) {
         console.log("Just created NSFW community %s index %d id %s", c.name, i, communityView.community_view.community);
       }
@@ -529,14 +539,16 @@ export async function sim_vote_posts_specified_communities() {
 }
 
 
-export async function sim_create_NSFW_community_and_posts() {
+export async function sim_create_NSFW_posts_in_regular_community() {
   const user = username_list[36];
   if (user.client) {
     // create a NSFW posting in a community not marked for NSFW
     setTargetCommunityName("books");
     let postList = await getPostsForTargetCommunity(user.client, 1, "New", true);
-    let post0 = createNoLinkPost(user.client, postList.posts[0].community.id, "Are NSFW book quotes and passages allowed here?", "example passage: 'hello world'", true);
-    let post1 = createNoLinkPost(user.client, postList.posts[0].community.id, "Are mods responding? Are NSFW book quotes & passages allowed here?", "example passage: 'hello world'", true);
+    await createNoLinkPost(user.client, postList.posts[0].community.id, "Are NSFW book quotes and passages allowed here?", "example passage: 'hello world'", true);
+    await createNoLinkPost(user.client, postList.posts[0].community.id, "Are mods responding? Are NSFW book quotes & passages allowed here?", "example passage: 'hello world'", true);
+    // create a post with both NSFW and language, see if it flies under moderator radar
+    await createNoLinkPost(user.client, postList.posts[0].community.id, "¡hola! ¿Se permiten aquí citas y pasajes de libros NSFW?", "example passage: 'discorrío, pasando por Adán y Eva, desvía la orilla hacia un recodo de bahía, llevándonos a una comodiosa vicositud recircular de vuelta a Howth Castle y Entornos.'", true, 39);
   };
 }
 
@@ -546,12 +558,12 @@ export async function sim_create_multi_language_community_and_posts() {
     // create a NSFW posting in a community not marked for NSFW
     setTargetCommunityName("books");
     let postList = await getPostsForTargetCommunity(user.client, 8, "New", true);
-    let post0 = await createNoLinkPost(user.client, postList.posts[0].community.id, "Hola, Español", "Español", false, 39);
-    let post1 = await createNoLinkPost(user.client, postList.posts[0].community.id, "Latin? Are Latin book quotes & passages allowed here?", "Primum opifex, altus prosator, ad terram viviparam et cuncti-potentem sine ullo pudore nec venia, suscepto pluviali atque discinctis perizomatis, natibus nudis uti nati fuissent, sese adpropinquans, flens et gemens, in manum suam evacuavit (highly prosy, crap in his hand, sorry!), postea, animale nigro exoneratus, classicum pulsans, stercus proprium, quod appellavit deiectiones suas, in vas olim honorabile tristitiae posuit, eodem sub invocatione fratrorum gemino-rum Medardi et Godardi laete ac melliflue minxit, psalmum qui incipit: Lingua mea calamus scribae velociter scribentis: magna voce cantitans (did a piss, says he was dejected, asks to be exonerated), demum ex stercore turpi cum divi Orionis iucunditate mixto, cocto, frigorique exposito, encaustum sibi fecit indelibile (faked O’Ryan’s, the indelible ink).", false, 91);
+    await createNoLinkPost(user.client, postList.posts[0].community.id, "Hola, Español", "Español", false, 39);
+    await createNoLinkPost(user.client, postList.posts[0].community.id, "Latin? Are Latin book quotes & passages allowed here?", "Primum opifex, altus prosator, ad terram viviparam et cuncti-potentem sine ullo pudore nec venia, suscepto pluviali atque discinctis perizomatis, natibus nudis uti nati fuissent, sese adpropinquans, flens et gemens, in manum suam evacuavit (highly prosy, crap in his hand, sorry!), postea, animale nigro exoneratus, classicum pulsans, stercus proprium, quod appellavit deiectiones suas, in vas olim honorabile tristitiae posuit, eodem sub invocatione fratrorum gemino-rum Medardi et Godardi laete ac melliflue minxit, psalmum qui incipit: Lingua mea calamus scribae velociter scribentis: magna voce cantitans (did a piss, says he was dejected, asks to be exonerated), demum ex stercore turpi cum divi Orionis iucunditate mixto, cocto, frigorique exposito, encaustum sibi fecit indelibile (faked O’Ryan’s, the indelible ink).", false, 91);
     // ToDo: create comments in other languages on other posts
     let desired = postList.posts.length;
-    if (desired > 4) {
-      desired = 4;
+    if (desired > 6) {
+      desired = 6;
     }
     for (let x = 0; x < desired; x++)
     {
@@ -569,6 +581,7 @@ export async function createCommunity(
   title = "",
   description = "",
   flag_NSFW?: boolean | undefined,
+  discussion_languages?: number[] | undefined
 ): Promise<CommunityResponse> {
   // some tests rely on auto-generated parameters
   let description_out = "a sample description for " + name_;
@@ -584,7 +597,8 @@ export async function createCommunity(
     title: title_out,
     description: description_out,
     auth: api.auth,
-    nsfw: flag_NSFW
+    nsfw: flag_NSFW,
+    discussion_languages,
   };
   return api.client.createCommunity(form);
 }

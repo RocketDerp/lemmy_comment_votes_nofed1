@@ -75,7 +75,8 @@ export async function createNoLinkPost(
   community_id: number,
   name: string = "Post without link " + randomString(5),
   body: string = "Body of post without link " + randomString(10),
-  nsfw?: boolean | undefined
+  nsfw?: boolean | undefined,
+  language_id?: number | undefined,
 ): Promise<PostResponse> {
   //let name = "Post without link " + randomString(5);
   // let body = "Body of post without link " + randomString(10);
@@ -86,7 +87,8 @@ export async function createNoLinkPost(
     body,
     auth: api.auth,
     community_id,
-    nsfw
+    nsfw,
+    language_id
   };
   return api.client.createPost(form);
 }

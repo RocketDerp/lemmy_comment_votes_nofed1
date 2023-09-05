@@ -11,8 +11,10 @@ jest.setTimeout(20 * 60 * 1000);
 
 import { alpha, setupLogins } from "./shared";
 import {
+  sim_create_NSFW_community_and_posts,
   sim_create_accounts,
   sim_create_communities,
+  sim_create_multi_language_community_and_posts,
   sim_create_posts_all_users_one_community,
   sim_create_posts_for_specified_communities,
   sim_create_reply_comments_to_posts,
@@ -122,3 +124,18 @@ test(
   4 * 60 * 1000,
 );
 
+test(
+  "create NSFW content",
+  async () => {
+    await sim_create_NSFW_community_and_posts();
+  },
+  4 * 60 * 1000,
+);
+
+test(
+  "create multi-language content",
+  async () => {
+    await sim_create_multi_language_community_and_posts();
+  },
+  4 * 60 * 1000,
+);

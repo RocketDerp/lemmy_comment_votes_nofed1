@@ -4,12 +4,11 @@ import {
   CommunityResponse,
   PostView,
   CreateCommunity,
+  CreateComment,
 } from "lemmy-js-client";
 import {
   API,
   alpha,
-  createComment,
-  createPost,
   // bypassed for local: createCommunity,
   followCommunity,
   getCommunityByName,
@@ -164,6 +163,7 @@ export let username_list: UserAccount[] = [
     join: ["Dublin"],
     skip_vote_welcome: true,
   },
+  // ToDo: 10 lurker accounts that do not create posts or comments, but subscribe and vote
 ];
 
 export interface CommunityHolder {
@@ -536,6 +536,28 @@ export async function sim_create_NSFW_community_and_posts() {
     setTargetCommunityName("books");
     let postList = await getPostsForTargetCommunity(user.client, 1, "New", true);
     let post0 = createNoLinkPost(user.client, postList.posts[0].community.id, "Are NSFW book quotes and passages allowed here?", "example passage: 'hello world'", true);
+    let post1 = createNoLinkPost(user.client, postList.posts[0].community.id, "Are mods responding? Are NSFW book quotes & passages allowed here?", "example passage: 'hello world'", true);
+  };
+}
+
+export async function sim_create_multi_language_community_and_posts() {
+  const user = username_list[36];
+  if (user.client) {
+    // create a NSFW posting in a community not marked for NSFW
+    setTargetCommunityName("books");
+    let postList = await getPostsForTargetCommunity(user.client, 8, "New", true);
+    let post0 = await createNoLinkPost(user.client, postList.posts[0].community.id, "Hola, Español", "Español", false, 39);
+    let post1 = await createNoLinkPost(user.client, postList.posts[0].community.id, "Latin? Are Latin book quotes & passages allowed here?", "Primum opifex, altus prosator, ad terram viviparam et cuncti-potentem sine ullo pudore nec venia, suscepto pluviali atque discinctis perizomatis, natibus nudis uti nati fuissent, sese adpropinquans, flens et gemens, in manum suam evacuavit (highly prosy, crap in his hand, sorry!), postea, animale nigro exoneratus, classicum pulsans, stercus proprium, quod appellavit deiectiones suas, in vas olim honorabile tristitiae posuit, eodem sub invocatione fratrorum gemino-rum Medardi et Godardi laete ac melliflue minxit, psalmum qui incipit: Lingua mea calamus scribae velociter scribentis: magna voce cantitans (did a piss, says he was dejected, asks to be exonerated), demum ex stercore turpi cum divi Orionis iucunditate mixto, cocto, frigorique exposito, encaustum sibi fecit indelibile (faked O’Ryan’s, the indelible ink).", false, 91);
+    // ToDo: create comments in other languages on other posts
+    let desired = postList.posts.length;
+    if (desired > 4) {
+      desired = 4;
+    }
+    for (let x = 0; x < desired; x++)
+    {
+      await createComment(user.client, postList.posts[x].post.id, undefined, "comment in Español", 39);
+      await createComment(user.client, postList.posts[x].post.id, undefined, "Primum opifex, altus prosator, ad terram viviparam et cuncti-potentem sine ullo pudore nec venia, suscepto pluviali atque discinctis perizomatis, natibus nudis uti nati fuissent, sese adpropinquans, flens et gemens, in manum suam evacuavit (highly prosy, crap in his hand, sorry!), postea, animale nigro exoneratus, classicum pulsans, stercus proprium, quod appellavit deiectiones suas, in vas olim honorabile tristitiae posuit, eodem sub invocatione fratrorum gemino-rum Medardi et Godardi laete ac melliflue minxit, psalmum qui incipit: Lingua mea calamus scribae velociter scribentis: magna voce cantitans (did a piss, says he was dejected, asks to be exonerated), demum ex stercore turpi cum divi Orionis iucunditate mixto, cocto, frigorique exposito", 91);
+    }
   };
 }
 
@@ -565,4 +587,21 @@ export async function createCommunity(
     nsfw: flag_NSFW
   };
   return api.client.createCommunity(form);
+}
+
+export async function createComment(
+  api: API,
+  post_id: number,
+  parent_id?: number,
+  content = "a jest test comment",
+  language_id?: number,
+): Promise<CommentResponse> {
+  let form: CreateComment = {
+    content,
+    post_id,
+    parent_id,
+    auth: api.auth,
+    language_id,
+  };
+  return api.client.createComment(form);
 }

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
-export LEMMY_DATABASE_URL=postgres://lemmy:password@localhost:5432
+# - set in external file export LEMMY_DATABASE_URL=postgres://lemmy:password@localhost:5432
+source ../../../lemmy_server_pg0.sh
+
 pushd ..
 cargo build
 rm target/lemmy_server || true

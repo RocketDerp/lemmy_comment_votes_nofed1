@@ -31,6 +31,7 @@ pub async fn get_site(
 
   let admins = PersonView::admins(&mut context.pool()).await?;
 
+  tracing::warn!(target: "API_look", "dong my_user");
   // Build the local user
   let my_user = if let Some(local_user_view) = local_user_view {
     let person_id = local_user_view.person.id;
@@ -61,6 +62,8 @@ pub async fn get_site(
     let discussion_languages = LocalUserLanguage::read(&mut context.pool(), local_user_id)
       .await
       .with_lemmy_type(LemmyErrorType::SystemErrLogin)?;
+
+    tracing::warn!(target: "API_look", "built my_user {:?}", local_user_view);
 
     Some(MyUserInfo {
       local_user_view,

@@ -248,6 +248,26 @@ export async function sim_create_accounts(admin_account: LemmyHttp) {
   }
 }
 
+export async function sim_analyze_user_accounts(admin_account: LemmyHttp) {
+  let foundMyUserCount = 0;
+  for (let i = 0; i < username_list.length; i++) {
+    const u = username_list[i];
+    if (u.client) {
+      let a = await u.client.getSite();
+      if (a.my_user) {
+        foundMyUserCount++;
+        if (i < 2) {
+          console.log(a.my_user);
+        }
+      } else {
+        throw "did not get my_user from getSite";
+      }
+    }
+  }
+  console.log("found my_user from getSite() %d times", foundMyUserCount);
+}
+
+
 export async function sim_users_update_profile() {
   for (let i = 0; i < username_list.length; i++) {
     const u = username_list[i];

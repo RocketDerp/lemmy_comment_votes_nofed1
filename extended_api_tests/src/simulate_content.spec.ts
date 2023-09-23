@@ -11,6 +11,7 @@ jest.setTimeout(20 * 60 * 1000);
 
 import { alpha, setupLogins } from "./shared";
 import {
+  sim_analyze_user_accounts,
   sim_create_NSFW_posts_in_regular_community,
   sim_create_accounts,
   sim_create_communities,
@@ -39,6 +40,15 @@ test(
   },
   3 * 60 * 1000,
 );
+
+test(
+  "my_user for accounts",
+  async () => {
+    await sim_analyze_user_accounts(alpha);
+  },
+  3 * 60 * 1000,
+);
+
 
 test(
   "create communities",
